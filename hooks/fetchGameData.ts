@@ -21,11 +21,28 @@ export async function fetchGameData(): Promise<Game[]> {
 			(team: any) => team.id === '251'
 		);
 
+		const getScore = (team: any) => {
+			if (typeof team.score === 'object' && team.score !== null) {
+				return team.score.displayValue || '-';
+			}
+			return team.score || '-';
+		};
+
+		const score = `${getScore(homeTeam)}-${getScore(awayTeam)}`;
+		console.log(
+			'Score:',
+			score,
+			'Home Score:',
+			homeTeam.score,
+			'Away Score:',
+			awayTeam.score
+		);
+
 		return {
 			id: event.id,
 			home: homeTeam.team.displayName,
 			away: awayTeam.team.displayName,
-			score: `${homeTeam.score || '-'}-${awayTeam.score || '-'}`,
+			score,
 			location: event.competitions[0].venue.fullName,
 			date: new Date(event.date).toLocaleDateString(),
 			timestamp: new Date(event.date).getTime(),
@@ -35,7 +52,7 @@ export async function fetchGameData(): Promise<Game[]> {
 					: texasTeam.winner === false
 						? 'loss'
 						: 'upcoming',
-			status: event.status.type.name,
+			status: event.status?.type?.name || 'Unknown',
 		};
 	});
 }

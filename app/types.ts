@@ -2,8 +2,8 @@ export interface Game {
 	id: string;
 	home: string;
 	away: string;
-	score: string;
-	location: string;
+	score?: string;
+	location?: string;
 	date: string;
 	timestamp: number;
 	result: 'win' | 'loss' | 'upcoming';

@@ -11,8 +11,8 @@ import {
 	Spinner,
 	Button,
 } from '@nextui-org/react';
-import useGameData from '../hooks/useGameData';
-import { Game } from '@/app/types';
+import useGameData from '@/hooks/useGameData';
+import { Game } from '@/types';
 
 const columns = [
 	{ name: 'HOME', uid: 'home' },
@@ -30,6 +30,7 @@ export default function StatsTable() {
 
 		switch (columnKey) {
 			case 'score':
+				console.log('Score cell value:', cellValue);
 				return (
 					<Chip
 						className='capitalize'
@@ -42,11 +43,15 @@ export default function StatsTable() {
 						}
 						size='sm'
 						variant='flat'>
-						{cellValue}
+						{typeof cellValue === 'string'
+							? cellValue
+							: JSON.stringify(cellValue)}
 					</Chip>
 				);
 			default:
-				return cellValue;
+				return typeof cellValue === 'string'
+					? cellValue
+					: JSON.stringify(cellValue);
 		}
 	}, []);
 

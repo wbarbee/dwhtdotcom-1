@@ -620,6 +620,11 @@ img, video {
   margin-bottom: .5rem;
 }
 
+.my-8 {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
 .my-\[calc\(\(theme\(spacing\.5\)-theme\(spacing\.1\)\)\/2\)\] {
   margin-top: .5rem;
   margin-bottom: .5rem;
@@ -638,11 +643,6 @@ img, video {
 .my-auto {
   margin-top: auto;
   margin-bottom: auto;
-}
-
-.my-8 {
-  margin-top: 2rem;
-  margin-bottom: 2rem;
 }
 
 .-mr-2 {
@@ -2098,10 +2098,6 @@ img, video {
 .bg-default-500 {
   --tw-bg-opacity: 1;
   background-color: hsl(var(--nextui-default-500) / var(--nextui-default-500-opacity, var(--tw-bg-opacity)));
-}
-
-.bg-default-500\/30 {
-  background-color: hsl(var(--nextui-default-500) / .3);
 }
 
 .bg-default\/40 {
@@ -4231,11 +4227,6 @@ img, video {
   height: 0;
 }
 
-.after\:h-2:after {
-  content: var(--tw-content);
-  height: .5rem;
-}
-
 .after\:h-4:after {
   content: var(--tw-content);
   height: 1rem;
@@ -4269,11 +4260,6 @@ img, video {
 .after\:w-0:after {
   content: var(--tw-content);
   width: 0;
-}
-
-.after\:w-2:after {
-  content: var(--tw-content);
-  width: .5rem;
 }
 
 .after\:w-4:after {
@@ -4427,12 +4413,6 @@ img, video {
   content: var(--tw-content);
   --tw-bg-opacity: 1;
   background-color: hsl(var(--nextui-divider) / var(--nextui-divider-opacity, var(--tw-bg-opacity)));
-}
-
-.after\:bg-foreground:after {
-  content: var(--tw-content);
-  --tw-bg-opacity: 1;
-  background-color: hsl(var(--nextui-foreground) / var(--nextui-foreground-opacity, var(--tw-bg-opacity)));
 }
 
 .after\:bg-primary:after {
@@ -8204,10 +8184,6 @@ img, video {
 
 .\[\&\>\*\]\:relative > * {
   position: relative;
-}
-
-.\[\&\>path\]\:stroke-transparent > path {
-  stroke: #0000;
 }
 
 .\[\&\>svg\]\:max-w-\[theme\(spacing\.8\)\] > svg {
