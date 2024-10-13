@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* @import url('https://fonts.googleapis.com/css2?family=Gothic+A1:wght@200;500;800&family=News+Cycle:wght@700&family=Orbitron:wght@500&family=Oxanium:wght@300;500&family=Playfair+Display&display=swap'); */
+
+@font-face {
+    font-family: 'Graduate';
+    src: url('/fonts/Graduate-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'ESPN';
+    src: url('/fonts/esp_bdit.ttf') format('truetype');
+    font-weight: bold;
+    font-style: itlic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'ESPN';
+    src: url('/fonts/esp_bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'ESPN';
+    src: url('/fonts/esp_ital.ttf') format('truetype');
+    font-weight: 500;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'ESPN';
+    src: url('/fonts/esp.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+
+.nav-main {
+	z-index: 1000;
+}
+
+.loader {
+	width: 5rem;
+	height: 5rem;
+	margin: 2rem auto 0;
+	position: relative;
+	box-sizing: border-box;
+}
+
+.dropdown-wrapper::before {
+	content: '';
+	position: absolute;
+	top: 2px;
+	left: -8px;
+	border-left: 20px solid transparent;
+	border-right: 20px solid transparent;
+	border-bottom: 20px solid #d1d5dc;
+}
+
+@media (prefers-color-scheme: dark) {
+	.dropdown-wrapper::before {
+		border-bottom: 20px solid #1f2937;
+	}
+}
+
+@media (min-width: 768px) {
+	.dropdown-wrapper::before {
+		top: 2px;
+		left: 20px;
+	}
+}
