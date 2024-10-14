@@ -8,6 +8,8 @@ export interface Game {
 	id: string;
 	homeTeam: string;
 	awayTeam: string;
+	home: string;
+	away: string;
 	longhornsRecord: number | null;
 	homeTeamRank?: number | string;
 	awayTeamRank?: number | string;
