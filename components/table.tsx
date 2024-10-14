@@ -1,5 +1,5 @@
 'use client';
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 // ts.ignore
 import {
 	Table,
@@ -13,7 +13,6 @@ import {
 } from '@nextui-org/react';
 import useGameData from '@/hooks/useGameData';
 import { Game } from '@/types';
-import { useMediaQuery } from '@react-hook/media-query';
 
 const columns = [
 	{ name: 'AWAY', uid: 'away' },
@@ -25,7 +24,18 @@ const columns = [
 
 export default function StatsTable() {
 	const { games, error, refetch } = useGameData();
-	const isMobile = useMediaQuery('(max-width: 640px)');
+	const [isMobile, setIsMobile] = useState(false);
+
+	useEffect(() => {
+		const checkIfMobile = () => {
+			setIsMobile(window.innerWidth <= 640);
+		};
+
+		checkIfMobile();
+		window.addEventListener('resize', checkIfMobile);
+
+		return () => window.removeEventListener('resize', checkIfMobile);
+	}, []);
 
 	const renderCell = useCallback(
 		(game: Game, columnKey: keyof Game) => {
@@ -51,7 +61,7 @@ export default function StatsTable() {
 			};
 
 			switch (columnKey) {
-				case 'awayTeam':
+				case 'away':
 					return (
 						<span className={isWinner(!game.isTexasHome) ? winnerStyle : ''}>
 							{gameFinished &&
@@ -59,10 +69,10 @@ export default function StatsTable() {
 							Number(game.awayTeamRank) < 50
 								? `[${game.awayTeamRank}]`
 								: ''}{' '}
-							{isMobile ? game.awayTeamAbbrev : game.awayTeam}
+							{isMobile ? game.awayTeamAbbrev : game.away}
 						</span>
 					);
-				case 'homeTeam':
+				case 'home':
 					return (
 						<span className={isWinner(game.isTexasHome) ? winnerStyle : ''}>
 							{gameFinished &&
@@ -70,7 +80,7 @@ export default function StatsTable() {
 							Number(game.homeTeamRank) < 50
 								? `[${game.homeTeamRank}]`
 								: ''}{' '}
-							{isMobile ? game.homeTeamAbbrev : game.homeTeam}
+							{isMobile ? game.homeTeamAbbrev : game.home}
 						</span>
 					);
 				case 'score':
@@ -134,7 +144,7 @@ export default function StatsTable() {
 	}
 
 	return (
-		<div className='w-full relative pt-4'>
+		<div className='w-full relative pt-4 animate-fade-in'>
 			<div className='text-xs absolute top-0 right-8 md:right-10'>
 				<span className='font-bold text-red-400'>*</span> = neutral site game
 			</div>
