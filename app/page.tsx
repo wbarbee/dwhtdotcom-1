@@ -24,13 +24,13 @@ export default function Home() {
 			</div>
 			<Tooltip
 				content={
-					<div className='font-menlo text-xs text-center' color='default'>
+					<div className='font-menlo text-xs text-center py-2' color='default'>
 						&copy; {new Date().getFullYear()} didwehookthem.com. All rights
 						reserved.
 						<br />
 						<Link
 							href='/about'
-							className='font-menlo text-xs'
+							className='font-menlo text-xs mt-1'
 							underline='always'>
 							Click for more info
 						</Link>
