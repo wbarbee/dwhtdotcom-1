@@ -8,7 +8,7 @@ const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
 
 export async function fetchGameData(): Promise<Game[]> {
 	if (IS_DEV_MODE && USE_MOCK_DATA) {
-		console.log('Using mock data in dev mode');
+		console.warn('Using mock data in dev mode');
 		return [generateMockGameData()];
 	}
 
@@ -17,8 +17,6 @@ export async function fetchGameData(): Promise<Game[]> {
 		throw new Error('Failed to fetch game data');
 	}
 	const data = await response.json();
-
-	console.log(data);
 
 	return data.events.map((event: any) => {
 		const homeTeam = event.competitions[0].competitors.find(
@@ -53,8 +51,6 @@ export async function fetchGameData(): Promise<Game[]> {
 			if (gameStatus === 'STATUS_CURRENT') return '0 - 0';
 			return `${awayScore ?? '-'} - ${homeScore ?? '-'}`;
 		};
-
-		console.log(data);
 
 		return {
 			id: event.id,
