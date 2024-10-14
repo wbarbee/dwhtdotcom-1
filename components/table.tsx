@@ -18,7 +18,7 @@ import { Game } from '@/types';
 const columns = [
 	{ name: 'AWAY', uid: 'away' },
 	{ name: 'HOME', uid: 'home' },
-	{ name: 'SCORE', uid: 'score' },
+	{ name: 'HOOKED THEM?', uid: 'score' },
 	{ name: 'LOCATION', uid: 'location' },
 	{ name: 'DATE', uid: 'date' },
 ];
