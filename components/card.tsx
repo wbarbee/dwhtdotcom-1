@@ -10,7 +10,6 @@ import {
 	DropdownItem,
 	Button,
 } from '@nextui-org/react';
-import { ReactNode } from 'react';
 
 const detectAppendedSuffix = (num: number): string => {
 	if (num === 1) return '1st';
@@ -108,7 +107,7 @@ export default function ScoreCard() {
 
 	return (
 		<>
-			{process.env.NODE_ENV === 'development' && (
+			{overrideVisible && (
 				<div className='mb-4 fixed bottom-4 left-4'>
 					<Dropdown>
 						<DropdownTrigger>
@@ -141,7 +140,7 @@ export default function ScoreCard() {
 					<div className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center'>
 						<div className='relative col-span-6 md:col-span-4 flex items-center justify-center'>
 							<div
-								className={`w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center ${modeData?.backgroundImage} dark:${modeData?.backgroundImageNight}`}>
+								className={`w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center ${modeData?.backgroundImage} ${modeData?.backgroundImageNight}`}>
 								<span
 									className={modeData?.hookEmClasses}
 									role='img'

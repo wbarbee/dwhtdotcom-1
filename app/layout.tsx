@@ -1,6 +1,7 @@
 import '@/styles/globals.css';
 import { Metadata, Viewport } from 'next';
 import clsx from 'clsx';
+import { ThemeProvider } from 'next-themes';
 
 import { fontSans } from '@/config/fonts';
 import { ThemeSwitch } from '@/components/theme-switch';
@@ -47,7 +48,12 @@ export default function RootLayout({
 					<div className='relative flex flex-col h-screen'>
 						<main className='container mx-auto max-w-7xl pt-16 px-6 flex-grow'>
 							<ThemeSwitch />
-							{children}
+							<ThemeProvider
+								attribute='class'
+								defaultTheme='system'
+								enableSystem>
+								{children}
+							</ThemeProvider>
 						</main>
 						<footer className='w-full flex items-center justify-center py-3'></footer>
 					</div>
