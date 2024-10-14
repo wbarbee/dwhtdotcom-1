@@ -11,13 +11,7 @@ import {
 } from '@nextui-org/react';
 import { RefreshCw } from 'lucide-react';
 import { refetchGameData } from '@/hooks/fetchGameData';
-
-const detectAppendedSuffix = (num: number): string => {
-	if (num === 1) return '1st';
-	if (num === 2) return '2nd';
-	if (num === 3) return '3rd';
-	return `${num}th`;
-};
+import { detectAppendedSuffix } from '@/utils/stringUtils';
 
 const gameModes = {
 	win: {
@@ -45,8 +39,8 @@ const gameModes = {
 		hookEmClasses: 'text-7xl animate-pulse',
 	},
 	auto: {
-		backgroundImage: 'bg-[url("/images/mem_stadium-day.webp")]',
-		backgroundImageNight: 'dark:bg-[url("/images/mem_stadium.webp")]',
+		backgroundImage: '',
+		backgroundImageNight: '',
 		title: '',
 		hookEmClasses: 'text-7xl',
 	},
@@ -94,7 +88,7 @@ export default function ScoreCard() {
 	};
 
 	const handleOverrideChange = async (key: string) => {
-		const newMode = key === 'null' ? null : (key as keyof typeof gameModes);
+		const newMode = key === 'auto' ? null : (key as keyof typeof gameModes);
 		setOverrideMode(newMode);
 		if (
 			process.env.NODE_ENV === 'development' &&
@@ -119,13 +113,13 @@ export default function ScoreCard() {
 		);
 	}
 
-	const currentMode =
-		overrideMode ||
-		(currentGameData.status === 'STATUS_CURRENT'
-			? 'current'
-			: currentGameData.result === 'win' || currentGameData.result === 'loss'
-				? currentGameData.result
-				: 'upcoming');
+	const currentMode = (() => {
+		if (overrideMode) return overrideMode;
+		if (currentGameData.status === 'STATUS_CURRENT') return 'current';
+		if (currentGameData.result === 'win' || currentGameData.result === 'loss')
+			return currentGameData.result;
+		return 'upcoming';
+	})();
 
 	const modeData = gameModes[currentMode as keyof typeof gameModes];
 
