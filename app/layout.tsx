@@ -1,21 +1,15 @@
 import '@/styles/globals.css';
 import { Metadata, Viewport } from 'next';
-import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import { ThemeProvider } from 'next-themes';
 import clsx from 'clsx';
 
-import { Providers } from './providers';
-
-import { siteConfig } from '@/config/site';
 import { fontSans } from '@/config/fonts';
 import { ThemeSwitch } from '@/components/theme-switch';
 import { NextUIProvider } from '@nextui-org/system';
 
 export const metadata: Metadata = {
-	title: {
-		default: siteConfig.name,
-		template: `%s - ${siteConfig.name}`,
-	},
-	description: siteConfig.description,
+	title: 'Did we hook them?',
+	description: 'A great source to find out if we hooked them or not.',
 	icons: {
 		icon: '/favicon.ico',
 	},
@@ -41,11 +35,8 @@ export default function RootLayout({
 					'min-h-screen bg-background font-sans antialiased',
 					fontSans.variable
 				)}>
-				<NextUIProvider>
-					<NextThemesProvider
-						attribute='class'
-						defaultTheme='system'
-						enableSystem>
+				<ThemeProvider attribute='class' defaultTheme='system' enableSystem>
+					<NextUIProvider>
 						<div className='relative flex flex-col h-screen'>
 							<main className='container mx-auto max-w-7xl pt-16 px-6 flex-grow'>
 								<ThemeSwitch />
@@ -53,8 +44,8 @@ export default function RootLayout({
 							</main>
 							<footer className='w-full flex items-center justify-center py-3'></footer>
 						</div>
-					</NextThemesProvider>
-				</NextUIProvider>
+					</NextUIProvider>
+				</ThemeProvider>
 			</body>
 		</html>
 	);
