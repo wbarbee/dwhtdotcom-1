@@ -10,6 +10,7 @@ import {
 	TableCell,
 	Chip,
 	Button,
+	Skeleton,
 } from '@nextui-org/react';
 import useGameData from '@/hooks/useGameData';
 import { Game } from '@/types';
@@ -17,7 +18,7 @@ import { Game } from '@/types';
 const columns = [
 	{ name: 'AWAY', uid: 'away' },
 	{ name: 'HOME', uid: 'home' },
-	{ name: 'HOOKED THEM?', uid: 'score' },
+	{ name: 'SCORE', uid: 'score' },
 	{ name: 'LOCATION', uid: 'location' },
 	{ name: 'DATE', uid: 'date' },
 ];
@@ -25,6 +26,7 @@ const columns = [
 export default function StatsTable() {
 	const { games, error, refetch } = useGameData();
 	const [isMobile, setIsMobile] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
 
 	useEffect(() => {
 		const checkIfMobile = () => {
@@ -36,6 +38,16 @@ export default function StatsTable() {
 
 		return () => window.removeEventListener('resize', checkIfMobile);
 	}, []);
+
+	useEffect(() => {
+		if (games && games.length > 0) {
+			const timer = setTimeout(() => {
+				setIsLoading(false);
+			}, 1000);
+
+			return () => clearTimeout(timer);
+		}
+	}, [games]);
 
 	const renderCell = useCallback(
 		(game: Game, columnKey: keyof Game) => {
@@ -135,32 +147,50 @@ export default function StatsTable() {
 		);
 	}
 
+	const renderSkeleton = () => (
+		<>
+			{Array(10)
+				.fill(null)
+				.map((_, index) => (
+					<TableRow key={`skeleton-${index}`}>
+						{columns.map((column) => (
+							<TableCell key={column.uid}>
+								<Skeleton className='w-full'>
+									<div className='h-3 w-full rounded-lg bg-default-200'></div>
+								</Skeleton>
+							</TableCell>
+						))}
+					</TableRow>
+				))}
+		</>
+	);
+
 	return (
-		<div className='w-full relative animate-fade-in'>
-			{games && games.length > 0 && (
-				<Table
-					aria-label='University of Texas Longhorns 2023 Season Record'
-					className='min-w-full overflow-x-auto'>
-					<TableHeader columns={columns}>
-						{(column: { uid: string; name: string }) => (
-							<TableColumn key={column.uid} align='center'>
-								{column.name}
-							</TableColumn>
-						)}
-					</TableHeader>
-					<TableBody items={games}>
-						{(item: Game) => (
-							<TableRow key={item.id}>
-								{(columnKey) => (
-									<TableCell>
-										{renderCell(item, columnKey as keyof Game)}
-									</TableCell>
-								)}
-							</TableRow>
-						)}
-					</TableBody>
-				</Table>
-			)}
+		<div className='w-full overflow-x-auto'>
+			<Table
+				aria-label='University of Texas Longhorns 2023 Season Record'
+				className='min-w-full'>
+				<TableHeader columns={columns}>
+					{(column) => (
+						<TableColumn key={column.uid} align='center'>
+							{column.name}
+						</TableColumn>
+					)}
+				</TableHeader>
+				<TableBody>
+					{isLoading || !games
+						? renderSkeleton()
+						: games.map((game) => (
+								<TableRow key={game.id} className='animate-fade-in'>
+									{(columnKey) => (
+										<TableCell>
+											{renderCell(game, columnKey as keyof Game)}
+										</TableCell>
+									)}
+								</TableRow>
+							))}
+				</TableBody>
+			</Table>
 		</div>
 	);
 }
