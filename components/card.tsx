@@ -2,7 +2,6 @@
 import { useState, useMemo } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useViewport } from '@/hooks/useViewport';
-import gameModes from '@/constants/constants';
 import { Card, CardBody, Button, Spinner } from '@nextui-org/react';
 import FullScoreModal from './modal';
 import {
@@ -17,7 +16,7 @@ import { detectAppendedSuffix } from '@/utils/stringUtils';
 import { Game } from '@/types';
 
 interface ScoreCardProps {
-	currentGameData: Game;
+	currentGameData: Game | null;
 	setCurrentGameData: (data: Game) => void;
 	error: string | null;
 }
@@ -63,12 +62,46 @@ export default function ScoreCard({
 	};
 
 	const currentMode = useMemo(() => {
+		if (!currentGameData) return 'auto';
 		if (overrideMode) return overrideMode;
 		if (currentGameData.status === 'STATUS_CURRENT') return 'current';
 		if (currentGameData.result === 'win' || currentGameData.result === 'loss')
 			return currentGameData.result;
 		return 'upcoming';
-	}, [overrideMode, currentGameData.status, currentGameData.result]);
+	}, [overrideMode, currentGameData]);
+
+	const gameModes = {
+		win: {
+			backgroundImage: 'bg-[url("/images/celebration.jpeg")]',
+			backgroundImageNight: 'dark:bg-[url("/images/celebration.jpeg")]',
+			title: 'We hooked them.',
+			hookEmClasses: 'text-7xl',
+		},
+		loss: {
+			backgroundImage: 'bg-[url("/images/hell.webp")]',
+			backgroundImageNight: 'dark:bg-[url("/images/hell.webp")]',
+			title: 'We did not hook them',
+			hookEmClasses: 'text-7xl rotate-180',
+		},
+		upcoming: {
+			backgroundImage: 'bg-[url("/images/magic-eye-2.webp")]',
+			backgroundImageNight: 'dark:bg-[url("/images/magic-eye-2.webp")]',
+			title: 'UP NEXT:',
+			hookEmClasses: 'text-7xl animate-spin',
+		},
+		current: {
+			backgroundImage: 'bg-[url("/images/mem_stadium-day.webp")]',
+			backgroundImageNight: 'dark:bg-[url("/images/mem_stadium.webp")]',
+			title: '',
+			hookEmClasses: 'text-7xl animate-pulse',
+		},
+		auto: {
+			backgroundImage: '',
+			backgroundImageNight: '',
+			title: '',
+			hookEmClasses: 'text-7xl',
+		},
+	};
 
 	const modeData = gameModes[currentMode];
 
