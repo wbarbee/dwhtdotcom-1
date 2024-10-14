@@ -13,8 +13,8 @@ const createBaseGame = (): Game => ({
 	home: 'Texas Longhorns',
 	away: 'Oklahoma Sooners',
 	longhornsRecord: '5-1',
-	homeTeamRank: '5',
-	awayTeamRank: '3',
+	homeTeamRank: 1,
+	awayTeamRank: 11,
 	currentPeriod: 3,
 	homeTeamAbbrev: 'TEX',
 	awayTeamAbbrev: 'OKLA',
@@ -140,8 +140,14 @@ const fetchData = async (): Promise<Game[]> => {
 };
 
 export const fetchGameData = async (overrideMode?: string): Promise<Game[]> => {
-	if (IS_DEV_MODE && USE_MOCK_DATA && overrideMode !== undefined) {
-		console.warn('Using mock data in dev mode');
+	if (
+		IS_DEV_MODE &&
+		USE_MOCK_DATA &&
+		overrideMode !== undefined &&
+		overrideMode !== null &&
+		overrideMode !== 'auto'
+	) {
+		console.warn('Using mock data in dev mode with override:', overrideMode);
 		return [generateMockGameData(overrideMode)];
 	}
 	return fetchData();
@@ -150,20 +156,19 @@ export const fetchGameData = async (overrideMode?: string): Promise<Game[]> => {
 export const refetchGameData = async (
 	overrideMode?: string
 ): Promise<Game[]> => {
-	if (IS_DEV_MODE && USE_MOCK_DATA) {
-		if (!overrideMode) {
-			console.warn(
-				'Reverting to actual data mock data in dev mode: ',
-				overrideMode
-			);
-			return fetchGameData();
-		}
-
-		console.warn('Refetching mock data in dev mode: ', overrideMode);
+	if (
+		IS_DEV_MODE &&
+		USE_MOCK_DATA &&
+		overrideMode !== undefined &&
+		overrideMode !== null &&
+		overrideMode !== 'auto'
+	) {
+		console.warn(
+			'Refetching mock data in dev mode with override:',
+			overrideMode
+		);
 		currentMockGameData = null;
-		if (overrideMode !== undefined) {
-			return [generateMockGameData(overrideMode)];
-		}
+		return [generateMockGameData(overrideMode)];
 	}
 	return fetchData();
 };

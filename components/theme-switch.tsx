@@ -1,11 +1,12 @@
 'use client';
 import React from 'react';
 import { FC } from 'react';
+import clsx from 'clsx';
 import { VisuallyHidden } from '@react-aria/visually-hidden';
+import { useIsSSR } from '@react-aria/ssr';
 import { SwitchProps, useSwitch } from '@nextui-org/switch';
 import { useTheme } from 'next-themes';
-import { useIsSSR } from '@react-aria/ssr';
-import clsx from 'clsx';
+
 import { SunIcon } from './icons/SunIcon';
 import { MoonIcon } from './icons/MoonIcon';
 

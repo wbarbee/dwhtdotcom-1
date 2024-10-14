@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Game } from '../types';
-import { fetchGameData } from './fetchGameData';
+import { fetchGameData, refetchGameData } from './fetchGameData';
 import { formatCurrentEventData } from '../utils/formatCurrentEventData';
 
 export function useCurrentGameData() {
@@ -8,50 +8,61 @@ export function useCurrentGameData() {
 	const [allGames, setAllGames] = useState<Game[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [overrideMode, setOverrideMode] = useState<string | null>(null);
+
+	const loadGameData = async (mode?: string) => {
+		try {
+			setLoading(true);
+			const data =
+				mode && mode !== 'auto'
+					? await refetchGameData(mode)
+					: await fetchGameData();
+			setAllGames(data);
+
+			let relevantGame: Game | undefined;
+
+			if (mode && mode !== 'auto' && data.length === 1) {
+				relevantGame = data[0];
+			} else {
+				relevantGame =
+					data.find((game) => game.status === 'STATUS_CURRENT') ||
+					data.find((game) => {
+						const gameDate = new Date(game.date);
+						const now = new Date();
+						const hoursDiff =
+							(now.getTime() - gameDate.getTime()) / (1000 * 60 * 60);
+						return game.status === 'STATUS_FINAL' && hoursDiff <= 48;
+					}) ||
+					data.find((game) => game.status === 'STATUS_SCHEDULED');
+			}
+
+			if (relevantGame) {
+				setCurrentGameData(formatCurrentEventData(relevantGame));
+			}
+		} catch (err) {
+			setError('Failed to fetch game data');
+			console.error(err);
+		} finally {
+			setLoading(false);
+		}
+	};
 
 	useEffect(() => {
-		async function loadCurrentGameData() {
-			try {
-				setLoading(true);
-				const data = await fetchGameData();
-				setAllGames(data);
-
-				const currentGame = data.find(
-					(game) => game.status === 'STATUS_CURRENT'
-				);
-				if (currentGame) {
-					setCurrentGameData(formatCurrentEventData(currentGame));
-					return;
-				}
-
-				const recentFinalGame = data.find((game) => {
-					const gameDate = new Date(game.date);
-					const now = new Date();
-					const hoursDiff =
-						(now.getTime() - gameDate.getTime()) / (1000 * 60 * 60);
-					return game.status === 'STATUS_FINAL' && hoursDiff <= 48;
-				});
-				if (recentFinalGame) {
-					setCurrentGameData(formatCurrentEventData(recentFinalGame));
-					return;
-				}
-
-				const nextScheduledGame = data.find(
-					(game) => game.status === 'STATUS_SCHEDULED'
-				);
-				if (nextScheduledGame) {
-					setCurrentGameData(formatCurrentEventData(nextScheduledGame));
-				}
-			} catch (err) {
-				setError('Failed to fetch current game data');
-				console.error(err);
-			} finally {
-				setLoading(false);
-			}
-		}
-
-		loadCurrentGameData();
+		loadGameData();
 	}, []);
 
-	return { currentGameData, setCurrentGameData, allGames, loading, error };
+	const handleOverrideChange = async (mode: string | null) => {
+		setOverrideMode(mode);
+		await loadGameData(mode || undefined);
+	};
+
+	return {
+		currentGameData,
+		allGames,
+		loading,
+		error,
+		overrideMode,
+		setCurrentGameData,
+		handleOverrideChange,
+	};
 }

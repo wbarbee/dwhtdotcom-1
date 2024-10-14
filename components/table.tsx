@@ -53,6 +53,11 @@ export default function StatsTable() {
 		(game: Game, columnKey: keyof Game) => {
 			const cellValue = game[columnKey];
 
+			const showRanking =
+				Number(game.awayTeamRank) < 50 &&
+				!isMobile &&
+				game.status === 'STATUS_FINAL';
+
 			switch (columnKey) {
 				case 'away':
 					return (
@@ -62,7 +67,7 @@ export default function StatsTable() {
 									? 'font-bold text-green-600'
 									: ''
 							}>
-							{game.awayTeamRank && Number(game.awayTeamRank) < 50
+							{game.awayTeamRank && showRanking
 								? `[${game.awayTeamRank}] `
 								: ''}
 							{isMobile ? game.awayTeamAbbrev : game.away}
@@ -76,7 +81,7 @@ export default function StatsTable() {
 									? 'font-bold text-green-600'
 									: ''
 							}>
-							{game.homeTeamRank && Number(game.homeTeamRank) < 50
+							{game.homeTeamRank && showRanking
 								? `[${game.homeTeamRank}] `
 								: ''}
 							{isMobile ? game.homeTeamAbbrev : game.home}
@@ -136,14 +141,14 @@ export default function StatsTable() {
 
 	const renderSkeleton = () => (
 		<>
-			{Array(10)
+			{Array(12)
 				.fill(null)
 				.map((_, index) => (
 					<TableRow key={`skeleton-${index}`}>
 						{columns.map((column) => (
 							<TableCell key={column.uid}>
 								<Skeleton className='w-full'>
-									<div className='h-3 w-full rounded-lg bg-default-200'></div>
+									<div className='h-3 w-full mb-1 rounded-lg bg-default-200'></div>
 								</Skeleton>
 							</TableCell>
 						))}
