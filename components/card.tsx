@@ -1,6 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { useCurrentGameData } from '../hooks/useCurrentGameData';
+import { useState, useMemo } from 'react';
+import { RefreshCw } from 'lucide-react';
+import { useViewport } from '@/hooks/useViewport';
+import gameModes from '@/constants/constants';
 import { Card, CardBody, Button, Spinner } from '@nextui-org/react';
 import FullScoreModal from './modal';
 import {
@@ -9,82 +11,33 @@ import {
 	DropdownMenu,
 	DropdownItem,
 } from '@nextui-org/react';
-import { RefreshCw } from 'lucide-react';
 import { refetchGameData } from '@/hooks/fetchGameData';
 import { detectAppendedSuffix } from '@/utils/stringUtils';
 
-const gameModes = {
-	win: {
-		backgroundImage: 'bg-[url("/images/celebration.jpeg")]',
-		backgroundImageNight: 'dark:bg-[url("/images/celebration.jpeg")]',
-		title: 'We hooked them.',
-		hookEmClasses: 'text-7xl',
-	},
-	loss: {
-		backgroundImage: 'bg-[url("/images/hell.webp")]',
-		backgroundImageNight: 'dark:bg-[url("/images/hell.webp")]',
-		title: 'We did not hook them',
-		hookEmClasses: 'text-7xl rotate-180',
-	},
-	upcoming: {
-		backgroundImage: 'bg-[url("/images/magic-eye-2.webp")]',
-		backgroundImageNight: 'dark:bg-[url("/images/magic-eye-2.webp")]',
-		title: 'UP NEXT:',
-		hookEmClasses: 'text-7xl animate-spin',
-	},
-	current: {
-		backgroundImage: 'bg-[url("/images/mem_stadium-day.webp")]',
-		backgroundImageNight: 'dark:bg-[url("/images/mem_stadium.webp")]',
-		title: '',
-		hookEmClasses: 'text-7xl animate-pulse',
-	},
-	auto: {
-		backgroundImage: '',
-		backgroundImageNight: '',
-		title: '',
-		hookEmClasses: 'text-7xl',
-	},
-};
+import { Game } from '@/types';
 
-export default function ScoreCard() {
-	const { currentGameData, setCurrentGameData, error } = useCurrentGameData();
+interface ScoreCardProps {
+	currentGameData: Game;
+	setCurrentGameData: (data: Game) => void;
+	error: string | null;
+}
+
+export default function ScoreCard({
+	currentGameData,
+	setCurrentGameData,
+	error,
+}: ScoreCardProps) {
 	const [overrideVisible] = useState(process.env.NODE_ENV === 'development');
-	const [_, setViewportWidth] = useState(0);
 	const [overrideMode, setOverrideMode] = useState<
 		keyof typeof gameModes | null
 	>(null);
-	const [isMobile, setIsMobile] = useState(false);
 	const [isRefreshing, setIsRefreshing] = useState(false);
-
-	useEffect(() => {
-		const updateViewportWidth = () => {
-			setViewportWidth(window.innerWidth);
-		};
-
-		updateViewportWidth();
-
-		window.addEventListener('resize', updateViewportWidth);
-
-		return () => window.removeEventListener('resize', updateViewportWidth);
-	}, []);
-
-	useEffect(() => {
-		const checkIfMobile = () => {
-			setIsMobile(window.innerWidth <= 640);
-		};
-
-		checkIfMobile();
-		window.addEventListener('resize', checkIfMobile);
-
-		return () => window.removeEventListener('resize', checkIfMobile);
-	}, []);
+	const { isMobile } = useViewport();
 
 	const handleRefresh = async () => {
 		setIsRefreshing(true);
 		await refetchGameData();
-		setTimeout(() => {
-			setIsRefreshing(false);
-		}, 1000);
+		setTimeout(() => setIsRefreshing(false), 1000);
 	};
 
 	const handleOverrideChange = async (key: string) => {
@@ -96,32 +49,36 @@ export default function ScoreCard() {
 		) {
 			const newData = await refetchGameData(newMode as string | undefined);
 			if (newData && newData.length > 0) {
-				setCurrentGameData(newData[0]);
+				const relevantGame = newData.find(
+					(game) =>
+						game.status === 'STATUS_CURRENT' ||
+						(game.status === 'STATUS_FINAL' &&
+							new Date(game.date).getTime() >
+								Date.now() - 48 * 60 * 60 * 1000) ||
+						game.status === 'STATUS_SCHEDULED'
+				);
+				if (relevantGame) setCurrentGameData(relevantGame);
 			}
 		}
 	};
 
-	if (!currentGameData) {
-		return null;
-	}
-
-	if (error) {
-		return (
-			<Card className='w-[300px] h-[200px] flex items-center justify-center'>
-				<p className='text-danger'>{error}</p>
-			</Card>
-		);
-	}
-
-	const currentMode = (() => {
+	const currentMode = useMemo(() => {
 		if (overrideMode) return overrideMode;
 		if (currentGameData.status === 'STATUS_CURRENT') return 'current';
 		if (currentGameData.result === 'win' || currentGameData.result === 'loss')
 			return currentGameData.result;
 		return 'upcoming';
-	})();
+	}, [overrideMode, currentGameData.status, currentGameData.result]);
 
-	const modeData = gameModes[currentMode as keyof typeof gameModes];
+	const modeData = gameModes[currentMode];
+
+	if (!currentGameData) return null;
+	if (error)
+		return (
+			<Card className='w-[300px] h-[200px] flex items-center justify-center'>
+				<p className='text-danger'>{error}</p>
+			</Card>
+		);
 
 	return (
 		<>
@@ -132,17 +89,15 @@ export default function ScoreCard() {
 							<Button
 								variant='bordered'
 								className='bg-[rgba(255,255,255,0.6)] dark:bg-[rgba(0,0,0,0.6)] border-none rounded-[3px]'>
-								{overrideMode || 'Auto (No Override)'}
+								{overrideMode || 'auto (no override)'}
 							</Button>
 						</DropdownTrigger>
 						<DropdownMenu
 							aria-label='Game mode selection'
 							onAction={(key) => handleOverrideChange(key.toString())}>
-							{(Object.keys(gameModes) as Array<keyof typeof gameModes>).map(
-								(mode) => (
-									<DropdownItem key={mode}>{mode}</DropdownItem>
-								)
-							)}
+							{Object.keys(gameModes).map((mode) => (
+								<DropdownItem key={mode}>{mode}</DropdownItem>
+							))}
 						</DropdownMenu>
 					</Dropdown>
 				</div>
@@ -156,16 +111,15 @@ export default function ScoreCard() {
 					<div className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center'>
 						<div className='relative col-span-6 md:col-span-4 flex items-center justify-center'>
 							<div
-								className={`w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center ${modeData?.backgroundImage} ${modeData?.backgroundImageNight}`}>
+								className={`w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center ${modeData.backgroundImage} ${modeData.backgroundImageNight}`}>
 								<span
-									className={modeData?.hookEmClasses}
+									className={modeData.hookEmClasses}
 									role='img'
 									aria-label='Hook em Horns'>
 									🤘
 								</span>
 							</div>
 						</div>
-
 						<div className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-4 md:py-2'>
 							<div className='flex flex-col mt-0 mb-0 gap-1'>
 								<p
@@ -176,25 +130,24 @@ export default function ScoreCard() {
 												? 'text-red-500'
 												: 'text-gray-800 dark:text-gray-400 mb-2'
 									} ${currentGameData.status === 'STATUS_FINAL' ? 'mb-4' : 'mb-0'}`}>
-									{modeData?.title}
+									{modeData.title}
 								</p>
 							</div>
 							{['STATUS_CURRENT', 'STATUS_FINAL'].includes(
 								currentGameData.status
-							) && !isRefreshing ? (
-								<h1 className='text-7xl font-medium font-oxanium animate-fade-in'>
-									{currentGameData.score}
-								</h1>
-							) : ['STATUS_CURRENT', 'STATUS_FINAL'].includes(
-									currentGameData.status
-							  ) && isRefreshing ? (
-								<Spinner
-									size='lg'
-									color='default'
-									labelColor='foreground'
-									className='mb-6'
-								/>
-							) : null}
+							) &&
+								(isRefreshing ? (
+									<Spinner
+										size='lg'
+										color='default'
+										labelColor='foreground'
+										className='mb-6'
+									/>
+								) : (
+									<h1 className='text-7xl font-medium font-oxanium animate-fade-in'>
+										{currentGameData.score}
+									</h1>
+								))}
 							{currentGameData.status === 'STATUS_CURRENT' &&
 								currentGameData.currentPeriod &&
 								!isRefreshing && (
@@ -218,7 +171,7 @@ export default function ScoreCard() {
 										</span>
 										{isMobile
 											? currentGameData.homeTeamAbbrev
-											: currentGameData.home}{' '}
+											: currentGameData.home}
 									</h3>
 									<p
 										className={`${currentGameData.status === 'STATUS_SCHEDULED' ? 'mt-2' : ''} text-small text-foreground/80`}>

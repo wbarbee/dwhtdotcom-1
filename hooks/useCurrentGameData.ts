@@ -5,6 +5,7 @@ import { formatCurrentEventData } from '../utils/formatCurrentEventData';
 
 export function useCurrentGameData() {
 	const [currentGameData, setCurrentGameData] = useState<Game | null>(null);
+	const [allGames, setAllGames] = useState<Game[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -13,9 +14,11 @@ export function useCurrentGameData() {
 			try {
 				setLoading(true);
 				const data = await fetchGameData();
+				setAllGames(data);
+
 				const currentGame = data.find(
 					(game) => game.status === 'STATUS_CURRENT'
-				) as Game | undefined;
+				);
 				if (currentGame) {
 					setCurrentGameData(formatCurrentEventData(currentGame));
 					return;
@@ -29,12 +32,13 @@ export function useCurrentGameData() {
 					return game.status === 'STATUS_FINAL' && hoursDiff <= 48;
 				});
 				if (recentFinalGame) {
-					setCurrentGameData(formatCurrentEventData(recentFinalGame as Game));
+					setCurrentGameData(formatCurrentEventData(recentFinalGame));
 					return;
 				}
+
 				const nextScheduledGame = data.find(
 					(game) => game.status === 'STATUS_SCHEDULED'
-				) as Game | undefined;
+				);
 				if (nextScheduledGame) {
 					setCurrentGameData(formatCurrentEventData(nextScheduledGame));
 				}
@@ -49,5 +53,5 @@ export function useCurrentGameData() {
 		loadCurrentGameData();
 	}, []);
 
-	return { currentGameData, setCurrentGameData, loading, error };
+	return { currentGameData, setCurrentGameData, allGames, loading, error };
 }
