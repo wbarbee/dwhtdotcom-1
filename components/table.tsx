@@ -53,37 +53,32 @@ export default function StatsTable() {
 		(game: Game, columnKey: keyof Game) => {
 			const cellValue = game[columnKey];
 
-			const texasWon = game.result === 'win';
-			const gameFinished = game.status === 'STATUS_FINAL';
-
-			const isWinner = (isTexasTeam: boolean) => {
-				if (!gameFinished) return false;
-				return texasWon === isTexasTeam;
-			};
-
-			const winnerStyle = 'font-bold text-green-600';
-
 			switch (columnKey) {
 				case 'away':
 					return (
-						<span className={isWinner(!game.isTexasHome) ? winnerStyle : ''}>
-							{gameFinished &&
-							game.awayTeamRank &&
-							Number(game.awayTeamRank) < 50 &&
-							!isMobile
-								? `[${game.awayTeamRank}]`
-								: ''}{' '}
+						<span
+							className={
+								game.result === 'win' && !game.isTexasHome
+									? 'font-bold text-green-600'
+									: ''
+							}>
+							{game.awayTeamRank && Number(game.awayTeamRank) < 50
+								? `[${game.awayTeamRank}] `
+								: ''}
 							{isMobile ? game.awayTeamAbbrev : game.away}
 						</span>
 					);
 				case 'home':
 					return (
-						<span className={isWinner(game.isTexasHome) ? winnerStyle : ''}>
-							{gameFinished &&
-							game.homeTeamRank &&
-							Number(game.homeTeamRank) < 50
-								? `[${game.homeTeamRank}]` && !isMobile
-								: ''}{' '}
+						<span
+							className={
+								game.result === 'win' && game.isTexasHome
+									? 'font-bold text-green-600'
+									: ''
+							}>
+							{game.homeTeamRank && Number(game.homeTeamRank) < 50
+								? `[${game.homeTeamRank}] `
+								: ''}
 							{isMobile ? game.homeTeamAbbrev : game.home}
 						</span>
 					);
@@ -97,7 +92,7 @@ export default function StatsTable() {
 										? '❌'
 										: '🤘?'}
 							</span>
-							{gameFinished && (
+							{['win', 'loss'].includes(game.result) && (
 								<Chip
 									className='capitalize'
 									color={
@@ -109,21 +104,12 @@ export default function StatsTable() {
 									}
 									size='sm'
 									variant='flat'>
-									{game.score}
+									{typeof cellValue === 'string'
+										? cellValue
+										: JSON.stringify(cellValue)}
 								</Chip>
 							)}
 						</div>
-					);
-				case 'location':
-					return (
-						<>
-							{game.location}
-							{game.neutralSite ? (
-								<span className='ml-1 text-red-400 font-bold'>*</span>
-							) : (
-								''
-							)}
-						</>
 					);
 				default:
 					return (
@@ -137,15 +123,6 @@ export default function StatsTable() {
 		},
 		[isMobile]
 	);
-
-	if (error) {
-		return (
-			<div>
-				<div>Error: {error.message}</div>
-				<Button onClick={refetch}>Retry</Button>
-			</div>
-		);
-	}
 
 	const renderSkeleton = () => (
 		<>
@@ -165,6 +142,15 @@ export default function StatsTable() {
 		</>
 	);
 
+	if (error) {
+		return (
+			<div>
+				<div>Error: {error.message}</div>
+				<Button onClick={refetch}>Retry</Button>
+			</div>
+		);
+	}
+
 	return (
 		<div className='w-full overflow-x-auto'>
 			<Table
@@ -178,17 +164,19 @@ export default function StatsTable() {
 					)}
 				</TableHeader>
 				<TableBody>
-					{isLoading || !games
+					{isLoading
 						? renderSkeleton()
-						: games.map((game) => (
-								<TableRow key={game.id} className='animate-fade-in'>
-									{(columnKey) => (
-										<TableCell>
-											{renderCell(game, columnKey as keyof Game)}
-										</TableCell>
-									)}
-								</TableRow>
-							))}
+						: games
+							? games.map((game) => (
+									<TableRow key={game.id}>
+										{(columnKey) => (
+											<TableCell>
+												{renderCell(game, columnKey as keyof Game)}
+											</TableCell>
+										)}
+									</TableRow>
+								))
+							: renderSkeleton()}
 				</TableBody>
 			</Table>
 		</div>

@@ -49,5 +49,5 @@ export function useCurrentGameData() {
 		loadCurrentGameData();
 	}, []);
 
-	return { currentGameData, loading, error };
+	return { currentGameData, setCurrentGameData, loading, error };
 }

@@ -6,12 +6,77 @@ const API_FULL_SCHEDULE =
 const IS_DEV_MODE = process.env.NODE_ENV === 'development';
 const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
 
-export async function fetchGameData(): Promise<Game[]> {
-	if (IS_DEV_MODE && USE_MOCK_DATA) {
-		console.warn('Using mock data in dev mode');
-		return [generateMockGameData()];
+let currentMockGameData: Game | null = null;
+
+export function generateMockGameData(overrideMode?: string): Game {
+	if (!currentMockGameData || overrideMode) {
+		const baseGame: Game = {
+			id: 'mock-game',
+			home: 'Texas Longhorns',
+			away: 'Oklahoma Sooners',
+			longhornsRecord: '5-1',
+			homeTeamRank: '5',
+			awayTeamRank: '3',
+			currentPeriod: 3,
+			homeTeamAbbrev: 'TEX',
+			awayTeamAbbrev: 'OKLA',
+			homeTeamScore: 28,
+			awayTeamScore: 21,
+			location: 'DKR-Texas Memorial Stadium',
+			neutralSite: false,
+			date: new Date().toLocaleDateString(),
+			timestamp: Date.now(),
+			score: '28 - 21',
+			result: 'win',
+			status: 'STATUS_CURRENT',
+			isTexasHome: true,
+		};
+
+		switch (overrideMode) {
+			case 'win':
+				currentMockGameData = {
+					...baseGame,
+					result: 'win',
+					status: 'STATUS_FINAL',
+				};
+				break;
+			case 'loss':
+				currentMockGameData = {
+					...baseGame,
+					result: 'loss',
+					status: 'STATUS_FINAL',
+					homeTeamScore: 21,
+					awayTeamScore: 28,
+					score: '21 - 28',
+				};
+				break;
+			case 'upcoming':
+				currentMockGameData = {
+					...baseGame,
+					result: 'upcoming',
+					status: 'STATUS_SCHEDULED',
+					homeTeamScore: null,
+					awayTeamScore: null,
+					score: '',
+					currentPeriod: null,
+				};
+				break;
+			case 'current':
+				currentMockGameData = {
+					...baseGame,
+					result: 'upcoming',
+					status: 'STATUS_CURRENT',
+				};
+				break;
+			default:
+				currentMockGameData = baseGame;
+		}
 	}
 
+	return currentMockGameData;
+}
+
+async function fetchData(): Promise<Game[]> {
 	const response = await fetch(API_FULL_SCHEDULE);
 	if (!response.ok) {
 		throw new Error('Failed to fetch game data');
@@ -43,15 +108,6 @@ export async function fetchGameData(): Promise<Game[]> {
 		const texasScore = getScore(texasTeam);
 		const opponentScore = getScore(isTexasHome ? awayTeam : homeTeam);
 
-		const formatScore = (
-			homeScore: number | null,
-			awayScore: number | null
-		) => {
-			if (gameStatus === 'STATUS_SCHEDULED') return '-';
-			if (gameStatus === 'STATUS_CURRENT') return '0 - 0';
-			return `${awayScore ?? '-'} - ${homeScore ?? '-'}`;
-		};
-
 		return {
 			id: event.id,
 			home: homeTeam.team.displayName,
@@ -77,32 +133,24 @@ export async function fetchGameData(): Promise<Game[]> {
 					: texasTeam.winner === false
 						? 'loss'
 						: 'upcoming',
-			status: event.competitions[0].status?.type?.name || 'Unknown',
+			status: gameStatus,
 			isTexasHome: isTexasHome,
 		};
 	});
 }
 
-function generateMockGameData(): Game {
-	return {
-		id: 'mock-game',
-		home: 'Texas Longhorns',
-		away: 'Oklahoma Sooners',
-		longhornsRecord: '6-0',
-		homeTeamRank: '1',
-		awayTeamRank: '11',
-		currentPeriod: 4,
-		homeTeamAbbrev: 'TEX',
-		awayTeamAbbrev: 'OKLA',
-		homeTeamScore: 28,
-		awayTeamScore: 21,
-		location: 'DKR-Texas Memorial Stadium',
-		neutralSite: false,
-		date: new Date().toLocaleDateString(),
-		timestamp: Date.now(),
-		score: '28 - 21',
-		result: 'win',
-		status: 'STATUS_CURRENT',
-		isTexasHome: true,
-	};
+export async function fetchGameData(overrideMode?: string): Promise<Game[]> {
+	if (IS_DEV_MODE && USE_MOCK_DATA) {
+		console.warn('Using mock data in dev mode');
+		return [generateMockGameData(overrideMode)];
+	}
+	return fetchData();
+}
+
+export async function refetchGameData(overrideMode?: string): Promise<Game[]> {
+	if (IS_DEV_MODE && USE_MOCK_DATA) {
+		console.warn('Refetching mock data in dev mode: ', overrideMode);
+		return [generateMockGameData(overrideMode)];
+	}
+	return fetchData();
 }

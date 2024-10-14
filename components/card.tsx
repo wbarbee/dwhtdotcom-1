@@ -1,87 +1,72 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useCurrentGameData } from '../hooks/useCurrentGameData';
-import { Card, CardBody } from '@nextui-org/react';
+import { Card, CardBody, Button, Spinner } from '@nextui-org/react';
 import FullScoreModal from './modal';
 import {
 	Dropdown,
 	DropdownTrigger,
 	DropdownMenu,
 	DropdownItem,
-	Button,
 } from '@nextui-org/react';
-
-const detectAppendedSuffix = (num: number): string => {
-	if (num === 1) return '1st';
-	if (num === 2) return '2nd';
-	if (num === 3) return '3rd';
-	return `${num}th`;
-};
-
-const gameModes = {
-	win: {
-		backgroundImage: 'bg-[url("/images/celebration.jpeg")]',
-		backgroundImageNight: 'dark:bg-[url("/images/celebration.jpeg")]',
-		title: 'We hooked them.',
-		hookEmClasses: 'text-7xl',
-	},
-	loss: {
-		backgroundImage: 'bg-[url("/images/hell.webp")]',
-		backgroundImageNight: 'dark:bg-[url("/images/hell.webp")]',
-		title: 'We did not hook them',
-		hookEmClasses: 'text-7xl rotate-180',
-	},
-	upcoming: {
-		backgroundImage: 'bg-[url("/images/magic-eye-2.webp")]',
-		backgroundImageNight: 'dark:bg-[url("/images/magic-eye-2.webp")]',
-		title: 'UP NEXT:',
-		hookEmClasses: 'text-7xl animate-spin',
-	},
-	current: {
-		backgroundImage: 'bg-[url("/images/mem_stadium-day.webp")]',
-		backgroundImageNight: 'dark:bg-[url("/images/mem_stadium.webp")]',
-		title: '',
-		hookEmClasses: 'text-7xl animate-pulse',
-	},
-	auto: {
-		backgroundImage: '',
-		backgroundImageNight: '',
-		title: 'auto (no override)',
-		hookEmClasses: 'text-7xl',
-	},
-};
+import { RefreshCw } from 'lucide-react';
+import { refetchGameData } from '@/hooks/fetchGameData';
+import { detectAppendedSuffix } from '@/utils/stringUtils';
+import { useViewport } from '@/hooks/useViewport';
+import { gameModes } from '@/constants/gameModes';
+import { formatCurrentEventData } from '@/utils/formatCurrentEventData';
 
 export default function ScoreCard() {
-	const { currentGameData, error } = useCurrentGameData();
+	const { currentGameData, setCurrentGameData, error } = useCurrentGameData();
 	const [overrideVisible] = useState(process.env.NODE_ENV === 'development');
-	const [_, setViewportWidth] = useState(0);
 	const [overrideMode, setOverrideMode] = useState<
 		keyof typeof gameModes | null
 	>(null);
-	const [isMobile, setIsMobile] = useState(false);
+	const [isRefreshing, setIsRefreshing] = useState(false);
+	const { isMobile } = useViewport();
 
-	useEffect(() => {
-		const updateViewportWidth = () => {
-			setViewportWidth(window.innerWidth);
-		};
+	const handleRefresh = async () => {
+		setIsRefreshing(true);
+		try {
+			const newData = await refetchGameData();
+			if (newData && newData.length > 0) {
+				const formattedData = formatCurrentEventData(newData[0]);
+				setCurrentGameData(formattedData);
+			}
+		} catch (error) {
+			console.error('Failed to refresh game data:', error);
+		} finally {
+			setTimeout(() => {
+				setIsRefreshing(false);
+			}, 1000);
+		}
+	};
 
-		updateViewportWidth();
+	const handleOverrideChange = async (key: string) => {
+		const newMode = key === 'null' ? null : (key as keyof typeof gameModes);
+		setOverrideMode(newMode);
+		if (
+			process.env.NODE_ENV === 'development' &&
+			process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true'
+		) {
+			const newData = await refetchGameData(newMode as string | undefined);
+			if (newData && newData.length > 0) {
+				setCurrentGameData(newData[0]);
+			}
+		}
+	};
 
-		window.addEventListener('resize', updateViewportWidth);
-
-		return () => window.removeEventListener('resize', updateViewportWidth);
-	}, []);
-
-	useEffect(() => {
-		const checkIfMobile = () => {
-			setIsMobile(window.innerWidth <= 640);
-		};
-
-		checkIfMobile();
-		window.addEventListener('resize', checkIfMobile);
-
-		return () => window.removeEventListener('resize', checkIfMobile);
-	}, []);
+	const currentMode = useMemo(() => {
+		if (!currentGameData) return 'auto';
+		return (
+			overrideMode ||
+			(currentGameData.status === 'STATUS_CURRENT'
+				? 'current'
+				: currentGameData.result === 'win' || currentGameData.result === 'loss'
+					? currentGameData.result
+					: 'upcoming')
+		);
+	}, [currentGameData, overrideMode]);
 
 	if (!currentGameData) {
 		return null;
@@ -95,15 +80,7 @@ export default function ScoreCard() {
 		);
 	}
 
-	const currentMode =
-		overrideMode ||
-		(currentGameData.status === 'STATUS_CURRENT'
-			? 'current'
-			: currentGameData.result === 'win' || currentGameData.result === 'loss'
-				? currentGameData.result
-				: 'upcoming');
-
-	const modeData = gameModes[currentMode as keyof typeof gameModes];
+	const modeData = gameModes[currentMode];
 
 	return (
 		<>
@@ -119,11 +96,7 @@ export default function ScoreCard() {
 						</DropdownTrigger>
 						<DropdownMenu
 							aria-label='Game mode selection'
-							onAction={(key) =>
-								setOverrideMode(
-									key === 'auto' ? null : (key as keyof typeof gameModes)
-								)
-							}>
+							onAction={(key) => handleOverrideChange(key.toString())}>
 							{Object.keys(gameModes).map((mode) => (
 								<DropdownItem key={mode}>{mode}</DropdownItem>
 							))}
@@ -155,23 +128,33 @@ export default function ScoreCard() {
 								<p
 									className={`text-3xl font-espn italic ${
 										currentMode === 'win'
-											? 'text-burntOrange dark:text-burntOrange mb-1'
+											? 'text-burntOrange dark:text-burntOrange'
 											: currentMode === 'loss'
-												? 'text-red-500 mb-1'
+												? 'text-red-500'
 												: 'text-gray-800 dark:text-gray-400 mb-2'
-									}`}>
+									} ${currentGameData.status === 'STATUS_FINAL' ? 'mb-4' : 'mb-0'}`}>
 									{modeData?.title}
 								</p>
 							</div>
-							{currentGameData.homeTeamScore !== null &&
-								currentGameData.awayTeamScore !== null && (
-									<h1 className='text-7xl font-medium mt-4 font-oxanium'>
+							{['STATUS_CURRENT', 'STATUS_FINAL'].includes(
+								currentGameData.status
+							) &&
+								(isRefreshing ? (
+									<Spinner
+										size='lg'
+										color='default'
+										labelColor='foreground'
+										className='mb-6'
+									/>
+								) : (
+									<h1 className='text-7xl font-medium font-oxanium animate-fade-in'>
 										{currentGameData.score}
 									</h1>
-								)}
+								))}
 							{currentGameData.status === 'STATUS_CURRENT' &&
-								currentGameData.currentPeriod && (
-									<h2 className='mt-1 font-oxanium font-light text-red-600'>
+								currentGameData.currentPeriod &&
+								!isRefreshing && (
+									<h2 className='mt-[0.25rem] mb-[0.5rem] font-oxanium font-light text-gray-700 dark:text-gray-400 animate-fade-in'>
 										{detectAppendedSuffix(currentGameData.currentPeriod)}{' '}
 										quarter
 									</h2>
@@ -214,7 +197,18 @@ export default function ScoreCard() {
 						</div>
 					</div>
 				</CardBody>
-				<div className='absolute bottom-2 md:bottom-[15px] right-2 md:right-[15px]'>
+				<div className='absolute bottom-2 right-2 flex gap-2'>
+					{currentGameData.status === 'STATUS_CURRENT' && (
+						<Button
+							isIconOnly
+							className='bg-transparent text-black dark:text-white rounded-full'
+							size='md'
+							aria-label='Refresh data'
+							onClick={handleRefresh}
+							isLoading={isRefreshing}>
+							{!isRefreshing && <RefreshCw size={16} />}
+						</Button>
+					)}
 					<FullScoreModal result={currentGameData.result} />
 				</div>
 			</Card>
