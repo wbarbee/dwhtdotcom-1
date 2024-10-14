@@ -52,7 +52,7 @@ export default function ScoreCard() {
 			fullWidth={true}
 			shadow='sm'>
 			<CardBody>
-				<div className='grid grid-cols-6 md:grid-cols-12 gap-6 md:gap-4 items-center justify-center'>
+				<div className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center'>
 					<div className='relative col-span-6 md:col-span-4 flex items-center justify-center'>
 						<div
 							className={`w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md ${currentGameData.result === 'win' ? 'bg-burntOrange' : currentGameData.result === 'loss' ? 'bg-red' : 'bg-white'}`}>
@@ -74,15 +74,15 @@ export default function ScoreCard() {
 						</div>
 					</div>
 
-					<div className='flex flex-col col-span-6 md:col-span-8 text-center py-8 md:py-4'>
+					<div className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-4 md:py-2'>
 						<div className='flex flex-col mt-0 mb-0 gap-1'>
 							<p
-								className={`text-3xl font-espn italic${
+								className={`text-3xl font-espn italic ${
 									currentGameData.result === 'win'
 										? 'text-burntOrange dark:text-burntOrange'
 										: currentGameData.result === 'loss'
 											? 'text-red-500'
-											: 'text-gray-800 dark:text-gray-400 mb-3'
+											: 'text-gray-800 dark:text-gray-400 mb-2'
 								}`}>
 								{currentGameData.result === 'win'
 									? 'We hooked them.'

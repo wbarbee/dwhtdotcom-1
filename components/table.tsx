@@ -18,7 +18,7 @@ import { useMediaQuery } from '@react-hook/media-query';
 const columns = [
 	{ name: 'AWAY', uid: 'away' },
 	{ name: 'HOME', uid: 'home' },
-	{ name: 'SCORE', uid: 'score' },
+	{ name: 'HOOKED THEM?', uid: 'score' },
 	{ name: 'LOCATION', uid: 'location' },
 	{ name: 'DATE', uid: 'date' },
 ];
@@ -134,7 +134,10 @@ export default function StatsTable() {
 	}
 
 	return (
-		<div className='w-full relative pb-8'>
+		<div className='w-full relative pt-4'>
+			<div className='text-xs absolute top-0 right-8 md:right-10'>
+				<span className='font-bold text-red-400'>*</span> = neutral site game
+			</div>
 			{games && games.length > 0 && (
 				<Table
 					aria-label='University of Texas Longhorns 2023 Season Record'
@@ -159,9 +162,6 @@ export default function StatsTable() {
 					</TableBody>
 				</Table>
 			)}
-			<div className='text-xs absolute bottom-0 left-8 md:left-10'>
-				<span className='font-bold text-red-400'>*</span> = neutral site game
-			</div>
 		</div>
 	);
 }
