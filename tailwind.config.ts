@@ -3,6 +3,7 @@ import { nextui } from '@nextui-org/theme';
 /** @type {import('tailwindcss').Config} */
 module.exports = {
 	content: [
+		'./pages/**/*.{js,ts,jsx,tsx,mdx}',
 		'./components/**/*.{js,ts,jsx,tsx,mdx}',
 		'./app/**/*.{js,ts,jsx,tsx,mdx}',
 		'./node_modules/@nextui-org/theme/dist/**/*.{js,ts,jsx,tsx}',
@@ -29,7 +30,14 @@ module.exports = {
 				playfair: ['Playfair Display', 'serif'],
 				gothic: ['Gothic A1', 'sans-serif'],
 				oxanium: ['Oxanium', 'sans-serif'],
-				menlo: ['Menlo', 'monospace'],
+				menlo: [
+					'Menlo',
+					'Monaco',
+					'Consolas',
+					'"Liberation Mono"',
+					'"Courier New"',
+					'monospace',
+				],
 				graduate: ['Graduate', 'serif'],
 				espn: ['ESPN', 'Arial', 'sans-serif'],
 			},

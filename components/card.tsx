@@ -116,7 +116,7 @@ export default function ScoreCard({
 	return (
 		<>
 			{overrideVisible && (
-				<div className='mb-4 fixed bottom-4 left-4'>
+				<div className='fixed bottom-3 left-3'>
 					<Dropdown>
 						<DropdownTrigger>
 							<Button
