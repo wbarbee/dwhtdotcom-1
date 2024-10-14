@@ -57,9 +57,9 @@ export default function ScoreCard() {
 						<div
 							className={`w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md ${
 								currentGameData.result === 'win'
-									? 'bg-burntOrange'
+									? 'bg-[url("/images/celebration.jpeg")] bg-cover bg-center'
 									: currentGameData.result === 'loss'
-										? 'bg-red'
+										? 'bg-[url("/images/hell.webp")] bg-cover bg-center'
 										: 'bg-[url("/images/magic-eye-2.webp")] bg-cover bg-center'
 							}`}>
 							{['win', 'loss'].includes(currentGameData.result) ? (
