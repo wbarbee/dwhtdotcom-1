@@ -4,7 +4,6 @@ import { useCurrentGameData } from '../hooks/useCurrentGameData';
 import FullScoreModal from './modal';
 import { useState, useEffect } from 'react';
 
-// Helper function to append the correct suffix
 const detectAppendedSuffix = (num: number): string => {
 	if (num === 1) return '1st';
 	if (num === 2) return '2nd';
@@ -17,18 +16,14 @@ export default function ScoreCard() {
 	const [viewportWidth, setViewportWidth] = useState(0);
 
 	useEffect(() => {
-		// Function to update the viewport width
 		const updateViewportWidth = () => {
 			setViewportWidth(window.innerWidth);
 		};
 
-		// Set the initial viewport width
 		updateViewportWidth();
 
-		// Add event listener
 		window.addEventListener('resize', updateViewportWidth);
 
-		// Remove event listener on cleanup
 		return () => window.removeEventListener('resize', updateViewportWidth);
 	}, []);
 
