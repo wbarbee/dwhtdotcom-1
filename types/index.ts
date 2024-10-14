@@ -19,6 +19,7 @@ export interface Game {
 	score: string;
 	location: string;
 	date: string;
+	currentPeriod: number | null;
 	timestamp: number;
 	status: string;
 	result: 'win' | 'loss' | 'upcoming';

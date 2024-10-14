@@ -11,7 +11,11 @@ import {
 import StatsTable from './table';
 import { useMediaQuery } from '@react-hook/media-query';
 
-export default function FullScoreModal() {
+interface FullScoreModalProps {
+	result: 'win' | 'loss' | 'upcoming';
+}
+
+export default function FullScoreModal({ result }: FullScoreModalProps) {
 	const { isOpen, onOpen, onOpenChange } = useDisclosure();
 	const isMobile = useMediaQuery('(max-width: 640px)');
 
@@ -19,7 +23,7 @@ export default function FullScoreModal() {
 		<>
 			<Button
 				onPress={onOpen}
-				className='rounded-[50px] w-10 h-10 p-0 min-w-10 bg-white text-burntOrange md:bg-burntOrange md:text-white'>
+				className={`rounded-[50px] w-10 h-10 p-0 min-w-10  ${result === 'win' ? 'bg-white text-burntOrange md:bg-burntOrange' : 'bg-burntOrange text-white md:bg-burntOrange'} md:text-white`}>
 				+
 			</Button>
 			<Modal

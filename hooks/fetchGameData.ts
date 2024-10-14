@@ -37,6 +37,7 @@ export async function fetchGameData(): Promise<Game[]> {
 			home: homeTeam.team.displayName,
 			away: awayTeam.team.displayName,
 			homeTeamRank: homeTeam.curatedRank.current,
+			currentPeriod: event.competitions[0].status.period,
 			homeTeamAbbrev: homeTeam.team.abbreviation,
 			awayTeamAbbrev: awayTeam.team.abbreviation,
 			awayTeamRank: awayTeam.curatedRank.current,

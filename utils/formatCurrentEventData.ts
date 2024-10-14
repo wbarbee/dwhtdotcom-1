@@ -11,6 +11,7 @@ export function formatCurrentEventData(event: Partial<Game>): Game {
 		id: event.id ?? '',
 		home: event.home ?? '',
 		away: event.away ?? '',
+		currentPeriod: event.currentPeriod ?? null,
 		homeTeamRank: event.homeTeamRank ?? 'unknown',
 		homeTeam: event.homeTeam ?? '',
 		awayTeam: event.awayTeam ?? '',
