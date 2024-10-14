@@ -139,56 +139,31 @@ const fetchData = async (): Promise<Game[]> => {
 	});
 };
 
-const findRelevantGame = (games: Game[]): Game => {
-	const now = new Date();
-	const currentGame = games.find((game) => game.status === 'STATUS_CURRENT');
-	if (currentGame) return currentGame;
-	const recentFinalGame = games.find((game) => {
-		const gameDate = new Date(game.date);
-		const hoursDiff = (now.getTime() - gameDate.getTime()) / (1000 * 60 * 60);
-		return game.status === 'STATUS_FINAL' && hoursDiff <= 48;
-	});
-	if (recentFinalGame) return recentFinalGame;
-
-	const upcomingGame = games.find((game) => {
-		const gameDate = new Date(game.date);
-		return gameDate > now && game.status === 'STATUS_SCHEDULED';
-	});
-	if (upcomingGame) return upcomingGame;
-
-	return games[0];
-};
-
 export const fetchGameData = async (overrideMode?: string): Promise<Game[]> => {
-	if (
-		IS_DEV_MODE &&
-		USE_MOCK_DATA &&
-		overrideMode !== undefined &&
-		overrideMode !== null
-	) {
+	if (IS_DEV_MODE && USE_MOCK_DATA && overrideMode !== undefined) {
 		console.warn('Using mock data in dev mode');
 		return [generateMockGameData(overrideMode)];
 	}
-	const allGames = await fetchData();
-	const relevantGame = findRelevantGame(allGames);
-	return [relevantGame];
+	return fetchData();
 };
 
 export const refetchGameData = async (
 	overrideMode?: string
 ): Promise<Game[]> => {
-	if (
-		IS_DEV_MODE &&
-		USE_MOCK_DATA &&
-		overrideMode !== undefined &&
-		overrideMode !== null
-	) {
+	if (IS_DEV_MODE && USE_MOCK_DATA) {
+		if (!overrideMode) {
+			console.warn(
+				'Reverting to actual data mock data in dev mode: ',
+				overrideMode
+			);
+			return fetchGameData();
+		}
+
 		console.warn('Refetching mock data in dev mode: ', overrideMode);
 		currentMockGameData = null;
-		return [generateMockGameData(overrideMode)];
+		if (overrideMode !== undefined) {
+			return [generateMockGameData(overrideMode)];
+		}
 	}
-	console.warn('Fetching actual data...');
-	const allGames = await fetchData();
-	const relevantGame = findRelevantGame(allGames);
-	return [relevantGame];
+	return fetchData();
 };
