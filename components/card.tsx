@@ -1,8 +1,16 @@
 'use client';
-import { Card, CardBody } from '@nextui-org/react';
-import { useCurrentGameData } from '../hooks/useCurrentGameData';
-import FullScoreModal from './modal';
 import { useState, useEffect } from 'react';
+import { useCurrentGameData } from '../hooks/useCurrentGameData';
+import { Card, CardBody } from '@nextui-org/react';
+import FullScoreModal from './modal';
+import {
+	Dropdown,
+	DropdownTrigger,
+	DropdownMenu,
+	DropdownItem,
+	Button,
+} from '@nextui-org/react';
+import { ReactNode } from 'react';
 
 const detectAppendedSuffix = (num: number): string => {
 	if (num === 1) return '1st';
@@ -35,6 +43,12 @@ const gameModes = {
 		backgroundImageNight: 'dark:bg-[url("/images/mem_stadium.webp")]',
 		title: '',
 		hookEmClasses: 'text-7xl animate-pulse',
+	},
+	auto: {
+		backgroundImage: '',
+		backgroundImageNight: '',
+		title: 'auto (no override)',
+		hookEmClasses: 'text-7xl',
 	},
 };
 
@@ -86,29 +100,36 @@ export default function ScoreCard() {
 		overrideMode ||
 		(currentGameData.status === 'STATUS_CURRENT'
 			? 'current'
-			: currentGameData.result);
+			: currentGameData.result === 'win' || currentGameData.result === 'loss'
+				? currentGameData.result
+				: 'upcoming');
 
 	const modeData = gameModes[currentMode as keyof typeof gameModes];
 
 	return (
 		<>
-			{overrideVisible && (
-				<div className='fixed bottom-4 left-4 z-[100]'>
-					<select
-						value={overrideMode || ''}
-						onChange={(e) =>
-							setOverrideMode(
-								(e.target.value as keyof typeof gameModes) || null
-							)
-						}
-						className='p-2 border rounded opacity-60'>
-						<option value=''>Auto (No Override)</option>
-						{Object.keys(gameModes).map((mode) => (
-							<option key={mode} value={mode}>
-								{mode}
-							</option>
-						))}
-					</select>
+			{process.env.NODE_ENV === 'development' && (
+				<div className='mb-4 fixed bottom-4 left-4'>
+					<Dropdown>
+						<DropdownTrigger>
+							<Button
+								variant='bordered'
+								className='bg-[rgba(255,255,255,0.6)] dark:bg-[rgba(0,0,0,0.6)] border-none rounded-[3px]'>
+								{overrideMode || 'Auto (No Override)'}
+							</Button>
+						</DropdownTrigger>
+						<DropdownMenu
+							aria-label='Game mode selection'
+							onAction={(key) =>
+								setOverrideMode(
+									key === 'auto' ? null : (key as keyof typeof gameModes)
+								)
+							}>
+							{Object.keys(gameModes).map((mode) => (
+								<DropdownItem key={mode}>{mode}</DropdownItem>
+							))}
+						</DropdownMenu>
+					</Dropdown>
 				</div>
 			)}
 			<Card
@@ -120,9 +141,9 @@ export default function ScoreCard() {
 					<div className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center'>
 						<div className='relative col-span-6 md:col-span-4 flex items-center justify-center'>
 							<div
-								className={`w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center ${modeData.backgroundImage} dark:${modeData.backgroundImageNight}`}>
+								className={`w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center ${modeData?.backgroundImage} dark:${modeData?.backgroundImageNight}`}>
 								<span
-									className={modeData.hookEmClasses}
+									className={modeData?.hookEmClasses}
 									role='img'
 									aria-label='Hook em Horns'>
 									🤘
@@ -140,7 +161,7 @@ export default function ScoreCard() {
 												? 'text-red-500 mb-1'
 												: 'text-gray-800 dark:text-gray-400 mb-2'
 									}`}>
-									{modeData.title}
+									{modeData?.title}
 								</p>
 							</div>
 							{currentGameData.homeTeamScore !== null &&

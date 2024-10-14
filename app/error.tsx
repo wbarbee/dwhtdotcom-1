@@ -15,9 +15,9 @@ export default function Error({
 	}, [error]);
 
 	return (
-		<div className='flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-burntOrange/70 via-gray-600 to-burntOrange/80 text-white p-4'>
+		<div className='flex flex-col rounded-md items-center justify-center min-h-screen bg-gradient-to-br from-burntOrange/70 via-gray-600 to-burntOrange/80 text-white p-4'>
 			<h1 className='text-4xl font-bold mb-4'>Oops! Something went wrong</h1>
-			<div className='bg-white/10 rounded-lg p-6 max-w-md w-full'>
+			<div className='bg-white/10 rounded-lg mt-4 p-6 max-w-md w-full'>
 				<h2 className='text-2xl font-semibold mb-2'>Error Details:</h2>
 				<p className='mb-4'>
 					{error.message || 'An unexpected error occurred.'}
