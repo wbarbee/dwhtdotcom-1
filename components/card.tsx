@@ -207,10 +207,10 @@ export default function ScoreCard({
 											: currentGameData.home}
 									</h3>
 									<p
-										className={`${currentGameData.status === 'STATUS_SCHEDULED' ? 'mt-2' : ''} text-small text-foreground/80`}>
+										className={`${currentGameData.status === 'STATUS_SCHEDULED' ? 'mt-2' : ''} text-sm text-foreground/80`}>
 										{currentGameData.location} -- {currentGameData.date}
 									</p>
-									<p className='mt-3 mb-0 text-md font-light'>
+									<p className='mt-3 mb-0 text-md text-gray-700 dark:text-gray-300 font-light font-menlo'>
 										<span className='text-md mr-1'>🤘</span>[
 										<b>{currentGameData.longhornsRecord}</b>]
 										<span
