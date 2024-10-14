@@ -85,13 +85,23 @@ export default function StatsTable() {
 				case 'score':
 					return (
 						<div className='flex items-center space-x-2'>
-							<span className='text-xl text-burntOrange font-gothic font-bold'>
-								{game.result === 'win'
-									? '🤘'
-									: game.result === 'loss'
-										? '❌'
-										: '🤘?'}
-							</span>
+							{game.result === 'win' ? (
+								<span className='text-xl text-burntOrange font-gothic font-bold'>
+									🤘
+								</span>
+							) : game.result === 'loss' ? (
+								<span
+									style={{
+										display: 'inline-block',
+										transform: 'rotate(180deg)',
+									}}>
+									🤘
+								</span>
+							) : (
+								<span className='text-xl text-burntOrange font-gothic font-bold'>
+									🤘?
+								</span>
+							)}
 							{['win', 'loss'].includes(game.result) && (
 								<Chip
 									className='capitalize'

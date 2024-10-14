@@ -20,14 +20,14 @@ export function generateMockGameData(overrideMode?: string): Game {
 			currentPeriod: 3,
 			homeTeamAbbrev: 'TEX',
 			awayTeamAbbrev: 'OKLA',
-			homeTeamScore: 28,
-			awayTeamScore: 21,
+			homeTeamScore: 21,
+			awayTeamScore: 28,
 			location: 'DKR-Texas Memorial Stadium',
 			neutralSite: false,
 			date: new Date().toLocaleDateString(),
 			timestamp: Date.now(),
-			score: '28 - 21',
-			result: 'win',
+			score: '21 - 28',
+			result: 'loss',
 			status: 'STATUS_CURRENT',
 			isTexasHome: true,
 		};
@@ -36,7 +36,10 @@ export function generateMockGameData(overrideMode?: string): Game {
 			case 'win':
 				currentMockGameData = {
 					...baseGame,
+					score: '21 - 28',
 					result: 'win',
+					homeTeamScore: 21,
+					awayTeamScore: 28,
 					status: 'STATUS_FINAL',
 				};
 				break;
@@ -45,9 +48,9 @@ export function generateMockGameData(overrideMode?: string): Game {
 					...baseGame,
 					result: 'loss',
 					status: 'STATUS_FINAL',
-					homeTeamScore: 21,
-					awayTeamScore: 28,
-					score: '21 - 28',
+					homeTeamScore: 28,
+					awayTeamScore: 21,
+					score: '28 - 21',
 				};
 				break;
 			case 'upcoming':

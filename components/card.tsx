@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useCurrentGameData } from '../hooks/useCurrentGameData';
 import { Card, CardBody, Button, Spinner } from '@nextui-org/react';
 import FullScoreModal from './modal';
@@ -11,35 +11,54 @@ import {
 } from '@nextui-org/react';
 import { RefreshCw } from 'lucide-react';
 import { refetchGameData } from '@/hooks/fetchGameData';
-import { detectAppendedSuffix } from '@/utils/stringUtils';
-import { useViewport } from '@/hooks/useViewport';
 import { gameModes } from '@/constants/gameModes';
-import { formatCurrentEventData } from '@/utils/formatCurrentEventData';
+
+const detectAppendedSuffix = (num: number): string => {
+	if (num === 1) return '1st';
+	if (num === 2) return '2nd';
+	if (num === 3) return '3rd';
+	return `${num}th`;
+};
 
 export default function ScoreCard() {
 	const { currentGameData, setCurrentGameData, error } = useCurrentGameData();
 	const [overrideVisible] = useState(process.env.NODE_ENV === 'development');
+	const [_, setViewportWidth] = useState(0);
 	const [overrideMode, setOverrideMode] = useState<
 		keyof typeof gameModes | null
 	>(null);
+	const [isMobile, setIsMobile] = useState(false);
 	const [isRefreshing, setIsRefreshing] = useState(false);
-	const { isMobile } = useViewport();
+
+	useEffect(() => {
+		const updateViewportWidth = () => {
+			setViewportWidth(window.innerWidth);
+		};
+
+		updateViewportWidth();
+
+		window.addEventListener('resize', updateViewportWidth);
+
+		return () => window.removeEventListener('resize', updateViewportWidth);
+	}, []);
+
+	useEffect(() => {
+		const checkIfMobile = () => {
+			setIsMobile(window.innerWidth <= 640);
+		};
+
+		checkIfMobile();
+		window.addEventListener('resize', checkIfMobile);
+
+		return () => window.removeEventListener('resize', checkIfMobile);
+	}, []);
 
 	const handleRefresh = async () => {
 		setIsRefreshing(true);
-		try {
-			const newData = await refetchGameData();
-			if (newData && newData.length > 0) {
-				const formattedData = formatCurrentEventData(newData[0]);
-				setCurrentGameData(formattedData);
-			}
-		} catch (error) {
-			console.error('Failed to refresh game data:', error);
-		} finally {
-			setTimeout(() => {
-				setIsRefreshing(false);
-			}, 1000);
-		}
+		await refetchGameData();
+		setTimeout(() => {
+			setIsRefreshing(false);
+		}, 1000);
 	};
 
 	const handleOverrideChange = async (key: string) => {
@@ -56,18 +75,6 @@ export default function ScoreCard() {
 		}
 	};
 
-	const currentMode = useMemo(() => {
-		if (!currentGameData) return 'auto';
-		return (
-			overrideMode ||
-			(currentGameData.status === 'STATUS_CURRENT'
-				? 'current'
-				: currentGameData.result === 'win' || currentGameData.result === 'loss'
-					? currentGameData.result
-					: 'upcoming')
-		);
-	}, [currentGameData, overrideMode]);
-
 	if (!currentGameData) {
 		return null;
 	}
@@ -80,7 +87,15 @@ export default function ScoreCard() {
 		);
 	}
 
-	const modeData = gameModes[currentMode];
+	const currentMode =
+		overrideMode ||
+		(currentGameData.status === 'STATUS_CURRENT'
+			? 'current'
+			: currentGameData.result === 'win' || currentGameData.result === 'loss'
+				? currentGameData.result
+				: 'upcoming');
+
+	const modeData = gameModes[currentMode as keyof typeof gameModes];
 
 	return (
 		<>
@@ -97,9 +112,11 @@ export default function ScoreCard() {
 						<DropdownMenu
 							aria-label='Game mode selection'
 							onAction={(key) => handleOverrideChange(key.toString())}>
-							{Object.keys(gameModes).map((mode) => (
-								<DropdownItem key={mode}>{mode}</DropdownItem>
-							))}
+							{(Object.keys(gameModes) as Array<keyof typeof gameModes>).map(
+								(mode) => (
+									<DropdownItem key={mode}>{mode}</DropdownItem>
+								)
+							)}
 						</DropdownMenu>
 					</Dropdown>
 				</div>
@@ -138,19 +155,20 @@ export default function ScoreCard() {
 							</div>
 							{['STATUS_CURRENT', 'STATUS_FINAL'].includes(
 								currentGameData.status
-							) &&
-								(isRefreshing ? (
-									<Spinner
-										size='lg'
-										color='default'
-										labelColor='foreground'
-										className='mb-6'
-									/>
-								) : (
-									<h1 className='text-7xl font-medium font-oxanium animate-fade-in'>
-										{currentGameData.score}
-									</h1>
-								))}
+							) && !isRefreshing ? (
+								<h1 className='text-7xl font-medium font-oxanium animate-fade-in'>
+									{currentGameData.score}
+								</h1>
+							) : ['STATUS_CURRENT', 'STATUS_FINAL'].includes(
+									currentGameData.status
+							  ) && isRefreshing ? (
+								<Spinner
+									size='lg'
+									color='default'
+									labelColor='foreground'
+									className='mb-6'
+								/>
+							) : null}
 							{currentGameData.status === 'STATUS_CURRENT' &&
 								currentGameData.currentPeriod &&
 								!isRefreshing && (

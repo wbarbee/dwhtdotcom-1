@@ -24,8 +24,8 @@ export const gameModes = {
 		hookEmClasses: 'text-7xl animate-pulse',
 	},
 	auto: {
-		backgroundImage: 'bg-[url("/images/mem_stadium-day.webp")]',
-		backgroundImageNight: 'dark:bg-[url("/images/mem_stadium.webp")]',
+		backgroundImage: '',
+		backgroundImageNight: '',
 		title: '',
 		hookEmClasses: 'text-7xl',
 	},
