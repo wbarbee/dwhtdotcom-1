@@ -10,6 +10,8 @@ export async function fetchGameData(): Promise<Game[]> {
 	}
 	const data = await response.json();
 
+	console.log(data);
+
 	return data.events.map((event: any) => {
 		const homeTeam = event.competitions[0].competitors.find(
 			(team: any) => team.homeAway === 'home'
@@ -30,9 +32,19 @@ export async function fetchGameData(): Promise<Game[]> {
 
 		const isNeutralSite = event.competitions[0].neutralSite;
 		const isTexasHome = texasTeam.homeAway === 'home';
+		const gameStatus = event.competitions[0].status?.type?.name || 'Unknown';
 
 		const texasScore = getScore(texasTeam);
 		const opponentScore = getScore(isTexasHome ? awayTeam : homeTeam);
+
+		const formatScore = (
+			homeScore: number | null,
+			awayScore: number | null
+		) => {
+			if (gameStatus === 'STATUS_SCHEDULED') return '-';
+			if (gameStatus === 'STATUS_CURRENT') return '0 - 0';
+			return `${awayScore ?? '-'} - ${homeScore ?? '-'}`;
+		};
 
 		return {
 			id: event.id,

@@ -5,7 +5,7 @@ import {
 	Table,
 	TableHeader,
 	TableColumn,
-    TableBody,
+	TableBody,
 	TableRow,
 	TableCell,
 	Chip,
@@ -16,7 +16,7 @@ import { Game } from '@/types';
 import { useMediaQuery } from '@react-hook/media-query';
 
 const columns = [
-    { name: 'AWAY', uid: 'away' },
+	{ name: 'AWAY', uid: 'away' },
 	{ name: 'HOME', uid: 'home' },
 	{ name: 'SCORE', uid: 'score' },
 	{ name: 'LOCATION', uid: 'location' },
@@ -39,11 +39,13 @@ export default function StatsTable() {
 				return texasWon === isTexasTeam;
 			};
 
-			const winnerStyle = 'font-bold text-green-400';
+			const winnerStyle = 'font-bold text-green-600';
 
 			const getScore = (isHome: boolean) => {
 				if (game.neutralSite) {
-					return game.isTexasHome === isHome ? game.homeTeamScore : game.awayTeamScore;
+					return game.isTexasHome === isHome
+						? game.homeTeamScore
+						: game.awayTeamScore;
 				}
 				return isHome ? game.homeTeamScore : game.awayTeamScore;
 			};
@@ -52,13 +54,23 @@ export default function StatsTable() {
 				case 'away':
 					return (
 						<span className={isWinner(!game.isTexasHome) ? winnerStyle : ''}>
-							{gameFinished && game.awayTeamRank && Number(game.awayTeamRank) < 50 ? `[${game.awayTeamRank}]` : ''} {isMobile ? game.awayTeamAbbrev : game.away}
+							{gameFinished &&
+							game.awayTeamRank &&
+							Number(game.awayTeamRank) < 50
+								? `[${game.awayTeamRank}]`
+								: ''}{' '}
+							{isMobile ? game.awayTeamAbbrev : game.away}
 						</span>
 					);
 				case 'home':
 					return (
 						<span className={isWinner(game.isTexasHome) ? winnerStyle : ''}>
-							{gameFinished && game.homeTeamRank && Number(game.homeTeamRank) < 50 ? `[${game.homeTeamRank}]` : ''} {isMobile ? game.homeTeamAbbrev : game.home} 
+							{gameFinished &&
+							game.homeTeamRank &&
+							Number(game.homeTeamRank) < 50
+								? `[${game.homeTeamRank}]`
+								: ''}{' '}
+							{isMobile ? game.homeTeamAbbrev : game.home}
 						</span>
 					);
 				case 'score':
@@ -82,9 +94,8 @@ export default function StatsTable() {
 												: 'default'
 									}
 									size='sm'
-									variant='flat'
-								>
-                                    {game.score}
+									variant='flat'>
+									{game.score}
 								</Chip>
 							)}
 						</div>
@@ -92,7 +103,12 @@ export default function StatsTable() {
 				case 'location':
 					return (
 						<>
-							{game.location}{game.neutralSite ? <span className='ml-1 text-red-400 font-bold'>*</span> : ''}
+							{game.location}
+							{game.neutralSite ? (
+								<span className='ml-1 text-red-400 font-bold'>*</span>
+							) : (
+								''
+							)}
 						</>
 					);
 				default:
@@ -118,7 +134,7 @@ export default function StatsTable() {
 	}
 
 	return (
-		<div className='w-full relative pb-10'>
+		<div className='w-full relative pb-8'>
 			{games && games.length > 0 && (
 				<Table
 					aria-label='University of Texas Longhorns 2023 Season Record'
@@ -140,12 +156,12 @@ export default function StatsTable() {
 								)}
 							</TableRow>
 						)}
-                    </TableBody>
+					</TableBody>
 				</Table>
-            )}
-            <div className='text-xs absolute bottom-0 left-8 md:left-10'>
-                <span className='font-bold text-red-400'>*</span> = neutral site game
-            </div>
+			)}
+			<div className='text-xs absolute bottom-0 left-8 md:left-10'>
+				<span className='font-bold text-red-400'>*</span> = neutral site game
+			</div>
 		</div>
 	);
 }

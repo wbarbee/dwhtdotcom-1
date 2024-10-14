@@ -82,20 +82,21 @@ export default function ScoreCard() {
 										? 'text-burntOrange dark:text-burntOrange'
 										: currentGameData.result === 'loss'
 											? 'text-red-500'
-											: 'text-gray-800 dark:text-gray-400'
+											: 'text-gray-800 dark:text-gray-400 mb-3'
 								}`}>
 								{currentGameData.result === 'win'
 									? 'We hooked them.'
 									: currentGameData.result === 'loss'
 										? 'We did not hook them'
-										: 'UP NEXT: Will we?'}
+										: 'UP NEXT:'}
 							</p>
 						</div>
-						{currentGameData.homeTeamScore !== null && currentGameData.awayTeamScore !== null && (
-							<h1 className='text-7xl font-medium mt-4 font-oxanium'>
-								{currentGameData.score}
-							</h1>
-						)}
+						{currentGameData.homeTeamScore !== null &&
+							currentGameData.awayTeamScore !== null && (
+								<h1 className='text-7xl font-medium mt-4 font-oxanium'>
+									{currentGameData.score}
+								</h1>
+							)}
 						{currentGameData.status === 'STATUS_CURRENT' && appendedSuffix && (
 							<h2 className='mt-1 font-oxanium font-light text-red-600'>
 								{appendedSuffix} quarter
@@ -117,9 +118,9 @@ export default function ScoreCard() {
 									{isMobile
 										? currentGameData.homeTeamAbbrev
 										: currentGameData.home}{' '}
-									{' '}
 								</h3>
-								<p className='text-small text-foreground/80'>
+								<p
+									className={`${currentGameData.status === 'STATUS_SCHEDULED' ? 'mt-2' : ''} text-small text-foreground/80`}>
 									{currentGameData.location} -- {currentGameData.date}
 								</p>
 							</div>
