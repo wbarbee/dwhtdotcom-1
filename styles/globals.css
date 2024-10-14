@@ -1,8 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Gothic+A1:wght@200;500;800&family=News+Cycle:wght@700&family=Orbitron:wght@500&family=Oxanium:wght@300;500&family=Playfair+Display&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* @import url('https://fonts.googleapis.com/css2?family=Gothic+A1:wght@200;500;800&family=News+Cycle:wght@700&family=Orbitron:wght@500&family=Oxanium:wght@300;500&family=Playfair+Display&display=swap'); */
+@layer base {
+  body {
+    @apply min-h-screen bg-gradient-to-br from-burntOrange/70 via-gray-600 to-burntOrange/80 dark:from-burntOrange/20 dark:via-gray-900 dark:to-burntOrange/30;
+  }
+}
+
+@layer utilities {
+  .animate-pulse-opacity {
+    animation: pulse-opacity 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
+@keyframes pulse-opacity {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
 
 @font-face {
     font-family: 'Graduate';

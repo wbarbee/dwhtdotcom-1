@@ -4,7 +4,7 @@ import { fetchGameData } from './fetchGameData';
 
 interface UseGameDataResult {
 	games: Game[] | null;
-	isLoading: boolean;
+	fullGameDataIsLoading: boolean;
 	error: Error | null;
 	refetch: () => void;
 }
@@ -16,7 +16,6 @@ const useGameData = (): UseGameDataResult => {
 
 	const fetchGames = async () => {
 		try {
-			setIsLoading(true);
 			const data = await fetchGameData();
 			setGames(data);
 			setError(null);
@@ -25,7 +24,9 @@ const useGameData = (): UseGameDataResult => {
 				err instanceof Error ? err : new Error('An unknown error occurred')
 			);
 		} finally {
-			setIsLoading(false);
+			setTimeout(() => {
+				setIsLoading(false);
+			}, 2000);
 		}
 	};
 
@@ -37,7 +38,7 @@ const useGameData = (): UseGameDataResult => {
 		fetchGames();
 	};
 
-	return { games, isLoading, error, refetch };
+	return { games, fullGameDataIsLoading: isLoading, error, refetch };
 };
 
 export default useGameData;

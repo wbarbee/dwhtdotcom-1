@@ -10,6 +10,8 @@ export async function fetchGameData(): Promise<Game[]> {
 	}
 	const data = await response.json();
 
+	console.log('BIG DATA: ', data);
+
 	return data.events.map((event: any) => {
 		const homeTeam = event.competitions[0].competitors.find(
 			(team: any) => team.homeAway === 'home'
@@ -29,30 +31,26 @@ export async function fetchGameData(): Promise<Game[]> {
 		};
 
 		const score = `${getScore(homeTeam)}-${getScore(awayTeam)}`;
-		console.log(
-			'Score:',
-			score,
-			'Home Score:',
-			homeTeam.score,
-			'Away Score:',
-			awayTeam.score
-		);
 
 		return {
 			id: event.id,
 			home: homeTeam.team.displayName,
 			away: awayTeam.team.displayName,
-			score,
+			homeTeamRank: homeTeam.curatedRank.current,
+			homeTeamAbbrev: homeTeam.team.abbreviation,
+			awayTeamAbbrev: awayTeam.team.abbreviation,
+			awayTeamRank: awayTeam.curatedRank.current,
 			location: event.competitions[0].venue.fullName,
 			date: new Date(event.date).toLocaleDateString(),
 			timestamp: new Date(event.date).getTime(),
+			score,
 			result:
 				texasTeam.winner === true
 					? 'win'
 					: texasTeam.winner === false
 						? 'loss'
 						: 'upcoming',
-			status: event.status?.type?.name || 'Unknown',
+			status: event.competitions[0].status?.type?.name || 'Unknown',
 		};
 	});
 }

@@ -2,15 +2,9 @@
   "pages": {
     "/_not-found/page": [
       "static/chunks/[root of the server]__e2ab11._.css",
-      "static/chunks/node_modules_tailwind-merge_dist_lib_40ffc2._.js",
-      "static/chunks/node_modules_@react-aria_8cc749._.js",
-      "static/chunks/node_modules_@react-aria_0a2161._.js",
-      "static/chunks/node_modules_@react-aria_632d6a._.js",
-      "static/chunks/node_modules_next_ee1867._.js",
-      "static/chunks/node_modules_framer-motion_dist_es_c1c3ff._.js",
-      "static/chunks/node_modules_803370._.js",
-      "static/chunks/_9b5d1d._.js",
-      "static/chunks/app_layout_tsx_a1fea2._.js",
+      "static/chunks/node_modules_780c7f._.js",
+      "static/chunks/app_9e4cf7._.js",
+      "static/chunks/app_layout_tsx_ad86cb._.js",
       "static/chunks/app_error_tsx_6c72c3._.js",
       "static/chunks/app_error_tsx_e5220d._.js",
       "static/chunks/node_modules_next_dist_compiled_react_a1d82d._.js",

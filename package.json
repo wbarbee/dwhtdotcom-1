@@ -16,6 +16,7 @@
     "@nextui-org/kbd": "2.0.34",
     "@nextui-org/link": "2.0.35",
     "@nextui-org/listbox": "2.1.27",
+    "@nextui-org/modal": "^2.0.41",
     "@nextui-org/navbar": "2.0.37",
     "@nextui-org/react": "^2.4.8",
     "@nextui-org/snippet": "2.0.43",
@@ -34,6 +35,7 @@
     "react-dom": "18.3.1"
   },
   "devDependencies": {
+    "@react-hook/media-query": "^1.1.1",
     "@types/node": "20.5.7",
     "@types/react": "^18.3.3",
     "@types/react-dom": "18.3.0",

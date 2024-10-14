@@ -1,16 +1,18 @@
-// import { Link } from '@nextui-org/link';
-// import { Snippet } from '@nextui-org/snippet';
-// import { button as buttonStyles } from '@nextui-org/theme';
-import StatsTable from '@/components/table';
+'use client';
+import ScoreCard from '@/components/card';
+import Loading from '@/components/loading';
+import FullScheduleModal from '@/components/modal';
+import useGameData from '@/hooks/useGameData';
 
 export default function Home() {
+	const { fullGameDataIsLoading } = useGameData();
+
+	if (fullGameDataIsLoading) return <Loading />;
+
 	return (
-		<section className='flex flex-col items-center justify-center gap-4 py-8 md:py-10'>
-			{/* <div className='w-full max-w-4xl justify-center flex my-8'>
-				<CurrentGameCard />
-			</div> */}
-			<div className='w-full max-w-4xl'>
-				<StatsTable />
+		<section className='h-full flex flex-col items-center justify-center gap-4 py-8 md:py-10 animate-fade-in'>
+			<div className='-mt-10 w-full max-w-4xl justify-center flex my-8'>
+				<ScoreCard />
 			</div>
 		</section>
 	);

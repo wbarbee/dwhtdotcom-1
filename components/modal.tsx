@@ -1,0 +1,56 @@
+'use client';
+import {
+	Modal,
+	ModalContent,
+	ModalHeader,
+	ModalBody,
+	ModalFooter,
+	Button,
+	useDisclosure,
+} from '@nextui-org/react';
+import StatsTable from './table';
+import { useMediaQuery } from '@react-hook/media-query';
+
+export default function FullScoreModal() {
+	const { isOpen, onOpen, onOpenChange } = useDisclosure();
+	const isMobile = useMediaQuery('(max-width: 640px)');
+
+	return (
+		<>
+			<Button
+				onPress={onOpen}
+				className='rounded-[50px] w-10 h-10 p-0 min-w-10 bg-white text-burntOrange md:bg-burntOrange md:text-white'>
+				+
+			</Button>
+			<Modal
+				isOpen={isOpen}
+				onOpenChange={onOpenChange}
+				scrollBehavior='inside'
+				size={isMobile ? 'full' : '5xl'}
+				classNames={{
+					base: isMobile
+						? 'max-h-[100vh] m-0 rounded-none animate-fade-in'
+						: 'max-h-[90vh] m-2 rounded-lg animate-fade-in',
+					closeButton: 'hover:bg-white/5 active:bg-white/10',
+				}}>
+				<ModalContent>
+					{(onClose) => (
+						<>
+							<ModalHeader className='flex flex-col gap-1'></ModalHeader>
+							<ModalBody className='overflow-x-auto'>
+								<StatsTable />
+							</ModalBody>
+							<ModalFooter>
+								<Button
+									onPress={onClose}
+									className='bg-burntOrange hover:bg-orange-700 text-white font-normal py-2 px-4 rounded-[3px] transition-colors duration-200 ease-in-out shadow-md hover:shadow-lg'>
+									Close
+								</Button>
+							</ModalFooter>
+						</>
+					)}
+				</ModalContent>
+			</Modal>
+		</>
+	);
+}
