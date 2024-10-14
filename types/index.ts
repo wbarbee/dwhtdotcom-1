@@ -21,7 +21,7 @@ export interface Game {
 	location: string;
 	date: string;
 	timestamp: number;
-	status: 'STATUS_SCHEDULED' | 'STATUS_CURRENT' | 'STATUS_FINAL' | undefined;
+	status: 'STATUS_SCHEDULED' | 'STATUS_CURRENT' | 'STATUS_FINAL';
 	result: 'win' | 'loss' | 'upcoming';
 	isTexasHome: boolean;
 }

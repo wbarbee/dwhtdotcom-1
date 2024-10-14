@@ -167,7 +167,7 @@ export default function ScoreCard({
 								</p>
 							</div>
 							{['STATUS_CURRENT', 'STATUS_FINAL'].includes(
-								currentGameData.status ?? ''
+								currentGameData.status
 							) &&
 								(isRefreshing ? (
 									<Spinner

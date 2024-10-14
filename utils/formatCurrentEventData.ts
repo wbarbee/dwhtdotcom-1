@@ -18,7 +18,7 @@ export function formatCurrentEventData(event: Partial<Game>): Game {
 		location: event.location ?? 'unknown',
 		date: event.date ?? '',
 		timestamp: event.timestamp ?? 0,
-		status: event.status ?? undefined,
+		status: event.status ?? 'STATUS_SCHEDULED',
 		result: event.result ?? 'upcoming',
 		isTexasHome: event.isTexasHome ?? false,
 	};
