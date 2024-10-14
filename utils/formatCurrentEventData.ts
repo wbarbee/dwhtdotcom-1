@@ -3,10 +3,9 @@ import { Game } from '../types';
 export function formatCurrentEventData(event: Partial<Game>): Game {
 	return {
 		id: event.id ?? '',
-		home: event.home ?? '',
-		away: event.away ?? '',
 		homeTeam: event.homeTeam ?? '',
 		awayTeam: event.awayTeam ?? '',
+		longhornsRecord: event.longhornsRecord ?? null,
 		currentPeriod: event.currentPeriod ?? null,
 		homeTeamRank: event.homeTeamRank ?? 'unknown',
 		awayTeamRank: event.awayTeamRank ?? 'unknown',

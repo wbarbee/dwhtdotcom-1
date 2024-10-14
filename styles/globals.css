@@ -76,3 +76,7 @@
 .bg-content1 {
     box-shadow: none;
 }
+
+.rotate-180 {
+  transform: rotate(180deg);
+}

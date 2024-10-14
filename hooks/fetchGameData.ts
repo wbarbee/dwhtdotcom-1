@@ -46,10 +46,13 @@ export async function fetchGameData(): Promise<Game[]> {
 			return `${awayScore ?? '-'} - ${homeScore ?? '-'}`;
 		};
 
+		console.log(data);
+
 		return {
 			id: event.id,
 			home: homeTeam.team.displayName,
 			away: awayTeam.team.displayName,
+			longhornsRecord: data.team.recordSummary,
 			homeTeam: homeTeam.team.displayName,
 			awayTeam: awayTeam.team.displayName,
 			homeTeamRank: homeTeam.curatedRank.current,

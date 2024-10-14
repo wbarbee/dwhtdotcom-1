@@ -55,7 +55,13 @@ export default function ScoreCard() {
 				<div className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center'>
 					<div className='relative col-span-6 md:col-span-4 flex items-center justify-center'>
 						<div
-							className={`w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md ${currentGameData.result === 'win' ? 'bg-burntOrange' : currentGameData.result === 'loss' ? 'bg-red' : 'bg-white'}`}>
+							className={`w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md ${
+								currentGameData.result === 'win'
+									? 'bg-burntOrange'
+									: currentGameData.result === 'loss'
+										? 'bg-red'
+										: 'bg-[url("/images/magic-eye-2.webp")] bg-cover bg-center'
+							}`}>
 							{['win', 'loss'].includes(currentGameData.result) ? (
 								<span
 									className={`text-7xl ${currentGameData.result === 'loss' ? 'rotate-180' : ''}`}
@@ -110,18 +116,30 @@ export default function ScoreCard() {
 									</span>
 									{isMobile
 										? currentGameData.awayTeamAbbrev
-										: currentGameData.away}
+										: currentGameData.awayTeam}
 									<span className='mx-2'>vs</span>
 									<span className='font-light text-xs ml-1 mr-1'>
 										[{currentGameData.homeTeamRank}]
 									</span>
 									{isMobile
 										? currentGameData.homeTeamAbbrev
-										: currentGameData.home}{' '}
+										: currentGameData.homeTeam}{' '}
 								</h3>
 								<p
 									className={`${currentGameData.status === 'STATUS_SCHEDULED' ? 'mt-2' : ''} text-small text-foreground/80`}>
 									{currentGameData.location} -- {currentGameData.date}
+								</p>
+								<p className='mt-2 mb-0 text-md font-light'>
+									<span className='text-md mr-1'>🤘</span>[
+									<b>{currentGameData.longhornsRecord}</b>]
+									<span
+										style={{
+											transform: 'rotate(180deg)',
+											display: 'inline-block',
+										}}
+										className='ml-1'>
+										<span>🤘</span>
+									</span>
 								</p>
 							</div>
 						</div>

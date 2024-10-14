@@ -6,10 +6,9 @@ export type IconSvgProps = SVGProps<SVGSVGElement> & {
 
 export interface Game {
 	id: string;
-	home: string;
-	away: string;
 	homeTeam: string;
 	awayTeam: string;
+	longhornsRecord: number | null;
 	homeTeamRank?: number | string;
 	awayTeamRank?: number | string;
 	homeTeamAbbrev: string;
@@ -20,7 +19,7 @@ export interface Game {
 	location: string;
 	date: string;
 	currentPeriod: number | null;
-	neutralSite: boolean,
+	neutralSite: boolean;
 	timestamp: number;
 	status: string;
 	result: 'win' | 'loss' | 'upcoming';

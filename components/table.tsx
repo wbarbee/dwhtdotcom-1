@@ -51,7 +51,7 @@ export default function StatsTable() {
 			};
 
 			switch (columnKey) {
-				case 'away':
+				case 'awayTeam':
 					return (
 						<span className={isWinner(!game.isTexasHome) ? winnerStyle : ''}>
 							{gameFinished &&
@@ -59,10 +59,10 @@ export default function StatsTable() {
 							Number(game.awayTeamRank) < 50
 								? `[${game.awayTeamRank}]`
 								: ''}{' '}
-							{isMobile ? game.awayTeamAbbrev : game.away}
+							{isMobile ? game.awayTeamAbbrev : game.awayTeam}
 						</span>
 					);
-				case 'home':
+				case 'homeTeam':
 					return (
 						<span className={isWinner(game.isTexasHome) ? winnerStyle : ''}>
 							{gameFinished &&
@@ -70,7 +70,7 @@ export default function StatsTable() {
 							Number(game.homeTeamRank) < 50
 								? `[${game.homeTeamRank}]`
 								: ''}{' '}
-							{isMobile ? game.homeTeamAbbrev : game.home}
+							{isMobile ? game.homeTeamAbbrev : game.homeTeam}
 						</span>
 					);
 				case 'score':
