@@ -26,7 +26,7 @@ export function useCurrentGameData() {
 					const now = new Date();
 					const hoursDiff =
 						(now.getTime() - gameDate.getTime()) / (1000 * 60 * 60);
-					return game.status === 'STATUS_FINAL' && hoursDiff <= 48;
+					return game.status === 'STATUS_FINAL' && hoursDiff <= 24;
 				});
 				if (recentFinalGame) {
 					setCurrentGameData(formatCurrentEventData(recentFinalGame as Game));

@@ -77,7 +77,7 @@ export default function ScoreCard() {
 					<div className='flex flex-col col-span-6 md:col-span-8 text-center py-8 md:py-4'>
 						<div className='flex flex-col mt-0 mb-0 gap-1'>
 							<p
-								className={`text-3xl font-espn ${
+								className={`text-3xl font-espn italic${
 									currentGameData.result === 'win'
 										? 'text-burntOrange dark:text-burntOrange'
 										: currentGameData.result === 'loss'
@@ -88,12 +88,14 @@ export default function ScoreCard() {
 									? 'We hooked them.'
 									: currentGameData.result === 'loss'
 										? 'We did not hook them'
-										: 'Will we?'}
+										: 'UP NEXT: Will we?'}
 							</p>
 						</div>
-						<h1 className='text-7xl font-medium mt-4 font-oxanium'>
-							{currentGameData.homeTeamScore} - {currentGameData.awayTeamScore}
-						</h1>
+						{currentGameData.homeTeamScore !== null && currentGameData.awayTeamScore !== null && (
+							<h1 className='text-7xl font-medium mt-4 font-oxanium'>
+								{currentGameData.score}
+							</h1>
+						)}
 						{currentGameData.status === 'STATUS_CURRENT' && appendedSuffix && (
 							<h2 className='mt-1 font-oxanium font-light text-red-600'>
 								{appendedSuffix} quarter
@@ -102,19 +104,20 @@ export default function ScoreCard() {
 						<div className='mt-2 flex justify-center'>
 							<div className='flex flex-col gap-0'>
 								<h3 className='font-semibold text-foreground/90'>
-									{isMobile
-										? currentGameData.homeTeamAbbrev
-										: currentGameData.home}{' '}
-									<span className='font-light text-xs ml-1 mr-1'>
-										[{currentGameData.homeTeamRank}]
-									</span>{' '}
-									vs{' '}
-									{isMobile
-										? currentGameData.awayTeamAbbrev
-										: currentGameData.away}
 									<span className='font-light text-xs ml-1 mr-1'>
 										[{currentGameData.awayTeamRank}]
 									</span>
+									{isMobile
+										? currentGameData.awayTeamAbbrev
+										: currentGameData.away}
+									<span className='mx-2'>vs</span>
+									<span className='font-light text-xs ml-1 mr-1'>
+										[{currentGameData.homeTeamRank}]
+									</span>
+									{isMobile
+										? currentGameData.homeTeamAbbrev
+										: currentGameData.home}{' '}
+									{' '}
 								</h3>
 								<p className='text-small text-foreground/80'>
 									{currentGameData.location} -- {currentGameData.date}

@@ -10,8 +10,6 @@ export async function fetchGameData(): Promise<Game[]> {
 	}
 	const data = await response.json();
 
-	console.log('BIG DATA: ', data);
-
 	return data.events.map((event: any) => {
 		const homeTeam = event.competitions[0].competitors.find(
 			(team: any) => team.homeAway === 'home'
@@ -24,27 +22,38 @@ export async function fetchGameData(): Promise<Game[]> {
 		);
 
 		const getScore = (team: any) => {
-			if (typeof team.score === 'object' && team.score !== null) {
-				return team.score.displayValue || '-';
+			if (team.score && typeof team.score.value === 'number') {
+				return team.score.value;
 			}
-			return team.score || '-';
+			return null;
 		};
 
-		const score = `${getScore(homeTeam)}-${getScore(awayTeam)}`;
+		const isNeutralSite = event.competitions[0].neutralSite;
+		const isTexasHome = texasTeam.homeAway === 'home';
+
+		const texasScore = getScore(texasTeam);
+		const opponentScore = getScore(isTexasHome ? awayTeam : homeTeam);
 
 		return {
 			id: event.id,
 			home: homeTeam.team.displayName,
 			away: awayTeam.team.displayName,
+			homeTeam: homeTeam.team.displayName,
+			awayTeam: awayTeam.team.displayName,
 			homeTeamRank: homeTeam.curatedRank.current,
+			awayTeamRank: awayTeam.curatedRank.current,
 			currentPeriod: event.competitions[0].status.period,
 			homeTeamAbbrev: homeTeam.team.abbreviation,
 			awayTeamAbbrev: awayTeam.team.abbreviation,
-			awayTeamRank: awayTeam.curatedRank.current,
+			homeTeamScore: getScore(homeTeam),
+			awayTeamScore: getScore(awayTeam),
 			location: event.competitions[0].venue.fullName,
+			neutralSite: isNeutralSite,
 			date: new Date(event.date).toLocaleDateString(),
 			timestamp: new Date(event.date).getTime(),
-			score,
+			score: isNeutralSite
+				? `${texasScore ?? '-'} - ${opponentScore ?? '-'}`
+				: `${getScore(awayTeam) ?? '-'} - ${getScore(homeTeam) ?? '-'}`,
 			result:
 				texasTeam.winner === true
 					? 'win'
@@ -52,6 +61,7 @@ export async function fetchGameData(): Promise<Game[]> {
 						? 'loss'
 						: 'upcoming',
 			status: event.competitions[0].status?.type?.name || 'Unknown',
+			isTexasHome: isTexasHome,
 		};
 	});
 }
