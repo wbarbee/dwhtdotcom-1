@@ -3,7 +3,15 @@ import { Game } from '@/types';
 const API_FULL_SCHEDULE =
 	'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/texas/schedule?startDate=2023-08-01&endDate=2024-01-31';
 
+const IS_DEV_MODE = process.env.NODE_ENV === 'development';
+const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
+
 export async function fetchGameData(): Promise<Game[]> {
+	if (IS_DEV_MODE && USE_MOCK_DATA) {
+		console.log('Using mock data in dev mode');
+		return [generateMockGameData()];
+	}
+
 	const response = await fetch(API_FULL_SCHEDULE);
 	if (!response.ok) {
 		throw new Error('Failed to fetch game data');
@@ -53,8 +61,6 @@ export async function fetchGameData(): Promise<Game[]> {
 			home: homeTeam.team.displayName,
 			away: awayTeam.team.displayName,
 			longhornsRecord: data.team.recordSummary,
-			homeTeam: homeTeam.team.displayName,
-			awayTeam: awayTeam.team.displayName,
 			homeTeamRank: homeTeam.curatedRank.current,
 			awayTeamRank: awayTeam.curatedRank.current,
 			currentPeriod: event.competitions[0].status.period,
@@ -79,4 +85,28 @@ export async function fetchGameData(): Promise<Game[]> {
 			isTexasHome: isTexasHome,
 		};
 	});
+}
+
+function generateMockGameData(): Game {
+	return {
+		id: 'mock-game',
+		home: 'Texas Longhorns',
+		away: 'Oklahoma Sooners',
+		longhornsRecord: '6-0',
+		homeTeamRank: '1',
+		awayTeamRank: '11',
+		currentPeriod: 4,
+		homeTeamAbbrev: 'TEX',
+		awayTeamAbbrev: 'OKLA',
+		homeTeamScore: 28,
+		awayTeamScore: 21,
+		location: 'DKR-Texas Memorial Stadium',
+		neutralSite: false,
+		date: new Date().toLocaleDateString(),
+		timestamp: Date.now(),
+		score: '28 - 21',
+		result: 'win',
+		status: 'STATUS_CURRENT',
+		isTexasHome: true,
+	};
 }
