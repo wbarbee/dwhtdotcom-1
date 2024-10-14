@@ -144,10 +144,7 @@ export default function StatsTable() {
 	}
 
 	return (
-		<div className='w-full relative pt-4 animate-fade-in'>
-			<div className='text-xs absolute top-0 right-8 md:right-10'>
-				<span className='font-bold text-red-400'>*</span> = neutral site game
-			</div>
+		<div className='w-full relative animate-fade-in'>
 			{games && games.length > 0 && (
 				<Table
 					aria-label='University of Texas Longhorns 2023 Season Record'

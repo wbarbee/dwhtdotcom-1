@@ -135,9 +135,9 @@ export default function ScoreCard() {
 								<p
 									className={`text-3xl font-espn italic ${
 										currentMode === 'win'
-											? 'text-burntOrange dark:text-burntOrange'
+											? 'text-burntOrange dark:text-burntOrange mb-1'
 											: currentMode === 'loss'
-												? 'text-red-500'
+												? 'text-red-500 mb-1'
 												: 'text-gray-800 dark:text-gray-400 mb-2'
 									}`}>
 									{modeData.title}

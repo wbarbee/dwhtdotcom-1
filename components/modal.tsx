@@ -44,6 +44,10 @@ export default function FullScoreModal({ result }: FullScoreModalProps) {
 								<StatsTable />
 							</ModalBody>
 							<ModalFooter>
+								<div className='text-xs absolute left-12 md:left-[4rem] bottom-8'>
+									<span className='font-bold text-red-400'>*</span> = neutral
+									site game
+								</div>
 								<Button
 									onPress={onClose}
 									className='bg-burntOrange hover:bg-orange-700 text-white font-normal py-2 px-4 rounded-[3px] transition-colors duration-200 ease-in-out shadow-md hover:shadow-lg'>
