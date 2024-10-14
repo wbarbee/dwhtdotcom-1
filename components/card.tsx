@@ -214,7 +214,7 @@ export default function ScoreCard() {
 						</div>
 					</div>
 				</CardBody>
-				<div className='absolute bottom-2 right-[25px] md:right-2'>
+				<div className='absolute bottom-2 right-2 md:right-[25px] md:right-2'>
 					<FullScoreModal result={currentGameData.result} />
 				</div>
 			</Card>
