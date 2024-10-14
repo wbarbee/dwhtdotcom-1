@@ -1,11 +1,10 @@
 import '@/styles/globals.css';
 import { Metadata, Viewport } from 'next';
 import clsx from 'clsx';
-import { ThemeProvider } from 'next-themes';
-
-import { fontSans } from '@/config/fonts';
-import { ThemeSwitch } from '@/components/theme-switch';
 import Providers from './providers';
+import { ThemeProvider } from 'next-themes';
+import { ThemeSwitch } from '@/components/theme-switch';
+import { fontSans } from '@/config/fonts';
 
 export const metadata: Metadata = {
 	title: 'Did we hook them?',
