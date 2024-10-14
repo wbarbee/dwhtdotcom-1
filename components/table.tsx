@@ -87,6 +87,15 @@ export default function StatsTable() {
 							{isMobile ? game.homeTeamAbbrev : game.home}
 						</span>
 					);
+				case 'location':
+					return (
+						<span>
+							{game.location}{' '}
+							{game.neutralSite && (
+								<span className='font-bold text-red-400 ml-[1px]'>*</span>
+							)}
+						</span>
+					);
 				case 'score':
 					return (
 						<div className='flex items-center space-x-2'>
