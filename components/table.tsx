@@ -51,22 +51,14 @@ export default function StatsTable() {
 
 			const winnerStyle = 'font-bold text-green-600';
 
-			const getScore = (isHome: boolean) => {
-				if (game.neutralSite) {
-					return game.isTexasHome === isHome
-						? game.homeTeamScore
-						: game.awayTeamScore;
-				}
-				return isHome ? game.homeTeamScore : game.awayTeamScore;
-			};
-
 			switch (columnKey) {
 				case 'away':
 					return (
 						<span className={isWinner(!game.isTexasHome) ? winnerStyle : ''}>
 							{gameFinished &&
 							game.awayTeamRank &&
-							Number(game.awayTeamRank) < 50
+							Number(game.awayTeamRank) < 50 &&
+							!isMobile
 								? `[${game.awayTeamRank}]`
 								: ''}{' '}
 							{isMobile ? game.awayTeamAbbrev : game.away}
@@ -78,7 +70,7 @@ export default function StatsTable() {
 							{gameFinished &&
 							game.homeTeamRank &&
 							Number(game.homeTeamRank) < 50
-								? `[${game.homeTeamRank}]`
+								? `[${game.homeTeamRank}]` && !isMobile
 								: ''}{' '}
 							{isMobile ? game.homeTeamAbbrev : game.home}
 						</span>
