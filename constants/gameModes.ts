@@ -12,8 +12,8 @@ const gameModes = {
 		hookEmClasses: 'text-7xl rotate-180',
 	},
 	upcoming: {
-		backgroundImage: '/images/agrey.jpg',
-		backgroundImageNight: '/images/agrey.jpg',
+		backgroundImage: '/images/agrey-min.jpg',
+		backgroundImageNight: '/images/agrey.-minjpg',
 		title: 'WILL WE 🤘?',
 		hookEmClasses: 'text-7xl',
 	},
