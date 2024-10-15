@@ -14,14 +14,14 @@ const gameModes = {
 	upcoming: {
 		backgroundImage: '/images/agrey.jpg',
 		backgroundImageNight: '/images/agrey.jpg',
-		title: 'UP NEXT:',
-		hookEmClasses: 'text-7xl animate-spin',
+		title: 'WILL WE 🤘?',
+		hookEmClasses: 'text-7xl',
 	},
 	current: {
 		backgroundImage: '/images/mem_stadium-day.webp',
 		backgroundImageNight: '/images/mem_stadium.webp',
 		title: '',
-		hookEmClasses: 'text-7xl animate-pulse-opacity',
+		hookEmClasses: 'text-7xl animate-spin',
 	},
 	auto: {
 		backgroundImage: '',

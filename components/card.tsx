@@ -78,12 +78,14 @@ export default function ScoreCard({
 								style={{
 									backgroundImage: `url(${isDarkMode ? modeData.backgroundImageNight : modeData.backgroundImage})`,
 								}}>
-								<span
-									className={`${modeData.hookEmClasses}`}
-									role='img'
-									aria-label='Hook em Horns'>
-									🤘
-								</span>
+								{currentGameData.status !== 'STATUS_SCHEDULED' && (
+									<span
+										className={`${modeData.hookEmClasses}`}
+										role='img'
+										aria-label='Hook em Horns'>
+										🤘
+									</span>
+								)}
 							</div>
 						</div>
 						<div className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-4 md:py-2'>
