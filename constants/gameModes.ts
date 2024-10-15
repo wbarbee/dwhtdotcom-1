@@ -1,7 +1,7 @@
 const gameModes = {
 	win: {
-		backgroundImage: '/images/celebration.jpeg',
-		backgroundImageNight: '/images/celebration.jpeg',
+		backgroundImage: '/images/party.jpg',
+		backgroundImageNight: '/images/party.jpg',
 		title: 'We hooked them.',
 		hookEmClasses: 'text-7xl',
 	},
@@ -12,8 +12,8 @@ const gameModes = {
 		hookEmClasses: 'text-7xl rotate-180',
 	},
 	upcoming: {
-		backgroundImage: '/images/magic-eye-2.webp',
-		backgroundImageNight: '/images/magic-eye-2.webp',
+		backgroundImage: '/images/riddler.avif',
+		backgroundImageNight: '/images/riddler.avif',
 		title: 'UP NEXT:',
 		hookEmClasses: 'text-7xl animate-spin',
 	},
