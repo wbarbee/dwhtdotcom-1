@@ -90,7 +90,9 @@ export default function StatsTable() {
 				case 'location':
 					return (
 						<span>
-							{game.location}{' '}
+							{isMobile && game.location === 'DKR-Texas Memorial Stadium'
+								? 'DKR'
+								: game.location}{' '}
 							{game.neutralSite && (
 								<span className='font-bold text-red-400 ml-[1px]'>*</span>
 							)}

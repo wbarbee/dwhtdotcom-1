@@ -50,6 +50,7 @@ export default function FullScoreModal({ result }: FullScoreModalProps) {
 								</div>
 								<Button
 									onPress={onClose}
+									size='sm'
 									className='bg-burntOrange hover:bg-orange-700 text-white font-normal py-2 px-4 rounded-[3px] transition-colors duration-200 ease-in-out shadow-md hover:shadow-lg'>
 									Close
 								</Button>
