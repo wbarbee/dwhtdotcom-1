@@ -18,7 +18,9 @@ module.exports = {
 			},
 			animation: {
 				'fade-in': 'fadeIn 0.65s ease-out',
-				'pulse-opacity': 'pulse 5s infinite',
+				pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+				'pulse-opacity':
+					'pulseOpacity 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
 				spin: 'spin 2s linear infinite',
 				'slide-in-left': 'slideInLeft 0.65s ease-out forwards',
 				'slide-in-right': 'slideInRight 0.65s ease-out forwards',
@@ -45,6 +47,10 @@ module.exports = {
 				pulse: {
 					'0%, 100%': { opacity: '1.0' },
 					'50%': { opacity: '0.3' },
+				},
+				pulseOpacity: {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0' },
 				},
 				spin: {
 					'0%': { transform: 'rotate(0deg)' },

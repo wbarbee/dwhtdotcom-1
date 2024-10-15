@@ -4,16 +4,13 @@ import { RefreshCw } from 'lucide-react';
 import { useViewport } from '@/hooks/useViewport';
 import { Card, CardBody, Button, Spinner } from '@nextui-org/react';
 import FullScoreModal from './modal';
-import {
-	Dropdown,
-	DropdownTrigger,
-	DropdownMenu,
-	DropdownItem,
-} from '@nextui-org/react';
 import { refetchGameData } from '@/hooks/fetchGameData';
 import { detectAppendedSuffix } from '@/utils/stringUtils';
+import { useIsDarkMode } from '@/hooks/useIsDarkMode';
 
 import { Game } from '@/types';
+import DevOverride from './dev-override';
+import gameModes from '@/constants/gameModes';
 
 interface ScoreCardProps {
 	currentGameData: Game | null;
@@ -32,33 +29,12 @@ export default function ScoreCard({
 	>(null);
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const { isMobile } = useViewport();
+	const isDarkMode = useIsDarkMode();
 
 	const handleRefresh = async () => {
 		setIsRefreshing(true);
 		await refetchGameData();
 		setTimeout(() => setIsRefreshing(false), 1000);
-	};
-
-	const handleOverrideChange = async (key: string) => {
-		const newMode = key === 'auto' ? null : (key as keyof typeof gameModes);
-		setOverrideMode(newMode);
-		if (
-			process.env.NODE_ENV === 'development' &&
-			process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true'
-		) {
-			const newData = await refetchGameData(newMode as string | undefined);
-			if (newData && newData.length > 0) {
-				const relevantGame = newData.find(
-					(game) =>
-						game.status === 'STATUS_CURRENT' ||
-						(game.status === 'STATUS_FINAL' &&
-							new Date(game.date).getTime() >
-								Date.now() - 48 * 60 * 60 * 1000) ||
-						game.status === 'STATUS_SCHEDULED'
-				);
-				if (relevantGame) setCurrentGameData(relevantGame);
-			}
-		}
 	};
 
 	const currentMode = useMemo(() => {
@@ -69,39 +45,6 @@ export default function ScoreCard({
 			return currentGameData.result;
 		return 'upcoming';
 	}, [overrideMode, currentGameData]);
-
-	const gameModes = {
-		win: {
-			backgroundImage: 'bg-[url("/images/celebration.jpeg")]',
-			backgroundImageNight: 'dark:bg-[url("/images/celebration.jpeg")]',
-			title: 'We hooked them.',
-			hookEmClasses: 'text-7xl',
-		},
-		loss: {
-			backgroundImage: 'bg-[url("/images/hell.webp")]',
-			backgroundImageNight: 'dark:bg-[url("/images/hell.webp")]',
-			title: 'We did not hook them',
-			hookEmClasses: 'text-7xl rotate-180',
-		},
-		upcoming: {
-			backgroundImage: 'bg-[url("/images/magic-eye-2.webp")]',
-			backgroundImageNight: 'dark:bg-[url("/images/magic-eye-2.webp")]',
-			title: 'UP NEXT:',
-			hookEmClasses: 'text-7xl animate-spin',
-		},
-		current: {
-			backgroundImage: 'bg-[url("/images/mem_stadium-day.webp")]',
-			backgroundImageNight: 'dark:bg-[url("/images/mem_stadium.webp")]',
-			title: '',
-			hookEmClasses: 'text-7xl animate-pulse',
-		},
-		auto: {
-			backgroundImage: '',
-			backgroundImageNight: '',
-			title: '',
-			hookEmClasses: 'text-7xl',
-		},
-	};
 
 	const modeData = gameModes[currentMode];
 
@@ -115,26 +58,13 @@ export default function ScoreCard({
 
 	return (
 		<>
-			{overrideVisible && (
-				<div className='fixed bottom-3 left-3'>
-					<Dropdown>
-						<DropdownTrigger>
-							<Button
-								variant='bordered'
-								className='bg-[rgba(255,255,255,0.6)] dark:bg-[rgba(0,0,0,0.6)] border-none rounded-[3px]'>
-								{overrideMode || 'auto (no override)'}
-							</Button>
-						</DropdownTrigger>
-						<DropdownMenu
-							aria-label='Game mode selection'
-							onAction={(key) => handleOverrideChange(key.toString())}>
-							{Object.keys(gameModes).map((mode) => (
-								<DropdownItem key={mode}>{mode}</DropdownItem>
-							))}
-						</DropdownMenu>
-					</Dropdown>
-				</div>
-			)}
+			<DevOverride
+				overrideVisible={overrideVisible}
+				overrideMode={overrideMode}
+				refetchGameData={refetchGameData}
+				setOverrideMode={setOverrideMode}
+				setCurrentGameData={setCurrentGameData}
+			/>
 			<Card
 				isBlurred
 				className='border-none bg-background/60 dark:bg-default-100/50 max-w-[810px]'
@@ -144,9 +74,12 @@ export default function ScoreCard({
 					<div className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center'>
 						<div className='relative col-span-6 md:col-span-4 flex items-center justify-center'>
 							<div
-								className={`w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center ${modeData.backgroundImage} ${modeData.backgroundImageNight}`}>
+								className={`w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center`}
+								style={{
+									backgroundImage: `url(${isDarkMode ? modeData.backgroundImageNight : modeData.backgroundImage})`,
+								}}>
 								<span
-									className={modeData.hookEmClasses}
+									className={`${modeData.hookEmClasses}`}
 									role='img'
 									aria-label='Hook em Horns'>
 									🤘
