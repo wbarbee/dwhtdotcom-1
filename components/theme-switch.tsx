@@ -1,5 +1,4 @@
 'use client';
-import React from 'react';
 import { FC } from 'react';
 import clsx from 'clsx';
 import { VisuallyHidden } from '@react-aria/visually-hidden';

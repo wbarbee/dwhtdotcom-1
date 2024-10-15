@@ -1,6 +1,5 @@
 'use client';
 import { useCallback, useState, useEffect } from 'react';
-// ts.ignore
 import {
 	Table,
 	TableHeader,
