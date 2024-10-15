@@ -89,18 +89,28 @@ export default function ScoreCard({
 							</div>
 						</div>
 						<div className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-4 md:py-2'>
-							<div className='flex flex-col mt-0 mb-0 gap-1'>
-								<p
-									className={`text-3xl font-espn italic ${
-										currentMode === 'win'
-											? 'text-burntOrange dark:text-burntOrange'
-											: currentMode === 'loss'
-												? 'text-red-500'
-												: 'text-gray-800 dark:text-gray-400 mb-2'
-									} ${currentGameData.status === 'STATUS_FINAL' ? 'mb-4' : 'mb-0'}`}>
-									{modeData.title}
-								</p>
-							</div>
+							{modeData.title && (
+								<div className='flex flex-col mt-0 mb-0 gap-1'>
+									<p
+										className={`text-3xl font-espn ${
+											currentMode === 'win'
+												? 'text-burntOrange dark:text-burntOrange'
+												: currentMode === 'loss'
+													? 'text-red-500'
+													: 'text-gray-800 dark:text-gray-400 mb-2'
+										} ${currentGameData.status === 'STATUS_FINAL' ? 'mb-4' : 'mb-0'}`}>
+										{modeData.title.split('').map((char, index) =>
+											char.match(/[a-zA-Z]/) ? (
+												<span key={index} className='italic'>
+													{char}
+												</span>
+											) : (
+												<span key={index}>{char}</span>
+											)
+										)}
+									</p>
+								</div>
+							)}
 							{['STATUS_CURRENT', 'STATUS_FINAL'].includes(
 								currentGameData.status
 							) &&
