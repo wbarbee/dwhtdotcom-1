@@ -1,19 +1,19 @@
 const gameModes = {
 	win: {
 		backgroundImage: '/images/party.jpg',
-		backgroundImageNight: '/images/party.jpg',
+		backgroundImageNight: '/images/party-dark.jpg',
 		title: 'We hooked them.',
 		hookEmClasses: 'text-7xl',
 	},
 	loss: {
 		backgroundImage: '/images/hell.webp',
-		backgroundImageNight: '/images/hell.webp',
+		backgroundImageNight: '/images/hell-dark.webp',
 		title: 'We did not hook them',
 		hookEmClasses: 'text-7xl rotate-180',
 	},
 	upcoming: {
 		backgroundImage: '/images/agrey-min.jpg',
-		backgroundImageNight: '/images/agrey-min.jpg',
+		backgroundImageNight: '/images/spiral.jpg',
 		title: 'WILL WE 🤘?',
 		hookEmClasses: 'text-7xl',
 	},
