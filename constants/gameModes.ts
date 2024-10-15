@@ -12,8 +12,8 @@ const gameModes = {
 		hookEmClasses: 'text-7xl rotate-180',
 	},
 	upcoming: {
-		backgroundImage: '/images/riddler.avif',
-		backgroundImageNight: '/images/riddler.avif',
+		backgroundImage: '/images/agrey.jpg',
+		backgroundImageNight: '/images/agrey.jpg',
 		title: 'UP NEXT:',
 		hookEmClasses: 'text-7xl animate-spin',
 	},
