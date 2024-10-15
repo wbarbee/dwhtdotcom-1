@@ -13,7 +13,7 @@ const gameModes = {
 	},
 	upcoming: {
 		backgroundImage: '/images/agrey-min.jpg',
-		backgroundImageNight: '/images/agrey.-minjpg',
+		backgroundImageNight: '/images/agrey-min.jpg',
 		title: 'WILL WE 🤘?',
 		hookEmClasses: 'text-7xl',
 	},
