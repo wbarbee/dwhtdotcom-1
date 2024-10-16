@@ -105,7 +105,8 @@ export default function ScoreCard({
 													<span
 														key={index}
 														role='img'
-														aria-label="Hook 'em Horns">
+														aria-label="Hook 'em Horns"
+														className='emoji'>
 														🤘
 													</span>
 												);
