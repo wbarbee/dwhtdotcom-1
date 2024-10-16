@@ -1,7 +1,7 @@
 import { Game } from '@/types';
 
 const API_FULL_SCHEDULE =
-	'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/texas/schedule?startDate=2023-08-01&endDate=2024-01-31';
+	'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/texas/schedule?startDate=2024-08-01&endDate=2025-03-31';
 
 const IS_DEV_MODE = process.env.NODE_ENV === 'development';
 const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
@@ -67,7 +67,7 @@ const generateMockGameData = (overrideMode?: string): Game => {
 				currentMockGameData = {
 					...baseGame,
 					result: 'upcoming',
-					status: 'STATUS_CURRENT',
+					status: 'STATUS_IN_PROGRESS',
 				};
 				break;
 			default:

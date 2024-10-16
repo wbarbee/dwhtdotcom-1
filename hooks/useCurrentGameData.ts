@@ -25,7 +25,11 @@ export function useCurrentGameData() {
 				relevantGame = data[0];
 			} else {
 				relevantGame =
-					data.find((game) => game.status === 'STATUS_CURRENT') ||
+					data.find(
+						(game) =>
+							game.status === 'STATUS_CURRENT' ||
+							game.status === 'STATUS_IN_PROGRESS'
+					) ||
 					data.find((game) => {
 						const gameDate = new Date(game.date);
 						const now = new Date();

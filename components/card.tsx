@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useViewport } from '@/hooks/useViewport';
 import { Card, CardBody, Button, Spinner } from '@nextui-org/react';
@@ -23,7 +23,6 @@ export default function ScoreCard({
 	setCurrentGameData,
 	error,
 }: ScoreCardProps) {
-	const [overrideVisible] = useState(process.env.NODE_ENV === 'development');
 	const [overrideMode, setOverrideMode] = useState<
 		keyof typeof gameModes | null
 	>(null);
@@ -31,35 +30,76 @@ export default function ScoreCard({
 	const { isMobile } = useViewport();
 	const isDarkMode = useIsDarkMode();
 
-	const handleRefresh = async () => {
+	const isDevMode = process.env.NODE_ENV === 'development';
+
+	const handleRefresh = useCallback(async () => {
 		setIsRefreshing(true);
-		await refetchGameData();
-		setTimeout(() => setIsRefreshing(false), 1000);
-	};
+		try {
+			const newGameData = await refetchGameData(overrideMode || undefined);
+			if (newGameData && newGameData.length > 0) {
+				setCurrentGameData(newGameData[0]);
+			}
+		} catch (error) {
+			console.error('Failed to refresh game data:', error);
+		} finally {
+			setIsRefreshing(false);
+		}
+	}, [overrideMode, setCurrentGameData]);
 
 	const currentMode = useMemo(() => {
 		if (!currentGameData) return 'auto';
 		if (overrideMode) return overrideMode;
-		if (currentGameData.status === 'STATUS_CURRENT') return 'current';
-		if (currentGameData.result === 'win' || currentGameData.result === 'loss')
-			return currentGameData.result;
+		const { status, result } = currentGameData;
+		if (status === 'STATUS_CURRENT' || status === 'STATUS_IN_PROGRESS')
+			return 'current';
+		if (result === 'win' || result === 'loss') return result;
 		return 'upcoming';
 	}, [overrideMode, currentGameData]);
 
 	const modeData = gameModes[currentMode];
 
-	if (!currentGameData) return null;
-	if (error)
+	if (error) {
 		return (
 			<Card className='w-[300px] h-[200px] flex items-center justify-center'>
 				<p className='text-danger'>{error}</p>
 			</Card>
 		);
+	}
+
+	if (!currentGameData) return null;
+
+	const {
+		status,
+		score,
+		currentPeriod,
+		home,
+		away,
+		homeTeamRank,
+		awayTeamRank,
+		homeTeamAbbrev,
+		awayTeamAbbrev,
+		location,
+		date,
+		longhornsRecord,
+	} = currentGameData;
+
+	const isGameInProgress =
+		status === 'STATUS_CURRENT' || status === 'STATUS_IN_PROGRESS';
+	const showScore =
+		(isGameInProgress || status === 'STATUS_FINAL') && !isRefreshing;
+	const showPeriod = isGameInProgress && currentPeriod && !isRefreshing;
+	const showRefreshButton = isGameInProgress;
+
+	const backgroundImageUrl = isDarkMode
+		? modeData.backgroundImageNight
+		: modeData.backgroundImage;
+
+	const formattedDate = new Date(date).toLocaleDateString();
 
 	return (
 		<>
 			<DevOverride
-				overrideVisible={overrideVisible}
+				overrideVisible={isDevMode}
 				overrideMode={overrideMode}
 				refetchGameData={refetchGameData}
 				setOverrideMode={setOverrideMode}
@@ -68,19 +108,19 @@ export default function ScoreCard({
 			<Card
 				isBlurred
 				className='border-none bg-background/60 dark:bg-default-100/50 max-w-[810px]'
-				fullWidth={true}
+				fullWidth
 				shadow='sm'>
 				<CardBody>
 					<div className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center'>
 						<div className='relative col-span-6 md:col-span-4 flex items-center justify-center'>
 							<div
-								className={`w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center`}
+								className='w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center'
 								style={{
-									backgroundImage: `url(${isDarkMode ? modeData.backgroundImageNight : modeData.backgroundImage})`,
+									backgroundImage: `url(${backgroundImageUrl})`,
 								}}>
-								{currentGameData.status !== 'STATUS_SCHEDULED' && (
+								{status !== 'STATUS_SCHEDULED' && (
 									<span
-										className={`${modeData.hookEmClasses}`}
+										className={modeData.hookEmClasses}
 										role='img'
 										aria-label='Hook em Horns'>
 										🤘
@@ -98,58 +138,50 @@ export default function ScoreCard({
 												: currentMode === 'loss'
 													? 'text-red-500'
 													: 'text-gray-800 dark:text-gray-400 mb-2'
-										} ${currentGameData.status === 'STATUS_FINAL' ? 'mb-4' : 'mb-0'}`}>
+										} ${status === 'STATUS_FINAL' ? 'mb-4' : 'mb-0'}`}>
 										{modeData.title}
 									</p>
 								</div>
 							)}
-							{['STATUS_CURRENT', 'STATUS_FINAL'].includes(
-								currentGameData.status
-							) &&
-								(isRefreshing ? (
-									<Spinner
-										size='lg'
-										color='default'
-										labelColor='foreground'
-										className='mb-6'
-									/>
-								) : (
-									<h1 className='text-7xl font-medium font-oxanium animate-fade-in'>
-										{currentGameData.score}
-									</h1>
-								))}
-							{currentGameData.status === 'STATUS_CURRENT' &&
-								currentGameData.currentPeriod &&
-								!isRefreshing && (
-									<h2 className='mt-[0.25rem] mb-[0.5rem] font-oxanium font-light text-gray-700 dark:text-gray-400 animate-fade-in'>
-										{detectAppendedSuffix(currentGameData.currentPeriod)}{' '}
-										quarter
-									</h2>
-								)}
+							{showScore ? (
+								<h1 className='text-7xl font-medium font-oxanium animate-fade-in'>
+									{score}
+								</h1>
+							) : isRefreshing ? (
+								<Spinner
+									size='lg'
+									color='default'
+									labelColor='foreground'
+									className='mb-6'
+								/>
+							) : null}
+							{showPeriod && (
+								<h2 className='mt-[0.25rem] mb-[0.5rem] font-oxanium font-light text-gray-700 dark:text-gray-400 animate-fade-in'>
+									{detectAppendedSuffix(currentPeriod)} quarter
+								</h2>
+							)}
 							<div className='mt-2 flex justify-center'>
 								<div className='flex flex-col gap-0'>
 									<h3 className='font-semibold text-foreground/90'>
 										<span className='font-light text-xs ml-1 mr-1'>
-											[{currentGameData.awayTeamRank}]
+											[{awayTeamRank}]
 										</span>
-										{isMobile
-											? currentGameData.awayTeamAbbrev
-											: currentGameData.away}
+										{isMobile ? awayTeamAbbrev : away}
 										<span className='mx-2'>vs</span>
 										<span className='font-light text-xs ml-1 mr-1'>
-											[{currentGameData.homeTeamRank}]
+											[{homeTeamRank}]
 										</span>
-										{isMobile
-											? currentGameData.homeTeamAbbrev
-											: currentGameData.home}
+										{isMobile ? homeTeamAbbrev : home}
 									</h3>
 									<p
-										className={`${currentGameData.status === 'STATUS_SCHEDULED' ? 'mt-2' : ''} text-sm text-foreground/80`}>
-										{currentGameData.location} -- {currentGameData.date}
+										className={`${
+											status === 'STATUS_SCHEDULED' ? 'mt-2' : ''
+										} text-sm text-foreground/80`}>
+										{location} -- {formattedDate}
 									</p>
 									<p className='mt-3 mb-0 text-md text-gray-700 dark:text-gray-300 font-light font-menlo'>
 										<span className='text-md mr-1'>🤘</span>[
-										<b>{currentGameData.longhornsRecord}</b>]
+										<b>{longhornsRecord}</b>]
 										<span
 											style={{
 												transform: 'rotate(180deg)',
@@ -165,7 +197,7 @@ export default function ScoreCard({
 					</div>
 				</CardBody>
 				<div className='absolute bottom-2 right-2 flex gap-2'>
-					{currentGameData.status === 'STATUS_CURRENT' && (
+					{showRefreshButton && (
 						<Button
 							isIconOnly
 							className='bg-transparent text-black dark:text-white rounded-full'

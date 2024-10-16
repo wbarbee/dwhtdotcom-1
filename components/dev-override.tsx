@@ -33,6 +33,7 @@ const DevOverride = ({
 				const relevantGame = newData.find(
 					(game) =>
 						game.status === 'STATUS_CURRENT' ||
+						game.status === 'STATUS_IN_PROGRESS' ||
 						(game.status === 'STATUS_FINAL' &&
 							new Date(game.date).getTime() >
 								Date.now() - 48 * 60 * 60 * 1000) ||
