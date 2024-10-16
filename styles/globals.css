@@ -16,6 +16,10 @@
   }
 }
 
+.emoji {
+	font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+}
+
 @keyframes pulse-opacity {
   0%, 100% {
     opacity: 1;
