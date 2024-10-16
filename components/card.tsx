@@ -99,15 +99,29 @@ export default function ScoreCard({
 													? 'text-red-500'
 													: 'text-gray-800 dark:text-gray-400 mb-2'
 										} ${currentGameData.status === 'STATUS_FINAL' ? 'mb-4' : 'mb-0'}`}>
-										{modeData.title.split('').map((char, index) =>
-											char.match(/[a-zA-Z]/) ? (
-												<span key={index} className='italic'>
-													{char}
-												</span>
-											) : (
-												<span key={index}>{char}</span>
-											)
-										)}
+										{modeData.title.split('').map((char, index) => {
+											if (char === '🤘') {
+												return (
+													<span
+														key={index}
+														role='img'
+														aria-label="Hook 'em Horns">
+														🤘
+													</span>
+												);
+											} else if (
+												char.match(/[a-zA-Z]/) ||
+												['?', '.', '!', ':'].includes(char)
+											) {
+												return (
+													<span key={index} className='italic'>
+														{char}
+													</span>
+												);
+											} else {
+												return <span key={index}>{char}</span>;
+											}
+										})}
 									</p>
 								</div>
 							)}
