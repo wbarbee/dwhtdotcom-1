@@ -30,6 +30,17 @@ export default function ScoreCard({
 	const { isMobile } = useViewport();
 	const isDarkMode = useIsDarkMode();
 
+	const isGameday = useMemo(() => {
+		if (!currentGameData) return false;
+		const gameDate = new Date(currentGameData.date);
+		const today = new Date();
+		return (
+			gameDate.getDate() === today.getDate() &&
+			gameDate.getMonth() === today.getMonth() &&
+			gameDate.getFullYear() === today.getFullYear()
+		);
+	}, [currentGameData]);
+
 	const isDevMode = process.env.NODE_ENV === 'development';
 
 	const handleRefresh = useCallback(async () => {
@@ -57,6 +68,13 @@ export default function ScoreCard({
 	}, [overrideMode, currentGameData]);
 
 	const modeData = gameModes[currentMode];
+
+	const getDynamicTitle = (mode: keyof typeof gameModes) => {
+		if (mode === 'upcoming' && isGameday) {
+			return 'GAMEDAY!';
+		}
+		return gameModes[mode].title;
+	};
 
 	if (error) {
 		return (
@@ -138,8 +156,8 @@ export default function ScoreCard({
 												: currentMode === 'loss'
 													? 'text-red-500'
 													: 'text-gray-800 dark:text-gray-400 mb-2'
-										} ${status === 'STATUS_FINAL' ? 'mb-4' : 'mb-0'}`}>
-										{modeData.title}
+										} ${currentGameData.status === 'STATUS_FINAL' ? 'mb-4' : 'mb-0'}`}>
+										{getDynamicTitle(currentMode)}
 									</p>
 								</div>
 							)}

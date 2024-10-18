@@ -12,8 +12,8 @@ export default function About() {
 				</div>
 				<p className='mb-6 font-menlo'>
 					didwehookthem.com seeks to become the premier authority on whether or
-					not we hooked them. that being said, any commentary, critique, usage
-					inquiries should be directed to{' '}
+					not we hooked them. any commentary, critique, usage inquiries should
+					be directed to{' '}
 					<Link
 						href='mailto:will.clayton.barbee@gmail.com'
 						color='foreground'

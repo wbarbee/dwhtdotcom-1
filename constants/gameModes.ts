@@ -18,10 +18,10 @@ const gameModes = {
 		hookEmClasses: 'text-7xl',
 	},
 	current: {
-		backgroundImage: '/images/dkr-day.webp',
-		backgroundImageNight: '/images/dkr-night-1.jpg',
+		backgroundImage: '/images/mem_stadium-day.webp',
+		backgroundImageNight: '/images/mem_stadium.webp',
 		title: '',
-		hookEmClasses: 'text-7xl animate-spin',
+		hookEmClasses: 'text-7xl animate-pulse-opacity',
 	},
 	auto: {
 		backgroundImage: '',
