@@ -20,9 +20,9 @@ export const metadata: Metadata = {
 		'insights',
 		'success rates',
 	],
-	authors: [{ name: 'Your Name', url: 'https://yourwebsite.com' }],
-	creator: 'Your Name or Company',
-	publisher: 'Your Company Name',
+	authors: [{ name: 'Will Barbee', url: 'https://yourwebsite.com' }],
+	creator: 'Will Barbee',
+	publisher: 'Will Barbee',
 	robots: 'index, follow',
 	alternates: {
 		canonical: 'https://www.didwehookthem.com',
@@ -43,15 +43,6 @@ export const metadata: Metadata = {
 				alt: 'Did we hook them? - OG Image',
 			},
 		],
-	},
-	twitter: {
-		card: 'summary_large_image',
-		site: '@yourTwitterHandle',
-		creator: '@yourTwitterHandle',
-		title: 'Did we hook them? | A great source to find out if we hooked them',
-		description:
-			'The ultimate source for finding out if we hooked them. Get real-time updates, statistics, and insights on hooking success rates.',
-		images: ['https://www.didwehookthem.com/twitter-image.jpg'],
 	},
 	icons: {
 		icon: [
@@ -94,7 +85,7 @@ export default function RootLayout({
 							name: 'Did we hook them?',
 							url: 'https://www.didwehookthem.com',
 							description:
-								'The ultimate source for finding out if we hooked them. Get real-time updates, statistics, and insights on hooking success rates.',
+								'The ultimate source for finding out if we hooked them. Get real-time updates, statistics, and insights.',
 							potentialAction: {
 								'@type': 'SearchAction',
 								target:
