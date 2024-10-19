@@ -1,10 +1,10 @@
-import '@/styles/globals.css';
+import '../styles/globals.css';
 import { Metadata, Viewport } from 'next';
 import clsx from 'clsx';
 import Providers from './providers';
 import { ThemeProvider } from 'next-themes';
-import { ThemeSwitch } from '@/components/theme-switch';
-import { fontSans } from '@/config/fonts';
+import { ThemeSwitch } from '../components/theme-switch';
+import { fontSans } from '../config/fonts';
 
 const SITE_URL = 'https://www.didwehookthem.com';
 const OPEN_GRAPH_IMAGE = `${SITE_URL}/opengraph-image.png`;
@@ -104,8 +104,8 @@ export default function RootLayout({
 					fontSans.variable
 				)}>
 				<Providers>
-					<div className='relative flex flex-col h-screen'>
-						<main className='container mx-auto max-w-7xl flex-grow'>
+					<div className='flex flex-col min-h-screen'>
+						<main className='container mx-auto max-w-7xl flex-1 content-center px-4 py-8'>
 							<ThemeSwitch />
 							<ThemeProvider
 								attribute='class'
