@@ -144,7 +144,7 @@ export default function ScoreCard({
 			/>
 			<Card
 				isBlurred
-				className='border-none bg-background/60 dark:bg-default-100/50 max-w-[810px]'
+				className='border-none bg-background/60 dark:bg-default-100/50 max-w-[810px] w-[90%] -mt-[1rem] md:mt-0'
 				fullWidth
 				shadow='sm'>
 				<CardBody>
