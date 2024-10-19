@@ -18,8 +18,8 @@ const gameModes = {
 		hookEmClasses: 'text-7xl',
 	},
 	current: {
-		backgroundImage: '/images/mem_stadium-day.webp',
-		backgroundImageNight: '/images/mem_stadium.webp',
+		backgroundImage: '/images/dkr-day.webp',
+		backgroundImageNight: '/images/dkr-night.webp',
 		title: '',
 		hookEmClasses: 'text-7xl animate-pulse-opacity',
 	},
