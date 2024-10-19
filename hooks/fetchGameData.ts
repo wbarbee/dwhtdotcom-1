@@ -1,4 +1,4 @@
-import { Game } from '@/types';
+import { Game } from '../types';
 
 const API_FULL_SCHEDULE =
 	'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/texas/schedule?startDate=2024-08-01&endDate=2025-03-31';
@@ -108,6 +108,14 @@ const fetchData = async (): Promise<Game[]> => {
 		const texasScore = getScore(texasTeam);
 		const opponentScore = getScore(isTexasHome ? awayTeam : homeTeam);
 
+		// Modified score calculation
+		const calculateScore = (score1: number | null, score2: number | null) => {
+			if (gameStatus === 'STATUS_SCHEDULED') {
+				return '';
+			}
+			return `${score1 ?? 0} - ${score2 ?? 0}`;
+		};
+
 		return {
 			id: event.id,
 			home: homeTeam.team.displayName,
@@ -125,8 +133,8 @@ const fetchData = async (): Promise<Game[]> => {
 			date: new Date(event.date).toLocaleDateString(),
 			timestamp: new Date(event.date).getTime(),
 			score: isNeutralSite
-				? `${texasScore ?? '-'} - ${opponentScore ?? '-'}`
-				: `${getScore(awayTeam) ?? '-'} - ${getScore(homeTeam) ?? '-'}`,
+				? calculateScore(texasScore, opponentScore)
+				: calculateScore(getScore(awayTeam), getScore(homeTeam)),
 			result:
 				texasTeam.winner === true
 					? 'win'
