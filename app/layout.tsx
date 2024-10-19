@@ -6,13 +6,17 @@ import { ThemeProvider } from 'next-themes';
 import { ThemeSwitch } from '@/components/theme-switch';
 import { fontSans } from '@/config/fonts';
 
+const SITE_URL = 'https://www.didwehookthem.com';
+const OPEN_GRAPH_IMAGE = `${SITE_URL}/opengraph-image.png`;
+const SITE_DESCRIPTION =
+	'The ultimate source for finding out if we hooked them. Get real-time updates, statistics, and insights.';
+
 export const metadata: Metadata = {
 	title: {
 		default: 'Did we hook them? | A great source to find out if we hooked them',
 		template: '%s | Did we hook them?',
 	},
-	description:
-		'The ultimate source for finding out if we hooked them. Get real-time updates, statistics, and insights on hooking success rates.',
+	description: SITE_DESCRIPTION,
 	keywords: [
 		'hook',
 		'statistics',
@@ -33,11 +37,10 @@ export const metadata: Metadata = {
 		url: 'https://www.didwehookthem.com',
 		siteName: 'Did we hook them?',
 		title: 'Did we hook them? | A great source to find out if we hooked them',
-		description:
-			'The ultimate source for finding out if we hooked them. Get real-time updates, statistics, and insights on hooking success rates.',
+		description: SITE_DESCRIPTION,
 		images: [
 			{
-				url: 'https://www.didwehookthem.com/og-image.jpg',
+				url: OPEN_GRAPH_IMAGE,
 				width: 1200,
 				height: 630,
 				alt: 'Did we hook them? - OG Image',
@@ -84,8 +87,7 @@ export default function RootLayout({
 							'@type': 'WebSite',
 							name: 'Did we hook them?',
 							url: 'https://www.didwehookthem.com',
-							description:
-								'The ultimate source for finding out if we hooked them. Get real-time updates, statistics, and insights.',
+							description: SITE_DESCRIPTION,
 							potentialAction: {
 								'@type': 'SearchAction',
 								target:
