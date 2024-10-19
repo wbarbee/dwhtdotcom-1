@@ -5,7 +5,7 @@ const Loading = () => {
 				Did we hook them?
 			</h1>
 			<div className='w-[5rem] md:w-[7rem] h-[6rem] md:h-[8rem] mx-auto mt-[1.5rem] animate-spin'>
-				<span className='animate-spin text-[5rem] md:text-[7rem]'>🤘</span>
+				<span className='animate-spin text-[4rem] md:text-[6rem]'>🤘</span>
 			</div>
 		</div>
 	);

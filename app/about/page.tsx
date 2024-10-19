@@ -6,11 +6,11 @@ import { Button } from '@nextui-org/button';
 export default function About() {
 	return (
 		<div className='about-page h-full flex items-center justify-center'>
-			<div className='bg-background/60 dark:bg-default-100/50 h-auto max-w-[810px] w-[95%] flex flex-col px-6 pb-6 -mt-[4rem] animate-fade-in'>
+			<div className='bg-background/60 dark:bg-default-50/30 h-auto max-w-[810px] w-[95%] flex flex-col px-6 pb-6 -mt-[4rem] animate-fade-in'>
 				<div className='max-w-[5rem] w-full h-auto mx-auto my-8'>
 					<Image alt='longhorn logo' src={hookSrc} width={100} height={100} />
 				</div>
-				<p className='mb-6 font-menlo'>
+				<p className='mb-6 font-menlo text-justify max-w-[95%] mx-auto'>
 					didwehookthem.com seeks to become the premier authority on whether or
 					not we hooked them. any commentary, critique, usage inquiries should
 					be directed to{' '}
