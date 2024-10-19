@@ -195,7 +195,7 @@ export default function StatsTable() {
 							? games.map((game) => (
 									<TableRow key={game.id}>
 										{(columnKey) => (
-											<TableCell>
+											<TableCell className='animate-fade-in'>
 												{renderCell(game, columnKey as keyof Game)}
 											</TableCell>
 										)}
