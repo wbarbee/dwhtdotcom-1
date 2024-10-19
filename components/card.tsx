@@ -71,7 +71,7 @@ export default function ScoreCard({
 
 	const getDynamicTitle = (mode: keyof typeof gameModes) => {
 		if (mode === 'upcoming' && isGameday) {
-			return 'GAMEDAY!';
+			return 'GAMEDAY';
 		}
 		return gameModes[mode].title;
 	};

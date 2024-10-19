@@ -7,8 +7,52 @@ import { ThemeSwitch } from '@/components/theme-switch';
 import { fontSans } from '@/config/fonts';
 
 export const metadata: Metadata = {
-	title: 'Did we hook them?',
-	description: 'A great source to find out if we hooked them.',
+	title: {
+		default: 'Did we hook them? | A great source to find out if we hooked them',
+		template: '%s | Did we hook them?',
+	},
+	description:
+		'The ultimate source for finding out if we hooked them. Get real-time updates, statistics, and insights on hooking success rates.',
+	keywords: [
+		'hook',
+		'statistics',
+		'real-time updates',
+		'insights',
+		'success rates',
+	],
+	authors: [{ name: 'Your Name', url: 'https://yourwebsite.com' }],
+	creator: 'Your Name or Company',
+	publisher: 'Your Company Name',
+	robots: 'index, follow',
+	alternates: {
+		canonical: 'https://www.didwehookthem.com',
+	},
+	openGraph: {
+		type: 'website',
+		locale: 'en_US',
+		url: 'https://www.didwehookthem.com',
+		siteName: 'Did we hook them?',
+		title: 'Did we hook them? | A great source to find out if we hooked them',
+		description:
+			'The ultimate source for finding out if we hooked them. Get real-time updates, statistics, and insights on hooking success rates.',
+		images: [
+			{
+				url: 'https://www.didwehookthem.com/og-image.jpg',
+				width: 1200,
+				height: 630,
+				alt: 'Did we hook them? - OG Image',
+			},
+		],
+	},
+	twitter: {
+		card: 'summary_large_image',
+		site: '@yourTwitterHandle',
+		creator: '@yourTwitterHandle',
+		title: 'Did we hook them? | A great source to find out if we hooked them',
+		description:
+			'The ultimate source for finding out if we hooked them. Get real-time updates, statistics, and insights on hooking success rates.',
+		images: ['https://www.didwehookthem.com/twitter-image.jpg'],
+	},
 	icons: {
 		icon: [
 			{ url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
@@ -28,6 +72,9 @@ export const viewport: Viewport = {
 		{ media: '(prefers-color-scheme: light)', color: 'white' },
 		{ media: '(prefers-color-scheme: dark)', color: 'black' },
 	],
+	width: 'device-width',
+	initialScale: 1,
+	maximumScale: 1,
 };
 
 export default function RootLayout({
@@ -37,7 +84,27 @@ export default function RootLayout({
 }) {
 	return (
 		<html suppressHydrationWarning lang='en'>
-			<head />
+			<head>
+				<script
+					type='application/ld+json'
+					dangerouslySetInnerHTML={{
+						__html: JSON.stringify({
+							'@context': 'https://schema.org',
+							'@type': 'WebSite',
+							name: 'Did we hook them?',
+							url: 'https://www.didwehookthem.com',
+							description:
+								'The ultimate source for finding out if we hooked them. Get real-time updates, statistics, and insights on hooking success rates.',
+							potentialAction: {
+								'@type': 'SearchAction',
+								target:
+									'https://www.didwehookthem.com/search?q={search_term_string}',
+								'query-input': 'required name=search_term_string',
+							},
+						}),
+					}}
+				/>
+			</head>
 			<body
 				className={clsx(
 					'min-h-screen bg-background font-sans antialiased',
@@ -54,7 +121,12 @@ export default function RootLayout({
 								{children}
 							</ThemeProvider>
 						</main>
-						<footer className='w-full flex items-center justify-center py-3'></footer>
+						<footer className='w-full items-center justify-center py-3 hidden'>
+							<p>
+								&copy; {new Date().getFullYear()} Did we hook them? All rights
+								reserved.
+							</p>
+						</footer>
 					</div>
 				</Providers>
 			</body>
