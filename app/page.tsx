@@ -15,7 +15,7 @@ export default function Home() {
 
 	return (
 		<section className='h-full flex flex-col items-center justify-center p-8 animate-fade-in'>
-			<div className='w-full max-w-4xl justify-center flex my-8'>
+			<div className='w-full max-w-4xl justify-center flex'>
 				<ScoreCard
 					currentGameData={currentGameData}
 					setCurrentGameData={setCurrentGameData}
