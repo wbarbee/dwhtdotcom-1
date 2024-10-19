@@ -1,22 +1,41 @@
 'use client';
 import { useState, useMemo, useCallback } from 'react';
 import { RefreshCw } from 'lucide-react';
-import { useViewport } from '@/hooks/useViewport';
+import { useViewport } from '../hooks/useViewport';
 import { Card, CardBody, Button, Spinner } from '@nextui-org/react';
 import FullScoreModal from './modal';
-import { refetchGameData } from '@/hooks/fetchGameData';
-import { detectAppendedSuffix } from '@/utils/stringUtils';
-import { useIsDarkMode } from '@/hooks/useIsDarkMode';
+import { refetchGameData } from '../hooks/fetchGameData';
+import { detectAppendedSuffix } from '../utils/stringUtils';
+import { useIsDarkMode } from '../hooks/useIsDarkMode';
+import { motion, AnimatePresence } from 'framer-motion';
 
-import { Game } from '@/types';
+import { Game } from '../types';
 import DevOverride from './dev-override';
-import gameModes from '@/constants/gameModes';
+import gameModes from '../constants/gameModes';
 
 interface ScoreCardProps {
 	currentGameData: Game | null;
 	setCurrentGameData: (data: Game) => void;
 	error: string | null;
 }
+
+const contentVariants = {
+	hidden: { opacity: 0, y: 20 },
+	visible: {
+		opacity: 1,
+		y: 0,
+		transition: { duration: 0.5, staggerChildren: 0.1 },
+	},
+};
+
+const itemVariants = {
+	hidden: { opacity: 0, y: 10 },
+	visible: {
+		opacity: 1,
+		y: 0,
+		transition: { duration: 0.3 },
+	},
+};
 
 export default function ScoreCard({
 	currentGameData,
@@ -129,8 +148,14 @@ export default function ScoreCard({
 				fullWidth
 				shadow='sm'>
 				<CardBody>
-					<div className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center'>
-						<div className='relative col-span-6 md:col-span-4 flex items-center justify-center'>
+					<motion.div
+						className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center'
+						variants={contentVariants}
+						initial='hidden'
+						animate='visible'>
+						<motion.div
+							className='relative col-span-6 md:col-span-4 flex items-center justify-center'
+							variants={itemVariants}>
 							<div
 								className='w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center'
 								style={{
@@ -145,10 +170,14 @@ export default function ScoreCard({
 									</span>
 								)}
 							</div>
-						</div>
-						<div className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-4 md:py-2'>
+						</motion.div>
+						<motion.div
+							className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-4 md:py-2'
+							variants={itemVariants}>
 							{modeData.title && (
-								<div className='flex flex-col mt-0 mb-0 gap-1'>
+								<motion.div
+									className='flex flex-col mt-0 mb-0 gap-1'
+									variants={itemVariants}>
 									<p
 										className={`text-3xl font-espn italic ${
 											currentMode === 'win'
@@ -159,26 +188,38 @@ export default function ScoreCard({
 										} ${currentGameData.status === 'STATUS_FINAL' ? 'mb-4' : 'mb-0'}`}>
 										{getDynamicTitle(currentMode)}
 									</p>
-								</div>
+								</motion.div>
 							)}
-							{showScore ? (
-								<h1 className='text-7xl font-medium font-oxanium animate-fade-in'>
-									{score}
-								</h1>
-							) : isRefreshing ? (
-								<Spinner
-									size='lg'
-									color='default'
-									labelColor='foreground'
-									className='mb-6'
-								/>
-							) : null}
+							<AnimatePresence mode='wait'>
+								{showScore ? (
+									<motion.h1
+										className='text-7xl font-medium font-oxanium'
+										key='score'
+										initial={{ opacity: 0, scale: 0.8 }}
+										animate={{ opacity: 1, scale: 1 }}
+										exit={{ opacity: 0, scale: 0.8 }}
+										transition={{ duration: 0.3 }}>
+										{score}
+									</motion.h1>
+								) : isRefreshing ? (
+									<Spinner
+										size='lg'
+										color='default'
+										labelColor='foreground'
+										className='mb-6'
+									/>
+								) : null}
+							</AnimatePresence>
 							{showPeriod && (
-								<h2 className='mt-[0.25rem] mb-[0.5rem] font-oxanium font-light text-gray-700 dark:text-gray-400 animate-fade-in'>
+								<motion.h2
+									className='mt-[0.25rem] mb-[0.5rem] font-oxanium font-light text-gray-700 dark:text-gray-400'
+									variants={itemVariants}>
 									{detectAppendedSuffix(currentPeriod)} quarter
-								</h2>
+								</motion.h2>
 							)}
-							<div className='mt-2 flex justify-center'>
+							<motion.div
+								className='mt-2 flex justify-center'
+								variants={itemVariants}>
 								<div className='flex flex-col gap-0'>
 									<h3 className='font-semibold text-foreground/90'>
 										<span className='font-light text-xs ml-1 mr-1'>
@@ -210,9 +251,9 @@ export default function ScoreCard({
 										</span>
 									</p>
 								</div>
-							</div>
-						</div>
-					</div>
+							</motion.div>
+						</motion.div>
+					</motion.div>
 				</CardBody>
 				<div className='absolute bottom-2 right-2 flex gap-2'>
 					{showRefreshButton && (
