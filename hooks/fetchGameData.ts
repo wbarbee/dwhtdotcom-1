@@ -32,72 +32,113 @@ const fetchData = async (forceRefresh: boolean = false): Promise<Game[]> => {
 
 	console.log('Raw schedule data:', data);
 
-	return data.events.map((event: any) => {
-		const homeTeam = event.competitions[0].competitors.find(
-			(team: any) => team.homeAway === 'home'
-		);
-		const awayTeam = event.competitions[0].competitors.find(
-			(team: any) => team.homeAway === 'away'
-		);
-		const texasTeam = event.competitions[0].competitors.find(
-			(team: any) => team.id === '251'
-		);
+	const processedGames = await Promise.all(
+		data.events.map(async (event: any) => {
+			const homeTeam = event.competitions[0].competitors.find(
+				(team: any) => team.homeAway === 'home'
+			);
+			const awayTeam = event.competitions[0].competitors.find(
+				(team: any) => team.homeAway === 'away'
+			);
+			const texasTeam = event.competitions[0].competitors.find(
+				(team: any) => team.id === '251'
+			);
 
-		const getScore = (team: any) =>
-			team.score && typeof team.score === 'string'
-				? parseInt(team.score, 10)
-				: null;
+			const getScore = (team: any) =>
+				team.score && typeof team.score === 'string'
+					? parseInt(team.score, 10)
+					: null;
 
-		const isNeutralSite = event.competitions[0].neutralSite;
-		const isTexasHome = texasTeam.homeAway === 'home';
-		const gameStatus = event.competitions[0].status?.type?.name || 'Unknown';
+			const isNeutralSite = event.competitions[0].neutralSite;
+			const isTexasHome = texasTeam.homeAway === 'home';
+			const gameStatus = event.competitions[0].status?.type?.name || 'Unknown';
 
-		const homeScore = getScore(homeTeam);
-		const awayScore = getScore(awayTeam);
+			let homeScore = getScore(homeTeam);
+			let awayScore = getScore(awayTeam);
 
-		const calculateScore = (
-			homeScore: number | null,
-			awayScore: number | null
-		) => {
-			if (gameStatus === 'STATUS_SCHEDULED') {
-				return '';
+			const calculateScore = (
+				homeScore: number | null,
+				awayScore: number | null
+			) => {
+				if (gameStatus === 'STATUS_SCHEDULED') {
+					return '';
+				}
+				return `${awayScore ?? 0} - ${homeScore ?? 0}`;
+			};
+
+			const determineResult = () => {
+				if (gameStatus !== 'STATUS_FINAL') return 'upcoming';
+				if (texasTeam.winner) return 'win';
+				if (texasTeam.winner === false) return 'loss';
+				return 'upcoming'; // Default to upcoming if winner is not determined
+			};
+
+			let game: Game = {
+				id: event.id,
+				home: homeTeam.team.displayName,
+				away: awayTeam.team.displayName,
+				longhornsRecord: data.team.recordSummary,
+				homeTeamRank: homeTeam.curatedRank.current,
+				awayTeamRank: awayTeam.curatedRank.current,
+				currentPeriod: event.competitions[0].status.period,
+				homeTeamAbbrev: homeTeam.team.abbreviation,
+				awayTeamAbbrev: awayTeam.team.abbreviation,
+				homeTeamScore: homeScore,
+				awayTeamScore: awayScore,
+				location: event.competitions[0].venue.fullName,
+				neutralSite: isNeutralSite,
+				date: new Date(event.date).toLocaleDateString(),
+				timestamp: new Date(event.date).getTime(),
+				score: calculateScore(homeScore, awayScore),
+				result: determineResult(),
+				status: gameStatus,
+				isTexasHome: isTexasHome,
+			};
+
+			// Fetch live data for current or in-progress games
+			if (
+				gameStatus === 'STATUS_CURRENT' ||
+				gameStatus === 'STATUS_IN_PROGRESS'
+			) {
+				try {
+					const liveData = await fetchLiveGameData(event.id);
+					if (
+						liveData &&
+						liveData.header &&
+						liveData.header.competitions &&
+						liveData.header.competitions.length > 0
+					) {
+						const liveCompetition = liveData.header.competitions[0];
+						const liveHomeTeam = liveCompetition.competitors.find(
+							(team: any) => team.homeAway === 'home'
+						);
+						const liveAwayTeam = liveCompetition.competitors.find(
+							(team: any) => team.homeAway === 'away'
+						);
+
+						homeScore = parseInt(liveHomeTeam.score || '0', 10);
+						awayScore = parseInt(liveAwayTeam.score || '0', 10);
+
+						game = {
+							...game,
+							homeTeamScore: homeScore,
+							awayTeamScore: awayScore,
+							score: calculateScore(homeScore, awayScore),
+							currentPeriod: liveCompetition.status.period,
+							status: liveCompetition.status.type.name,
+						};
+					}
+				} catch (error) {
+					console.error('Error fetching live game data:', error);
+				}
 			}
-			return `${awayScore ?? 0} - ${homeScore ?? 0}`;
-		};
 
-		const determineResult = () => {
-			if (gameStatus !== 'STATUS_FINAL') return 'upcoming';
-			if (texasTeam.winner) return 'win';
-			if (texasTeam.winner === false) return 'loss';
-			return 'upcoming'; // Default to upcoming if winner is not determined
-		};
+			console.log('Processed game data:', game);
+			return game;
+		})
+	);
 
-		const game: Game = {
-			id: event.id,
-			home: homeTeam.team.displayName,
-			away: awayTeam.team.displayName,
-			longhornsRecord: data.team.recordSummary,
-			homeTeamRank: homeTeam.curatedRank.current,
-			awayTeamRank: awayTeam.curatedRank.current,
-			currentPeriod: event.competitions[0].status.period,
-			homeTeamAbbrev: homeTeam.team.abbreviation,
-			awayTeamAbbrev: awayTeam.team.abbreviation,
-			homeTeamScore: homeScore,
-			awayTeamScore: awayScore,
-			location: event.competitions[0].venue.fullName,
-			neutralSite: isNeutralSite,
-			date: new Date(event.date).toLocaleDateString(),
-			timestamp: new Date(event.date).getTime(),
-			score: calculateScore(homeScore, awayScore),
-			result: determineResult(),
-			status: gameStatus,
-			isTexasHome: isTexasHome,
-		};
-
-		console.log('Processed game data:', game);
-
-		return game;
-	});
+	return processedGames;
 };
 
 export const fetchGameData = async (overrideMode?: string): Promise<Game[]> => {

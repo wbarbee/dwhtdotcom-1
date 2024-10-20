@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Game } from '../types';
-import { fetchGameData, refetchGameData, fetchLiveGame } from './fetchGameData';
+import { fetchGameData, refetchGameData } from './fetchGameData';
 import { formatCurrentEventData } from '../utils/formatCurrentEventData';
 
 export function useCurrentGameData() {
@@ -53,24 +53,6 @@ export function useCurrentGameData() {
 						game.status === 'STATUS_IN_PROGRESS'
 				);
 				console.log('Current or in-progress game:', relevantGame);
-
-				if (relevantGame) {
-					console.log(
-						'Attempting to fetch live data for game:',
-						relevantGame.id
-					);
-					// Fetch live data for the current game
-					const liveGameData = await fetchLiveGame(
-						relevantGame.id,
-						relevantGame
-					);
-					if (liveGameData) {
-						relevantGame = liveGameData;
-						console.log('Updated with live game data:', relevantGame);
-					} else {
-						console.log('Failed to fetch live game data');
-					}
-				}
 
 				if (!relevantGame) {
 					console.log(
