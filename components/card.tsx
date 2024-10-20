@@ -195,7 +195,7 @@ export default function ScoreCard({
 							<AnimatePresence mode='wait'>
 								{showScore ? (
 									<motion.h1
-										className='text-6xl md:text-7xl font-medium font-oxanium'
+										className='text-6xl font-medium font-oxanium'
 										key='score'
 										initial={{ opacity: 0, scale: 0.8 }}
 										animate={{ opacity: 1, scale: 1 }}
