@@ -9,6 +9,11 @@ const isGameInProgress = (status: string) => {
 		'STATUS_CURRENT',
 		'STATUS_END_PERIOD',
 		'STATUS_PRE_END_PERIOD',
+		'STATUS_FIRST_QUARTER',
+		'STATUS_SECOND_QUARTER',
+		'STATUS_THIRD_QUARTER',
+		'STATUS_FOURTH_QUARTER',
+		'STATUS_OVERTIME',
 	].includes(status);
 };
 

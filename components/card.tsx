@@ -36,7 +36,18 @@ const itemVariants = {
 };
 
 const isGameInProgress = (status: Game['status']) =>
-	['STATUS_CURRENT', 'STATUS_IN_PROGRESS', 'STATUS_HALFTIME'].includes(status);
+	[
+		'STATUS_IN_PROGRESS',
+		'STATUS_HALFTIME',
+		'STATUS_CURRENT',
+		'STATUS_END_PERIOD',
+		'STATUS_PRE_END_PERIOD',
+		'STATUS_FIRST_QUARTER',
+		'STATUS_SECOND_QUARTER',
+		'STATUS_THIRD_QUARTER',
+		'STATUS_FOURTH_QUARTER',
+		'STATUS_OVERTIME',
+	].includes(status);
 
 export default function ScoreCard({
 	currentGameData,
@@ -115,7 +126,7 @@ export default function ScoreCard({
 
 	const showScore =
 		(isGameInProgress(status) || status === 'STATUS_FINAL') && !isRefreshing;
-	const showPeriod = isGameInProgress(status) && currentPeriod && !isRefreshing;
+	const showPeriod = isGameInProgress(status) && !isRefreshing;
 	const showRefreshButton = isGameInProgress(status);
 
 	const backgroundImageUrl = isDarkMode
@@ -200,7 +211,13 @@ export default function ScoreCard({
 									variants={itemVariants}>
 									{status === 'STATUS_HALFTIME'
 										? 'Halftime'
-										: `${detectAppendedSuffix(currentPeriod)} quarter`}
+										: status === 'STATUS_END_PERIOD'
+											? 'End of Quarter'
+											: status === 'STATUS_PRE_END_PERIOD'
+												? 'Quarter Break'
+												: currentPeriod !== null
+													? `${detectAppendedSuffix(currentPeriod)} quarter`
+													: 'In Progress'}
 								</motion.h2>
 							)}
 							<motion.div

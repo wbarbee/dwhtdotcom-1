@@ -11,8 +11,8 @@ import {
 	Button,
 	Skeleton,
 } from '@nextui-org/react';
-import useGameData from '@/hooks/useGameData';
-import { Game } from '@/types';
+import useGameData from '../hooks/useGameData';
+import { Game } from '../types';
 
 const columns = [
 	{ name: 'AWAY', uid: 'away' },
@@ -64,7 +64,9 @@ export default function StatsTable() {
 							className={
 								game.result === 'win' && !game.isTexasHome
 									? 'font-bold text-green-600'
-									: ''
+									: game.result === 'loss' && !game.isTexasHome
+										? 'font-bold text-red-600'
+										: ''
 							}>
 							{game.awayTeamRank && showRanking
 								? `[${game.awayTeamRank}] `
@@ -78,7 +80,9 @@ export default function StatsTable() {
 							className={
 								game.result === 'win' && game.isTexasHome
 									? 'font-bold text-green-600'
-									: ''
+									: game.result === 'loss' && game.isTexasHome
+										? 'font-bold text-red-600'
+										: ''
 							}>
 							{game.homeTeamRank && showRanking
 								? `[${game.homeTeamRank}] `
@@ -192,7 +196,7 @@ export default function StatsTable() {
 					{isLoading
 						? renderSkeleton()
 						: games
-							? games.map((game) => (
+							? games.map((game: Game) => (
 									<TableRow key={game.id}>
 										{(columnKey) => (
 											<TableCell className='animate-fade-in'>
