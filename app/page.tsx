@@ -1,25 +1,62 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import ScoreCard from '../components/card';
 import Loading from '../components/loading';
+import DevOverride from '../components/dev-override';
 import { useCurrentGameData } from '../hooks/useCurrentGameData';
 import { Button } from '@nextui-org/button';
 import { Link } from '@nextui-org/link';
 import { Tooltip } from '@nextui-org/tooltip';
+import { Game } from '../types';
 
 export default function Home() {
-	const { currentGameData, loading, error, refreshData } = useCurrentGameData();
+	const {
+		currentGameData,
+		loading,
+		error,
+		refreshData: originalRefreshData,
+	} = useCurrentGameData();
+	const [overrideVisible, setOverrideVisible] = useState(false);
+	const [mockGameData, setMockGameData] = useState<Game | null>(null);
+
+	useEffect(() => {
+		const handleKeyPress = (event: KeyboardEvent) => {
+			if (event.key === '`') {
+				setOverrideVisible((prev) => !prev);
+			}
+		};
+
+		window.addEventListener('keydown', handleKeyPress);
+		return () => {
+			window.removeEventListener('keydown', handleKeyPress);
+		};
+	}, []);
+
+	const refreshData = async (mockData?: Game) => {
+		if (mockData) {
+			setMockGameData(mockData);
+		} else {
+			setMockGameData(null);
+			await originalRefreshData();
+		}
+	};
 
 	if (loading) return <Loading />;
 
+	const displayedGameData = mockGameData || currentGameData;
+
 	return (
 		<div className='relative w-full h-full'>
+			<DevOverride
+				overrideVisible={overrideVisible}
+				refreshData={refreshData}
+			/>
 			<div className='absolute top-4 right-4'>
 				{/* Add any top-right corner elements here */}
 			</div>
 			<div className='flex items-center justify-center w-full h-full'>
 				<ScoreCard
-					currentGameData={currentGameData}
+					currentGameData={displayedGameData}
 					refreshData={refreshData}
 					error={error}
 				/>

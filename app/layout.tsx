@@ -116,7 +116,7 @@ export default function RootLayout({
 				)}>
 				<Providers>
 					<div className='relative flex flex-col h-screen'>
-						<main className='container mx-auto max-w-7xl flex-grow'>
+						<main className='w-full max-w-screen mx-auto flex-grow'>
 							<ThemeSwitch />
 							<ThemeProvider
 								attribute='class'

@@ -22,6 +22,8 @@ const columns = [
 	{ name: 'DATE', uid: 'date' },
 ];
 
+const isTexas = (teamName: string) => teamName.includes('Texas Longhorns');
+
 export default function StatsTable() {
 	const { games, error, refetch } = useGameData();
 	const [isMobile, setIsMobile] = useState(false);
@@ -48,6 +50,18 @@ export default function StatsTable() {
 		}
 	}, [games]);
 
+	const getTeamStyle = (teamName: string, game: Game) => {
+		const isTexasTeam = isTexas(teamName);
+		if (isTexasTeam && game.result === 'win') {
+			return 'font-bold text-green-600';
+		} else if (!isTexasTeam && game.result === 'loss') {
+			return 'font-bold text-red-600';
+		} else if (game.result === 'loss' || game.result === 'win') {
+			return 'text-gray-500';
+		}
+		return '';
+	};
+
 	const renderCell = useCallback(
 		(game: Game, columnKey: keyof Game) => {
 			const cellValue = game[columnKey];
@@ -60,14 +74,7 @@ export default function StatsTable() {
 			switch (columnKey) {
 				case 'away':
 					return (
-						<span
-							className={
-								game.result === 'win' && !game.isTexasHome
-									? 'font-bold text-green-600'
-									: game.result === 'loss' && !game.isTexasHome
-										? 'font-bold text-red-600'
-										: ''
-							}>
+						<span className={getTeamStyle(game.away, game)}>
 							{game.awayTeamRank && showRanking
 								? `[${game.awayTeamRank}] `
 								: ''}
@@ -76,14 +83,7 @@ export default function StatsTable() {
 					);
 				case 'home':
 					return (
-						<span
-							className={
-								game.result === 'win' && game.isTexasHome
-									? 'font-bold text-green-600'
-									: game.result === 'loss' && game.isTexasHome
-										? 'font-bold text-red-600'
-										: ''
-							}>
+						<span className={getTeamStyle(game.home, game)}>
 							{game.homeTeamRank && showRanking
 								? `[${game.homeTeamRank}] `
 								: ''}
@@ -110,6 +110,7 @@ export default function StatsTable() {
 								</span>
 							) : game.result === 'loss' ? (
 								<span
+									className='text-xl'
 									style={{
 										display: 'inline-block',
 										transform: 'rotate(180deg)',
