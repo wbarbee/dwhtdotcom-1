@@ -9,78 +9,6 @@ const API_LIVE_GAME =
 const IS_DEV_MODE = process.env.NODE_ENV === 'development';
 const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
 
-let currentMockGameData: Game | null = null;
-
-const createBaseGame = (): Game => ({
-	id: 'mock-game',
-	home: 'Texas Longhorns',
-	away: 'Oklahoma Sooners',
-	longhornsRecord: '6-0',
-	homeTeamRank: 1,
-	awayTeamRank: 11,
-	currentPeriod: 3,
-	homeTeamAbbrev: 'TEX',
-	awayTeamAbbrev: 'OKLA',
-	homeTeamScore: 21,
-	awayTeamScore: 28,
-	location: 'Cotton Bowl',
-	neutralSite: true,
-	date: new Date().toLocaleDateString(),
-	timestamp: Date.now(),
-	score: '21 - 28',
-	result: 'loss',
-	status: 'STATUS_CURRENT',
-	isTexasHome: true,
-});
-
-const generateMockGameData = (overrideMode?: string): Game => {
-	if (!currentMockGameData || overrideMode !== undefined) {
-		const baseGame = createBaseGame();
-
-		switch (overrideMode) {
-			case 'win':
-				currentMockGameData = {
-					...baseGame,
-					score: '28 - 21',
-					result: 'win',
-					homeTeamScore: 28,
-					awayTeamScore: 21,
-					status: 'STATUS_FINAL',
-				};
-				break;
-			case 'loss':
-				currentMockGameData = {
-					...baseGame,
-					result: 'loss',
-					status: 'STATUS_FINAL',
-				};
-				break;
-			case 'upcoming':
-				currentMockGameData = {
-					...baseGame,
-					result: 'upcoming',
-					status: 'STATUS_SCHEDULED',
-					homeTeamScore: null,
-					awayTeamScore: null,
-					score: '',
-					currentPeriod: null,
-				};
-				break;
-			case 'current':
-				currentMockGameData = {
-					...baseGame,
-					result: 'upcoming',
-					status: 'STATUS_IN_PROGRESS',
-				};
-				break;
-			default:
-				currentMockGameData = baseGame;
-		}
-	}
-
-	return currentMockGameData;
-};
-
 const fetchLiveGameData = async (eventId: string): Promise<any> => {
 	const response = await fetch(`${API_LIVE_GAME}${eventId}`);
 	if (!response.ok) {
@@ -102,7 +30,7 @@ const fetchData = async (forceRefresh: boolean = false): Promise<Game[]> => {
 	}
 	const data = await response.json();
 
-	console.log('Schedule data:', data);
+	console.log('Raw schedule data:', data);
 
 	return data.events.map((event: any) => {
 		const homeTeam = event.competitions[0].competitors.find(
@@ -137,7 +65,14 @@ const fetchData = async (forceRefresh: boolean = false): Promise<Game[]> => {
 			return `${awayScore ?? 0} - ${homeScore ?? 0}`;
 		};
 
-		return {
+		const determineResult = () => {
+			if (gameStatus !== 'STATUS_FINAL') return 'upcoming';
+			if (texasTeam.winner) return 'win';
+			if (texasTeam.winner === false) return 'loss';
+			return 'upcoming'; // Default to upcoming if winner is not determined
+		};
+
+		const game: Game = {
 			id: event.id,
 			home: homeTeam.team.displayName,
 			away: awayTeam.team.displayName,
@@ -154,28 +89,22 @@ const fetchData = async (forceRefresh: boolean = false): Promise<Game[]> => {
 			date: new Date(event.date).toLocaleDateString(),
 			timestamp: new Date(event.date).getTime(),
 			score: calculateScore(homeScore, awayScore),
-			result:
-				texasTeam.winner === true
-					? 'win'
-					: texasTeam.winner === false
-						? 'loss'
-						: 'upcoming',
+			result: determineResult(),
 			status: gameStatus,
 			isTexasHome: isTexasHome,
 		};
+
+		console.log('Processed game data:', game);
+
+		return game;
 	});
 };
 
 export const fetchGameData = async (overrideMode?: string): Promise<Game[]> => {
-	if (
-		IS_DEV_MODE &&
-		USE_MOCK_DATA &&
-		overrideMode !== undefined &&
-		overrideMode !== null &&
-		overrideMode !== 'auto'
-	) {
+	if (IS_DEV_MODE && USE_MOCK_DATA && overrideMode) {
 		console.warn('Using mock data in dev mode with override:', overrideMode);
-		return [generateMockGameData(overrideMode)];
+		// Implement mock data generation here if needed
+		return [];
 	}
 	return fetchData();
 };
@@ -183,19 +112,13 @@ export const fetchGameData = async (overrideMode?: string): Promise<Game[]> => {
 export const refetchGameData = async (
 	overrideMode?: string
 ): Promise<Game[]> => {
-	if (
-		IS_DEV_MODE &&
-		USE_MOCK_DATA &&
-		overrideMode !== undefined &&
-		overrideMode !== null &&
-		overrideMode !== 'auto'
-	) {
+	if (IS_DEV_MODE && USE_MOCK_DATA && overrideMode) {
 		console.warn(
 			'Refetching mock data in dev mode with override:',
 			overrideMode
 		);
-		currentMockGameData = null;
-		return [generateMockGameData(overrideMode)];
+		// Implement mock data generation here if needed
+		return [];
 	}
 	return fetchData(true); // Force a refresh
 };
@@ -237,7 +160,7 @@ export const fetchLiveGame = async (
 		const homeScore = parseInt(homeTeam.score || '0', 10);
 		const awayScore = parseInt(awayTeam.score || '0', 10);
 
-		return {
+		const updatedGame: Game = {
 			...originalGame,
 			id: liveData.header.id,
 			home: homeTeam.team.displayName,
@@ -252,7 +175,6 @@ export const fetchLiveGame = async (
 			homeTeamScore: homeScore,
 			awayTeamScore: awayScore,
 			// Keep the original location
-			// location: competition.venue?.fullName || originalGame.location,
 			neutralSite: competition.neutralSite || originalGame.neutralSite,
 			date: new Date(competition.date).toLocaleDateString(),
 			timestamp: new Date(competition.date).getTime(),
@@ -265,6 +187,10 @@ export const fetchLiveGame = async (
 			status: competition.status.type.name,
 			isTexasHome: texasTeam.homeAway === 'home',
 		};
+
+		console.log('Updated live game data:', updatedGame);
+
+		return updatedGame;
 	} catch (error) {
 		console.error('Error fetching live game data:', error);
 		return null;

@@ -38,7 +38,12 @@ export function useCurrentGameData() {
 				);
 				console.log(
 					'Sorted games:',
-					sortedGames.map((g) => ({ id: g.id, date: g.date, status: g.status }))
+					sortedGames.map((g) => ({
+						id: g.id,
+						date: g.date,
+						status: g.status,
+						result: g.result,
+					}))
 				);
 
 				// Find the current or in-progress game
@@ -68,18 +73,8 @@ export function useCurrentGameData() {
 				}
 
 				if (!relevantGame) {
-					console.log('No current game found, looking for upcoming game');
-					// Find the next upcoming game
-					relevantGame = sortedGames.find((game) => {
-						const gameDate = new Date(game.date);
-						return game.status === 'STATUS_SCHEDULED' && gameDate > now;
-					});
-					console.log('Next upcoming game:', relevantGame);
-				}
-
-				if (!relevantGame) {
 					console.log(
-						'No upcoming game found, looking for recently completed game'
+						'No current game found, looking for recently completed game'
 					);
 					// Find the most recently completed game (within the last 48 hours)
 					relevantGame = sortedGames.find((game) => {
@@ -92,7 +87,17 @@ export function useCurrentGameData() {
 				}
 
 				if (!relevantGame) {
-					console.log('No recent game found, using most recent game in data');
+					console.log('No recent game found, looking for upcoming game');
+					// Find the next upcoming game
+					relevantGame = sortedGames.find((game) => {
+						const gameDate = new Date(game.date);
+						return game.status === 'STATUS_SCHEDULED' && gameDate > now;
+					});
+					console.log('Next upcoming game:', relevantGame);
+				}
+
+				if (!relevantGame) {
+					console.log('No upcoming game found, using most recent game in data');
 					// If none of the above, use the most recent game
 					relevantGame = sortedGames[0];
 					console.log('Fallback to most recent game:', relevantGame);
@@ -101,7 +106,9 @@ export function useCurrentGameData() {
 
 			if (relevantGame) {
 				console.log('Setting current game data:', relevantGame);
-				setCurrentGameData(formatCurrentEventData(relevantGame));
+				const formattedGame = formatCurrentEventData(relevantGame);
+				console.log('Formatted game data being set:', formattedGame);
+				setCurrentGameData(formattedGame);
 			} else {
 				console.log('No relevant game found');
 				setCurrentGameData(null);
