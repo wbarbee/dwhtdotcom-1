@@ -1,33 +1,28 @@
-import { SVGProps } from 'react';
-
-export type IconSvgProps = SVGProps<SVGSVGElement> & {
-	size?: number;
-};
-
-export interface Game {
+export type Game = {
 	id: string;
 	home: string;
 	away: string;
-	longhornsRecord: string | null;
+	longhornsRecord: string;
+	homeTeamRank: number;
+	awayTeamRank: number;
 	currentPeriod: number | null;
-	homeTeamRank: number | string;
-	awayTeamRank: number | string;
 	homeTeamAbbrev: string;
 	awayTeamAbbrev: string;
-	homeTeamScore: number | string | null;
-	awayTeamScore: number | string | null;
-	score: string;
-	neutralSite: boolean;
+	homeTeamScore: number | null;
+	awayTeamScore: number | null;
 	location: string;
+	neutralSite: boolean;
 	date: string;
 	timestamp: number;
+	score: string;
+	result: 'win' | 'loss' | 'upcoming';
 	status:
 		| 'STATUS_SCHEDULED'
-		| 'STATUS_CURRENT'
 		| 'STATUS_IN_PROGRESS'
+		| 'STATUS_FINAL'
+		| 'STATUS_HALFTIME'
+		| 'STATUS_CURRENT'
 		| 'STATUS_END_PERIOD'
-		| 'STATUS_PRE_END_PERIOD'
-		| 'STATUS_FINAL';
-	result: 'win' | 'loss' | 'upcoming';
+		| 'STATUS_PRE_END_PERIOD';
 	isTexasHome: boolean;
-}
+};

@@ -8,7 +8,7 @@ import { Link } from '@nextui-org/link';
 import { Tooltip } from '@nextui-org/tooltip';
 
 export default function Home() {
-	const { currentGameData, setCurrentGameData, error, loading } =
+	const { currentGameData, allGames, loading, error, refreshData } =
 		useCurrentGameData();
 
 	useEffect(() => {
@@ -25,7 +25,7 @@ export default function Home() {
 			<div className='flex items-center justify-center w-full h-full'>
 				<ScoreCard
 					currentGameData={currentGameData}
-					setCurrentGameData={setCurrentGameData}
+					refreshData={refreshData}
 					error={error}
 				/>
 			</div>

@@ -4,7 +4,6 @@ import { RefreshCw } from 'lucide-react';
 import { useViewport } from '../hooks/useViewport';
 import { Card, CardBody, Button, Spinner } from '@nextui-org/react';
 import FullScoreModal from './modal';
-import { refetchGameData } from '../hooks/fetchGameData';
 import { detectAppendedSuffix } from '../utils/stringUtils';
 import { useIsDarkMode } from '../hooks/useIsDarkMode';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,7 +14,7 @@ import gameModes from '../constants/gameModes';
 
 interface ScoreCardProps {
 	currentGameData: Game | null;
-	setCurrentGameData: (data: Game) => void;
+	refreshData: () => Promise<void>;
 	error: string | null;
 }
 
@@ -37,14 +36,14 @@ const itemVariants = {
 	},
 };
 
+const isGameInProgress = (status: Game['status']) =>
+	['STATUS_CURRENT', 'STATUS_IN_PROGRESS', 'STATUS_HALFTIME'].includes(status);
+
 export default function ScoreCard({
 	currentGameData,
-	setCurrentGameData,
+	refreshData,
 	error,
 }: ScoreCardProps) {
-	const [overrideMode, setOverrideMode] = useState<
-		keyof typeof gameModes | null
-	>(null);
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const { isMobile } = useViewport();
 	const isDarkMode = useIsDarkMode();
@@ -65,39 +64,21 @@ export default function ScoreCard({
 	const handleRefresh = useCallback(async () => {
 		setIsRefreshing(true);
 		try {
-			const newGameData = await refetchGameData(overrideMode || undefined);
-			console.log('newGameData', newGameData);
-			if (newGameData && newGameData.length > 0) {
-				const currentGame = newGameData.find(
-					(game) =>
-						game.status === 'STATUS_CURRENT' ||
-						game.status === 'STATUS_IN_PROGRESS'
-				);
-				if (currentGame) {
-					setCurrentGameData(currentGame);
-				} else {
-					// If no current game, fall back to the first game in the array
-					setCurrentGameData(newGameData[0]);
-				}
-			}
+			await refreshData();
 		} catch (error) {
 			console.error('Failed to refresh game data:', error);
 		} finally {
-			setTimeout(() => {
-				setIsRefreshing(false);
-			}, 1000);
+			setIsRefreshing(false);
 		}
-	}, [overrideMode, setCurrentGameData]);
+	}, [refreshData]);
 
 	const currentMode = useMemo(() => {
 		if (!currentGameData) return 'auto';
-		if (overrideMode) return overrideMode;
 		const { status, result } = currentGameData;
-		if (status === 'STATUS_CURRENT' || status === 'STATUS_IN_PROGRESS')
-			return 'current';
+		if (isGameInProgress(status)) return 'current';
 		if (result === 'win' || result === 'loss') return result;
 		return 'upcoming';
-	}, [overrideMode, currentGameData]);
+	}, [currentGameData]);
 
 	const modeData = gameModes[currentMode];
 
@@ -133,12 +114,10 @@ export default function ScoreCard({
 		longhornsRecord,
 	} = currentGameData;
 
-	const isGameInProgress =
-		status !== 'STATUS_FINAL' && status !== 'STATUS_SCHEDULED';
 	const showScore =
-		(isGameInProgress || status === 'STATUS_FINAL') && !isRefreshing;
-	const showPeriod = isGameInProgress && currentPeriod && !isRefreshing;
-	const showRefreshButton = isGameInProgress;
+		(isGameInProgress(status) || status === 'STATUS_FINAL') && !isRefreshing;
+	const showPeriod = isGameInProgress(status) && currentPeriod && !isRefreshing;
+	const showRefreshButton = isGameInProgress(status);
 
 	const backgroundImageUrl = isDarkMode
 		? modeData.backgroundImageNight
@@ -148,13 +127,7 @@ export default function ScoreCard({
 
 	return (
 		<>
-			<DevOverride
-				overrideVisible={isDevMode}
-				overrideMode={overrideMode}
-				refetchGameData={refetchGameData}
-				setOverrideMode={setOverrideMode}
-				setCurrentGameData={setCurrentGameData}
-			/>
+			<DevOverride overrideVisible={isDevMode} refreshData={refreshData} />
 			<Card
 				isBlurred
 				className='border-none bg-background/60 dark:bg-default-100/50 max-w-[810px] w-[90%] -mt-[1rem] md:mt-0'
@@ -198,7 +171,7 @@ export default function ScoreCard({
 												: currentMode === 'loss'
 													? 'text-red-500'
 													: 'text-gray-800 dark:text-gray-400 mb-2'
-										} ${currentGameData.status === 'STATUS_FINAL' ? 'mb-4' : 'mb-0'}`}>
+										} ${status === 'STATUS_FINAL' ? 'mb-4' : 'mb-0'}`}>
 										{getDynamicTitle(currentMode)}
 									</p>
 								</motion.div>
@@ -227,7 +200,9 @@ export default function ScoreCard({
 								<motion.h2
 									className='mt-[0.25rem] mb-[0.5rem] font-oxanium font-light text-gray-700 dark:text-gray-400'
 									variants={itemVariants}>
-									{detectAppendedSuffix(currentPeriod)} quarter
+									{status === 'STATUS_HALFTIME'
+										? 'Halftime'
+										: `${detectAppendedSuffix(currentPeriod)} quarter`}
 								</motion.h2>
 							)}
 							<motion.div

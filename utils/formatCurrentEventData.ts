@@ -1,26 +1,28 @@
 import { Game } from '../types';
 
-export function formatCurrentEventData(event: Partial<Game>): Game {
-	console.log(event.homeTeamScore);
+export const formatCurrentEventData = (event: any): Game => {
 	return {
-		id: event.id ?? '',
-		home: event.home ?? '',
-		away: event.away ?? '',
-		longhornsRecord: event.longhornsRecord ?? null,
-		currentPeriod: event.currentPeriod ?? null,
-		homeTeamRank: event.homeTeamRank ?? 'unknown',
-		awayTeamRank: event.awayTeamRank ?? 'unknown',
-		homeTeamAbbrev: event.homeTeamAbbrev ?? 'unknown',
-		awayTeamAbbrev: event.awayTeamAbbrev ?? 'unknown',
-		homeTeamScore: event.homeTeamScore ?? null,
-		awayTeamScore: event.awayTeamScore ?? null,
-		score: event.score ?? '',
-		neutralSite: event.neutralSite ?? false,
-		location: event.location ?? 'unknown',
-		date: event.date ?? '',
-		timestamp: event.timestamp ?? 0,
-		status: event.status ?? 'STATUS_SCHEDULED',
-		result: event.result ?? 'upcoming',
-		isTexasHome: event.isTexasHome ?? false,
+		id: event.id,
+		home: event.home,
+		away: event.away,
+		longhornsRecord: event.longhornsRecord,
+		homeTeamRank: event.homeTeamRank,
+		awayTeamRank: event.awayTeamRank,
+		currentPeriod:
+			event.currentPeriod !== null ? Number(event.currentPeriod) : null,
+		homeTeamAbbrev: event.homeTeamAbbrev,
+		awayTeamAbbrev: event.awayTeamAbbrev,
+		homeTeamScore:
+			event.homeTeamScore !== null ? Number(event.homeTeamScore) : null,
+		awayTeamScore:
+			event.awayTeamScore !== null ? Number(event.awayTeamScore) : null,
+		location: event.location,
+		neutralSite: event.neutralSite,
+		date: event.date,
+		timestamp: event.timestamp,
+		score: event.score,
+		result: event.result,
+		status: event.status,
+		isTexasHome: event.isTexasHome,
 	};
-}
+};

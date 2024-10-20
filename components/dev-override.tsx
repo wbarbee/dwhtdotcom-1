@@ -1,70 +1,30 @@
-import gameModes from '@/constants/gameModes';
-import { Game } from '@/types';
-import {
-	Dropdown,
-	DropdownTrigger,
-	DropdownMenu,
-	DropdownItem,
-	Button,
-} from '@nextui-org/react';
+import React from 'react';
+import { Button } from '@nextui-org/react';
 
-const DevOverride = ({
-	overrideVisible,
-	overrideMode,
-	refetchGameData,
-	setOverrideMode,
-	setCurrentGameData,
-}: {
+interface DevOverrideProps {
 	overrideVisible: boolean;
-	overrideMode: keyof typeof gameModes | null;
-	refetchGameData: (mode?: string) => Promise<Game[]>;
-	setOverrideMode: (mode: keyof typeof gameModes | null) => void;
-	setCurrentGameData: (data: Game) => void;
+	refreshData: () => Promise<void>;
+}
+
+const DevOverride: React.FC<DevOverrideProps> = ({
+	overrideVisible,
+	refreshData,
 }) => {
-	const handleOverrideChange = async (key: string) => {
-		const newMode = key === 'auto' ? null : (key as keyof typeof gameModes);
-		setOverrideMode(newMode);
-		if (
-			process.env.NODE_ENV === 'development' &&
-			process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true'
-		) {
-			const newData = await refetchGameData(newMode as string | undefined);
-			if (newData && newData.length > 0) {
-				const relevantGame = newData.find(
-					(game) =>
-						game.status === 'STATUS_CURRENT' ||
-						game.status === 'STATUS_IN_PROGRESS' ||
-						(game.status === 'STATUS_FINAL' &&
-							new Date(game.date).getTime() >
-								Date.now() - 48 * 60 * 60 * 1000) ||
-						game.status === 'STATUS_SCHEDULED'
-				);
-				if (relevantGame) setCurrentGameData(relevantGame);
-			}
-		}
+	if (!overrideVisible) return null;
+
+	const handleRefresh = async () => {
+		await refreshData();
 	};
 
 	return (
-		overrideVisible && (
-			<div className='fixed bottom-3 left-3'>
-				<Dropdown>
-					<DropdownTrigger>
-						<Button
-							variant='bordered'
-							className='bg-[rgba(255,255,255,0.6)] dark:bg-[rgba(0,0,0,0.6)] border-none rounded-[3px]'>
-							{overrideMode || 'auto (no override)'}
-						</Button>
-					</DropdownTrigger>
-					<DropdownMenu
-						aria-label='Game mode selection'
-						onAction={(key) => handleOverrideChange(key.toString())}>
-						{Object.keys(gameModes).map((mode) => (
-							<DropdownItem key={mode}>{mode}</DropdownItem>
-						))}
-					</DropdownMenu>
-				</Dropdown>
+		<div className='fixed top-0 left-0 z-50 p-4 bg-gray-800 text-white'>
+			<h3 className='text-lg font-bold mb-2'>Dev Override</h3>
+			<div className='flex flex-wrap gap-2'>
+				<Button size='sm' onClick={handleRefresh}>
+					Refresh Data
+				</Button>
 			</div>
-		)
+		</div>
 	);
 };
 

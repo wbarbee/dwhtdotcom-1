@@ -1,127 +1,76 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Game } from '../types';
-import { fetchGameData, refetchGameData } from './fetchGameData';
-import { formatCurrentEventData } from '../utils/formatCurrentEventData';
+import { fetchGameData, fetchLiveGame } from './fetchGameData';
+
+const isGameInProgress = (status: string) => {
+	return ['STATUS_IN_PROGRESS', 'STATUS_HALFTIME', 'STATUS_CURRENT'].includes(
+		status
+	);
+};
 
 export function useCurrentGameData() {
 	const [currentGameData, setCurrentGameData] = useState<Game | null>(null);
 	const [allGames, setAllGames] = useState<Game[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const [overrideMode, setOverrideMode] = useState<string | null>(null);
 
-	const loadGameData = async (mode?: string) => {
+	const loadGameData = useCallback(async () => {
 		try {
 			setLoading(true);
-			console.log('Starting to load game data. Mode:', mode);
-
-			const data =
-				mode && mode !== 'auto'
-					? await refetchGameData(mode)
-					: await fetchGameData();
+			const data = await fetchGameData();
 			setAllGames(data);
 
-			console.log('Fetched games:', data);
+			const now = new Date();
 
-			let relevantGame: Game | undefined;
+			// First, look for a game in progress (including halftime)
+			let relevantGame = data.find((game) => isGameInProgress(game.status));
 
-			if (mode && mode !== 'auto' && data.length === 1) {
-				relevantGame = data[0];
-				console.log('Override mode, using single game:', relevantGame);
-			} else {
-				const now = new Date();
-				console.log('Current date:', now);
+			// If no game in progress, look for the next upcoming game
+			if (!relevantGame) {
+				relevantGame = data.find((game) => {
+					const gameDate = new Date(game.date);
+					return game.status === 'STATUS_SCHEDULED' && gameDate > now;
+				});
+			}
 
-				// Sort games by date, most recent first
-				const sortedGames = data.sort(
-					(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-				);
-				console.log(
-					'Sorted games:',
-					sortedGames.map((g) => ({
-						id: g.id,
-						date: g.date,
-						status: g.status,
-						result: g.result,
-					}))
-				);
+			// If no upcoming game, use the most recent completed game
+			if (!relevantGame && data.length > 0) {
+				relevantGame = data
+					.filter((game) => game.status === 'STATUS_FINAL')
+					.sort(
+						(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+					)[0];
+			}
 
-				// Find the current or in-progress game
-				relevantGame = sortedGames.find(
-					(game) =>
-						game.status === 'STATUS_CURRENT' ||
-						game.status === 'STATUS_IN_PROGRESS'
-				);
-				console.log('Current or in-progress game:', relevantGame);
-
-				if (!relevantGame) {
-					console.log(
-						'No current game found, looking for recently completed game'
-					);
-					// Find the most recently completed game (within the last 48 hours)
-					relevantGame = sortedGames.find((game) => {
-						const gameDate = new Date(game.date);
-						const hoursDiff =
-							(now.getTime() - gameDate.getTime()) / (1000 * 60 * 60);
-						return game.status === 'STATUS_FINAL' && hoursDiff <= 48;
-					});
-					console.log('Recently completed game:', relevantGame);
-				}
-
-				if (!relevantGame) {
-					console.log('No recent game found, looking for upcoming game');
-					// Find the next upcoming game
-					relevantGame = sortedGames.find((game) => {
-						const gameDate = new Date(game.date);
-						return game.status === 'STATUS_SCHEDULED' && gameDate > now;
-					});
-					console.log('Next upcoming game:', relevantGame);
-				}
-
-				if (!relevantGame) {
-					console.log('No upcoming game found, using most recent game in data');
-					// If none of the above, use the most recent game
-					relevantGame = sortedGames[0];
-					console.log('Fallback to most recent game:', relevantGame);
+			if (relevantGame && isGameInProgress(relevantGame.status)) {
+				const liveData = await fetchLiveGame(relevantGame.id, relevantGame);
+				if (liveData) {
+					relevantGame = liveData;
 				}
 			}
 
-			if (relevantGame) {
-				console.log('Setting current game data:', relevantGame);
-				const formattedGame = formatCurrentEventData(relevantGame);
-				console.log('Formatted game data being set:', formattedGame);
-				setCurrentGameData(formattedGame);
-			} else {
-				console.log('No relevant game found');
-				setCurrentGameData(null);
-			}
+			setCurrentGameData(relevantGame || null);
 		} catch (err) {
+			console.error('Failed to fetch game data:', err);
 			setError('Failed to fetch game data');
-			console.error('Error in loadGameData:', err);
 		} finally {
 			setLoading(false);
-			console.log('Finished loading game data');
 		}
-	};
-
-	useEffect(() => {
-		console.log('useEffect triggered, calling loadGameData');
-		loadGameData();
 	}, []);
 
-	const handleOverrideChange = async (mode: string | null) => {
-		console.log('handleOverrideChange called with mode:', mode);
-		setOverrideMode(mode);
-		await loadGameData(mode || undefined);
-	};
+	useEffect(() => {
+		loadGameData();
+	}, [loadGameData]);
+
+	const refreshData = useCallback(async () => {
+		await loadGameData();
+	}, [loadGameData]);
 
 	return {
 		currentGameData,
 		allGames,
 		loading,
 		error,
-		overrideMode,
-		setCurrentGameData,
-		handleOverrideChange,
+		refreshData,
 	};
 }
