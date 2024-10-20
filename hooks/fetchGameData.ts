@@ -10,7 +10,9 @@ const IS_DEV_MODE = process.env.NODE_ENV === 'development';
 const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
 
 const fetchLiveGameData = async (eventId: string): Promise<any> => {
-	const response = await fetch(`${API_LIVE_GAME}${eventId}`);
+	const response = await fetch(`${API_LIVE_GAME}${eventId}`, {
+		cache: 'no-store',
+	});
 	if (!response.ok) {
 		throw new Error('Failed to fetch live game data');
 	}
@@ -18,11 +20,9 @@ const fetchLiveGameData = async (eventId: string): Promise<any> => {
 };
 
 const fetchData = async (forceRefresh: boolean = false): Promise<Game[]> => {
-	const url = forceRefresh
-		? `${API_FULL_SCHEDULE}&_=${Date.now()}`
-		: API_FULL_SCHEDULE;
+	const url = `${API_FULL_SCHEDULE}&_=${Date.now()}`; // Always add a timestamp to prevent caching
 	const response = await fetch(url, {
-		cache: forceRefresh ? 'no-cache' : 'default',
+		cache: 'no-store', // Ensure we're always getting fresh data
 	});
 
 	if (!response.ok) {
@@ -95,7 +95,7 @@ const fetchData = async (forceRefresh: boolean = false): Promise<Game[]> => {
 				isTexasHome: isTexasHome,
 			};
 
-			// Fetch live data for current or in-progress games
+			// Always fetch live data for current or in-progress games
 			if (
 				gameStatus === 'STATUS_CURRENT' ||
 				gameStatus === 'STATUS_IN_PROGRESS'
@@ -147,7 +147,7 @@ export const fetchGameData = async (overrideMode?: string): Promise<Game[]> => {
 		// Implement mock data generation here if needed
 		return [];
 	}
-	return fetchData();
+	return fetchData(true); // Always force a refresh
 };
 
 export const refetchGameData = async (
