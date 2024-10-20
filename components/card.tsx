@@ -181,7 +181,7 @@ export default function ScoreCard({
 									className='flex flex-col mt-0 mb-0 gap-1'
 									variants={itemVariants}>
 									<p
-										className={`text-2xl before:md:text-3xl font-espn italic ${
+										className={`text-2xl md:text-3xl font-espn italic ${
 											currentMode === 'win'
 												? 'text-burntOrange dark:text-burntOrange'
 												: currentMode === 'loss'
