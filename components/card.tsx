@@ -256,7 +256,7 @@ export default function ScoreCard({
 					</motion.div>
 				</CardBody>
 				<div className='absolute bottom-2 right-2 flex gap-2'>
-					{showRefreshButton && (
+					{/* {showRefreshButton && (
 						<Button
 							isIconOnly
 							className='bg-transparent text-black dark:text-white rounded-full'
@@ -266,7 +266,7 @@ export default function ScoreCard({
 							isLoading={isRefreshing}>
 							{!isRefreshing && <RefreshCw size={16} />}
 						</Button>
-					)}
+					)} */}
 					<FullScoreModal result={currentGameData.result} />
 				</div>
 			</Card>

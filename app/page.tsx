@@ -1,4 +1,5 @@
 'use client';
+import { useEffect, useState } from 'react';
 import ScoreCard from '../components/card';
 import Loading from '../components/loading';
 import { useCurrentGameData } from '../hooks/useCurrentGameData';
@@ -6,12 +7,32 @@ import useGameData from '../hooks/useGameData';
 import { Button } from '@nextui-org/button';
 import { Link } from '@nextui-org/link';
 import { Tooltip } from '@nextui-org/tooltip';
+import { Game } from '../types';
 
 export default function Home() {
 	const { fullGameDataIsLoading } = useGameData();
-	const { currentGameData, setCurrentGameData, error } = useCurrentGameData();
+	const { currentGameData, setCurrentGameData, error, loading } =
+		useCurrentGameData();
+	const [localGameData, setLocalGameData] = useState<Game | null>(null);
 
-	if (fullGameDataIsLoading) return <Loading />;
+	useEffect(() => {
+		console.log('Home component rendered');
+		console.log('Current game data:', currentGameData);
+	});
+
+	useEffect(() => {
+		if (currentGameData) {
+			console.log('Updating local game data');
+			setLocalGameData(currentGameData);
+		}
+	}, [currentGameData]);
+
+	if (fullGameDataIsLoading || loading) {
+		console.log('Loading...');
+		return <Loading />;
+	}
+
+	console.log('Rendering ScoreCard with data:', localGameData);
 
 	return (
 		<div className='relative w-full h-full'>
@@ -20,7 +41,7 @@ export default function Home() {
 			</div>
 			<div className='flex items-center justify-center w-full h-full'>
 				<ScoreCard
-					currentGameData={currentGameData}
+					currentGameData={localGameData}
 					setCurrentGameData={setCurrentGameData}
 					error={error}
 				/>

@@ -47,6 +47,15 @@ export function useCurrentGameData() {
 				console.log('Current or in-progress game:', relevantGame);
 
 				if (!relevantGame) {
+					// Find the next upcoming game
+					relevantGame = sortedGames.find((game) => {
+						const gameDate = new Date(game.date);
+						return game.status === 'STATUS_SCHEDULED' && gameDate > now;
+					});
+					console.log('Next upcoming game:', relevantGame);
+				}
+
+				if (!relevantGame) {
 					// Find the most recently completed game (within the last 48 hours)
 					relevantGame = sortedGames.find((game) => {
 						const gameDate = new Date(game.date);
@@ -55,15 +64,6 @@ export function useCurrentGameData() {
 						return game.status === 'STATUS_FINAL' && hoursDiff <= 48;
 					});
 					console.log('Recently completed game:', relevantGame);
-				}
-
-				if (!relevantGame) {
-					// Find the next upcoming game
-					relevantGame = sortedGames.find((game) => {
-						const gameDate = new Date(game.date);
-						return game.status === 'STATUS_SCHEDULED' && gameDate > now;
-					});
-					console.log('Next upcoming game:', relevantGame);
 				}
 
 				if (!relevantGame) {
@@ -78,6 +78,7 @@ export function useCurrentGameData() {
 				setCurrentGameData(formatCurrentEventData(relevantGame));
 			} else {
 				console.log('No relevant game found');
+				setCurrentGameData(null);
 			}
 		} catch (err) {
 			setError('Failed to fetch game data');
