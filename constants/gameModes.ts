@@ -21,7 +21,7 @@ const gameModes = {
 		backgroundImage: '/images/dkr-day.webp',
 		backgroundImageNight: '/images/dkr-night.webp',
 		title: '',
-		hookEmClasses: 'text-7xl animate-pulse-opacity',
+		hookEmClasses: 'text-7xl animate-spin',
 	},
 	auto: {
 		backgroundImage: '',
