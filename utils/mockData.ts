@@ -1,5 +1,9 @@
 import { Game } from '../types';
 
+const getCurrentTimestamp = () => new Date().getTime();
+const get48HoursAgoTimestamp = () =>
+	getCurrentTimestamp() - 48 * 60 * 60 * 1000;
+
 const baseMockGame: Game = {
 	id: '401525547',
 	home: 'Texas Longhorns',
@@ -7,16 +11,16 @@ const baseMockGame: Game = {
 	longhornsRecord: '5-1',
 	homeTeamRank: 3,
 	awayTeamRank: 12,
-	currentPeriod: 2,
+	currentPeriod: null,
 	homeTeamAbbrev: 'TEX',
 	awayTeamAbbrev: 'OKLA',
-	homeTeamScore: 21,
-	awayTeamScore: 14,
+	homeTeamScore: null,
+	awayTeamScore: null,
 	location: 'Cotton Bowl',
 	neutralSite: true,
 	date: '2023-10-07',
-	timestamp: 1696694400000,
-	score: '14 - 21',
+	timestamp: getCurrentTimestamp(),
+	score: '',
 	result: 'upcoming',
 	status: 'STATUS_SCHEDULED',
 	isTexasHome: true,
@@ -25,43 +29,96 @@ const baseMockGame: Game = {
 export const mockGames: Record<string, Game> = {
 	scheduled: {
 		...baseMockGame,
-		status: 'STATUS_SCHEDULED',
-		result: 'upcoming',
-		homeTeamScore: null,
-		awayTeamScore: null,
-		score: '',
-		currentPeriod: null,
+		timestamp: getCurrentTimestamp() + 24 * 60 * 60 * 1000, // 24 hours in the future
 	},
-	inProgress: {
+	preGame: {
+		...baseMockGame,
+		status: 'STATUS_PRE_GAME',
+		timestamp: getCurrentTimestamp() + 30 * 60 * 1000, // 30 minutes in the future
+	},
+	firstQuarter: {
 		...baseMockGame,
 		status: 'STATUS_IN_PROGRESS',
-		result: 'upcoming',
+		currentPeriod: 1,
+		homeTeamScore: 7,
+		awayTeamScore: 0,
+		score: '0 - 7',
+		timestamp: getCurrentTimestamp(),
+	},
+	secondQuarter: {
+		...baseMockGame,
+		status: 'STATUS_IN_PROGRESS',
+		currentPeriod: 2,
+		homeTeamScore: 14,
+		awayTeamScore: 7,
+		score: '7 - 14',
+		timestamp: getCurrentTimestamp(),
 	},
 	halftime: {
 		...baseMockGame,
 		status: 'STATUS_HALFTIME',
-		result: 'upcoming',
+		currentPeriod: 2,
+		homeTeamScore: 21,
+		awayTeamScore: 14,
+		score: '14 - 21',
+		timestamp: getCurrentTimestamp(),
 	},
-	endOfQuarter: {
+	thirdQuarter: {
 		...baseMockGame,
-		status: 'STATUS_END_PERIOD',
-		result: 'upcoming',
-	},
-	win: {
-		...baseMockGame,
-		status: 'STATUS_FINAL',
-		result: 'win',
+		status: 'STATUS_IN_PROGRESS',
+		currentPeriod: 3,
 		homeTeamScore: 28,
 		awayTeamScore: 21,
 		score: '21 - 28',
+		timestamp: getCurrentTimestamp(),
 	},
-	loss: {
+	fourthQuarter: {
+		...baseMockGame,
+		status: 'STATUS_IN_PROGRESS',
+		currentPeriod: 4,
+		homeTeamScore: 35,
+		awayTeamScore: 28,
+		score: '28 - 35',
+		timestamp: getCurrentTimestamp(),
+	},
+	overtime: {
+		...baseMockGame,
+		status: 'STATUS_OVERTIME',
+		currentPeriod: 5,
+		homeTeamScore: 42,
+		awayTeamScore: 42,
+		score: '42 - 42',
+		timestamp: getCurrentTimestamp(),
+	},
+	finalWin: {
+		...baseMockGame,
+		status: 'STATUS_FINAL',
+		result: 'win',
+		currentPeriod: 4,
+		homeTeamScore: 42,
+		awayTeamScore: 35,
+		score: '35 - 42',
+		timestamp: get48HoursAgoTimestamp() + 30 * 60 * 1000, // 47.5 hours ago
+	},
+	finalLoss: {
 		...baseMockGame,
 		status: 'STATUS_FINAL',
 		result: 'loss',
-		homeTeamScore: 21,
-		awayTeamScore: 28,
-		score: '28 - 21',
+		currentPeriod: 4,
+		homeTeamScore: 35,
+		awayTeamScore: 42,
+		score: '42 - 35',
+		timestamp: get48HoursAgoTimestamp() + 30 * 60 * 1000, // 47.5 hours ago
+	},
+	oldGame: {
+		...baseMockGame,
+		status: 'STATUS_FINAL',
+		result: 'win',
+		currentPeriod: 4,
+		homeTeamScore: 49,
+		awayTeamScore: 0,
+		score: '0 - 49',
+		timestamp: get48HoursAgoTimestamp() - 24 * 60 * 60 * 1000, // 72 hours ago
 	},
 };
 

@@ -1,4 +1,5 @@
 import { Game } from '../types';
+import { mockGames, getGameByMode } from '../utils/mockData';
 
 const API_FULL_SCHEDULE =
 	'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/texas/schedule?startDate=2024-08-01&endDate=2025-03-31';
@@ -150,10 +151,11 @@ export const fetchGameData = async (
 ): Promise<Game[]> => {
 	if (setIsRefreshing) setIsRefreshing(true);
 	try {
-		if (IS_DEV_MODE && USE_MOCK_DATA && overrideMode) {
+		if (IS_DEV_MODE && USE_MOCK_DATA && overrideMode !== undefined) {
 			console.warn('Using mock data in dev mode with override:', overrideMode);
-			// Implement mock data generation here if needed
-			return [];
+			const mockGame = getGameByMode(overrideMode || 'scheduled');
+			await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate network delay
+			return [mockGame];
 		}
 		const data = await fetchData();
 		// Add a minimum delay of 1 second to ensure the spinner is visible
@@ -168,29 +170,18 @@ export const refetchGameData = async (
 	overrideMode?: string,
 	setIsRefreshing?: (isRefreshing: boolean) => void
 ): Promise<Game[]> => {
-	if (setIsRefreshing) setIsRefreshing(true);
-	try {
-		if (IS_DEV_MODE && USE_MOCK_DATA && overrideMode) {
-			console.warn(
-				'Refetching mock data in dev mode with override:',
-				overrideMode
-			);
-			// Implement mock data generation here if needed
-			return [];
-		}
-		const data = await fetchData();
-		// Add a minimum delay of 1 second to ensure the spinner is visible
-		await new Promise((resolve) => setTimeout(resolve, 1000));
-		return data;
-	} finally {
-		if (setIsRefreshing) setIsRefreshing(false);
-	}
+	return fetchGameData(overrideMode, setIsRefreshing);
 };
 
 export const fetchLiveGame = async (
 	eventId: string,
 	originalGame: Game
 ): Promise<Game | null> => {
+	if (IS_DEV_MODE && USE_MOCK_DATA) {
+		console.warn('Using mock data for live game in dev mode');
+		return getGameByMode('inProgress');
+	}
+
 	try {
 		const liveData = await fetchLiveGameData(eventId);
 

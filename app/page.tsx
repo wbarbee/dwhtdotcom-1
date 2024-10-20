@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import ScoreCard from '../components/card';
-import Loading from '../components/loading';
 import DevOverride from '../components/dev-override';
 import { useCurrentGameData } from '../hooks/useCurrentGameData';
 import { Button } from '@nextui-org/button';
@@ -10,59 +9,57 @@ import { Tooltip } from '@nextui-org/tooltip';
 import { Game } from '../types';
 
 export default function Home() {
-	const {
-		currentGameData,
-		loading,
-		error,
-		refreshData: originalRefreshData,
-	} = useCurrentGameData();
+	const { currentGameData, loading, error, refreshData, overrideMode } =
+		useCurrentGameData();
 	const [overrideVisible, setOverrideVisible] = useState(false);
-	const [mockGameData, setMockGameData] = useState<Game | null>(null);
 
 	useEffect(() => {
-		const handleKeyPress = (event: KeyboardEvent) => {
-			if (event.key === '`') {
-				setOverrideVisible((prev) => !prev);
-			}
-		};
-
-		window.addEventListener('keydown', handleKeyPress);
-		return () => {
-			window.removeEventListener('keydown', handleKeyPress);
-		};
-	}, []);
-
-	const refreshData = async (mockData?: Game) => {
-		if (mockData) {
-			setMockGameData(mockData);
+		if (process.env.NODE_ENV === 'development') {
+			setOverrideVisible(true);
 		} else {
-			setMockGameData(null);
-			await originalRefreshData();
+			setOverrideVisible(false);
+		}
+
+		// Log debug information
+		console.log('IS_DEV_MODE:', process.env.NODE_ENV === 'development');
+		console.log(
+			'USE_MOCK_DATA:',
+			process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true'
+		);
+		console.log('Current overrideMode:', overrideMode);
+	}, [overrideMode]);
+
+	const handleRefreshData = async (
+		newOverrideMode?: string,
+		setIsRefreshing?: (isRefreshing: boolean) => void
+	) => {
+		if (setIsRefreshing) setIsRefreshing(true);
+		try {
+			await refreshData(newOverrideMode);
+			// Log the new override mode
+			console.log('New overrideMode:', newOverrideMode);
+		} finally {
+			if (setIsRefreshing) setIsRefreshing(false);
 		}
 	};
-
-	if (loading) return <Loading />;
-
-	const displayedGameData = mockGameData || currentGameData;
 
 	return (
 		<div className='relative w-full h-full'>
 			<DevOverride
 				overrideVisible={overrideVisible}
-				refreshData={refreshData}
+				currentOverrideMode={overrideMode}
+				refreshData={handleRefreshData}
 			/>
 			<div className='absolute top-4 right-4'>
 				{/* Add any top-right corner elements here */}
 			</div>
 			<div className='flex items-center justify-center w-full h-full'>
 				<ScoreCard
-					currentGameData={displayedGameData}
-					refreshData={refreshData}
+					currentGameData={currentGameData}
+					refreshData={() => handleRefreshData(overrideMode)}
 					error={error}
+					loading={loading}
 				/>
-			</div>
-			<div className='absolute bottom-4 left-4'>
-				{/* Add any bottom-left corner elements here */}
 			</div>
 			<div className='absolute bottom-4 right-4'>
 				<Tooltip

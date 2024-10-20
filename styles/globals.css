@@ -5,64 +5,65 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply min-h-screen bg-gradient-to-br from-burntOrange/70 via-gray-600 to-burntOrange/80 dark:from-burntOrange/30 dark:via-gray-800 dark:to-burntOrange/40;
-  }
+	body {
+		@apply min-h-screen bg-gradient-to-br from-burntOrange/70 via-gray-600 to-burntOrange/80 dark:from-burntOrange/30 dark:via-gray-800 dark:to-burntOrange/40;
+	}
 }
 
 @layer utilities {
-  .animate-pulse-opacity {
-    animation: pulse-opacity 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
+	.animate-pulse-opacity {
+		animation: pulse-opacity 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+	}
 }
 
 @keyframes pulse-opacity {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: .5;
-  }
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
 }
 
 @font-face {
-    font-family: 'Graduate';
-    src: url('/fonts/Graduate-Regular.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
+	font-family: 'Graduate';
+	src: url('/fonts/Graduate-Regular.ttf') format('truetype');
+	font-weight: normal;
+	font-style: normal;
+	font-display: swap;
 }
 
 @font-face {
-    font-family: 'ESPN';
-    src: url('/fonts/esp_bdit.ttf') format('truetype');
-    font-weight: bold;
-    font-style: itlic;
-    font-display: swap;
+	font-family: 'ESPN';
+	src: url('/fonts/esp_bdit.ttf') format('truetype');
+	font-weight: bold;
+	font-style: itlic;
+	font-display: swap;
 }
 
 @font-face {
-    font-family: 'ESPN';
-    src: url('/fonts/esp_bold.ttf') format('truetype');
-    font-weight: bold;
-    font-style: normal;
-    font-display: swap;
+	font-family: 'ESPN';
+	src: url('/fonts/esp_bold.ttf') format('truetype');
+	font-weight: bold;
+	font-style: normal;
+	font-display: swap;
 }
 
 @font-face {
-    font-family: 'ESPN';
-    src: url('/fonts/esp_ital.ttf') format('truetype');
-    font-weight: 500;
-    font-style: italic;
-    font-display: swap;
+	font-family: 'ESPN';
+	src: url('/fonts/esp_ital.ttf') format('truetype');
+	font-weight: 500;
+	font-style: italic;
+	font-display: swap;
 }
 
 @font-face {
-    font-family: 'ESPN';
-    src: url('/fonts/esp.ttf') format('truetype');
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
+	font-family: 'ESPN';
+	src: url('/fonts/esp.ttf') format('truetype');
+	font-weight: 500;
+	font-style: normal;
+	font-display: swap;
 }
 
 .loader {
@@ -74,9 +75,15 @@
 }
 
 .bg-content1 {
-    box-shadow: none;
+	box-shadow: none;
 }
 
 .rotate-180 {
-  transform: rotate(180deg);
+	transform: rotate(180deg);
+}
+
+.dropdown-menu-override {
+	bottom: 100% !important;
+	top: auto !important;
+	margin-bottom: 5px;
 }

@@ -24,73 +24,89 @@ const isWithin48Hours = (gameDate: string) => {
 	return hoursDiff <= 48;
 };
 
-export function useCurrentGameData() {
+export function useCurrentGameData(initialOverrideMode?: string) {
 	const [currentGameData, setCurrentGameData] = useState<Game | null>(null);
 	const [allGames, setAllGames] = useState<Game[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [overrideMode, setOverrideMode] = useState<string | undefined>(
+		initialOverrideMode
+	);
 
 	const loadGameData = useCallback(async () => {
 		try {
 			setLoading(true);
-			const data = await fetchGameData();
+			setCurrentGameData(null); // Clear current data to prevent flashing
+			const data = await fetchGameData(overrideMode);
 			setAllGames(data);
 
-			const now = new Date();
+			if (overrideMode) {
+				setCurrentGameData(data[0] || null);
+			} else {
+				const now = new Date();
 
-			// First, look for a game in progress
-			let relevantGame = data.find((game) => isGameInProgress(game.status));
+				// First, look for a game in progress
+				let relevantGame = data.find((game) => isGameInProgress(game.status));
 
-			// If no game in progress, look for a recently completed game within 48 hours
-			if (!relevantGame) {
-				relevantGame = data.find(
-					(game) =>
-						game.status === 'STATUS_FINAL' &&
-						isWithin48Hours(game.date) &&
-						['win', 'loss'].includes(game.result)
-				);
-			}
-
-			// If no recent completed game, look for the next upcoming game
-			if (!relevantGame) {
-				relevantGame = data.find((game) => {
-					const gameDate = new Date(game.date);
-					return game.status === 'STATUS_SCHEDULED' && gameDate > now;
-				});
-			}
-
-			// If no upcoming game, use the most recent completed game
-			if (!relevantGame && data.length > 0) {
-				relevantGame = data
-					.filter((game) => game.status === 'STATUS_FINAL')
-					.sort(
-						(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-					)[0];
-			}
-
-			if (relevantGame && isGameInProgress(relevantGame.status)) {
-				const liveData = await fetchLiveGame(relevantGame.id, relevantGame);
-				if (liveData) {
-					relevantGame = liveData;
+				// If no game in progress, look for a recently completed game within 48 hours
+				if (!relevantGame) {
+					relevantGame = data.find(
+						(game) =>
+							game.status === 'STATUS_FINAL' &&
+							isWithin48Hours(game.date) &&
+							['win', 'loss'].includes(game.result)
+					);
 				}
-			}
 
-			setCurrentGameData(relevantGame || null);
+				// If no recent completed game, look for the next upcoming game
+				if (!relevantGame) {
+					relevantGame = data.find((game) => {
+						const gameDate = new Date(game.date);
+						return game.status === 'STATUS_SCHEDULED' && gameDate > now;
+					});
+				}
+
+				// If no upcoming game, use the most recent completed game
+				if (!relevantGame && data.length > 0) {
+					relevantGame = data
+						.filter((game) => game.status === 'STATUS_FINAL')
+						.sort(
+							(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+						)[0];
+				}
+
+				if (
+					relevantGame &&
+					isGameInProgress(relevantGame.status) &&
+					!overrideMode
+				) {
+					const liveData = await fetchLiveGame(relevantGame.id, relevantGame);
+					if (liveData) {
+						relevantGame = liveData;
+					}
+				}
+
+				setCurrentGameData(relevantGame || null);
+			}
 		} catch (err) {
 			console.error('Failed to fetch game data:', err);
 			setError('Failed to fetch game data');
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	}, [overrideMode]);
 
 	useEffect(() => {
 		loadGameData();
 	}, [loadGameData]);
 
-	const refreshData = useCallback(async () => {
-		await loadGameData();
-	}, [loadGameData]);
+	const refreshData = useCallback(
+		async (newOverrideMode?: string) => {
+			setOverrideMode(newOverrideMode);
+			await loadGameData();
+		},
+		[loadGameData]
+	);
 
 	return {
 		currentGameData,
@@ -98,5 +114,6 @@ export function useCurrentGameData() {
 		loading,
 		error,
 		refreshData,
+		overrideMode,
 	};
 }

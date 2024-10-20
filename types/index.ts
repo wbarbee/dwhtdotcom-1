@@ -18,12 +18,14 @@ export type Game = {
 	result: 'win' | 'loss' | 'upcoming';
 	status:
 		| 'STATUS_SCHEDULED'
+		| 'STATUS_PRE_GAME'
 		| 'STATUS_IN_PROGRESS'
 		| 'STATUS_FINAL'
 		| 'STATUS_HALFTIME'
 		| 'STATUS_CURRENT'
 		| 'STATUS_END_PERIOD'
-		| 'STATUS_PRE_END_PERIOD';
+		| 'STATUS_PRE_END_PERIOD'
+		| 'STATUS_OVERTIME';
 	isTexasHome: boolean;
 };
 

@@ -7,14 +7,16 @@ import FullScoreModal from './modal';
 import { detectAppendedSuffix } from '../utils/stringUtils';
 import { useIsDarkMode } from '../hooks/useIsDarkMode';
 import { motion, AnimatePresence } from 'framer-motion';
+import gameModes from '../constants/gameModes';
+import Loading from './loading';
 
 import { Game } from '../types';
-import gameModes from '../constants/gameModes';
 
 interface ScoreCardProps {
 	currentGameData: Game | null;
 	refreshData: () => Promise<void>;
 	error: string | null;
+	loading: boolean;
 }
 
 const contentVariants = {
@@ -53,6 +55,7 @@ export default function ScoreCard({
 	currentGameData,
 	refreshData,
 	error,
+	loading,
 }: ScoreCardProps) {
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const { isMobile } = useViewport();
@@ -87,12 +90,16 @@ export default function ScoreCard({
 		const { status, result } = currentGameData;
 		if (isGameInProgress(status)) return 'current';
 		if (result === 'win' || result === 'loss') return result;
-		return 'upcoming';
-	}, [currentGameData]);
+		return isGameday ? 'pregame' : 'upcoming';
+	}, [currentGameData, isGameday]);
 
-	const modeData = gameModes[currentMode];
+	const modeData =
+		gameModes[currentMode === 'pregame' ? 'upcoming' : currentMode];
 
-	const getDynamicTitle = (mode: keyof typeof gameModes) => {
+	const getDynamicTitle = (mode: keyof typeof gameModes | 'pregame') => {
+		if (mode === 'pregame') {
+			return 'GAMEDAY';
+		}
 		if (mode === 'upcoming' && isGameday) {
 			return 'GAMEDAY';
 		}
@@ -107,7 +114,9 @@ export default function ScoreCard({
 		);
 	}
 
-	if (!currentGameData) return null;
+	if (loading || !currentGameData) {
+		return <Loading />;
+	}
 
 	const {
 		status,
@@ -148,9 +157,7 @@ export default function ScoreCard({
 						variants={contentVariants}
 						initial='hidden'
 						animate='visible'>
-						<motion.div
-							className='relative col-span-6 md:col-span-4 flex items-center justify-center'
-							variants={itemVariants}>
+						<div className='relative col-span-6 md:col-span-4 flex items-center justify-center'>
 							<div
 								className='w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center'
 								style={{
@@ -165,11 +172,11 @@ export default function ScoreCard({
 									</span>
 								)}
 							</div>
-						</motion.div>
+						</div>
 						<motion.div
 							className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-4 md:py-2'
 							variants={itemVariants}>
-							{modeData.title && (
+							{(modeData.title || currentMode === 'pregame') && (
 								<motion.div
 									className='flex flex-col mt-0 mb-0 gap-1'
 									variants={itemVariants}>
@@ -209,15 +216,17 @@ export default function ScoreCard({
 								<motion.h2
 									className='mt-[0.25rem] mb-[0.5rem] font-oxanium font-light text-gray-700 dark:text-gray-400'
 									variants={itemVariants}>
-									{status === 'STATUS_HALFTIME'
-										? 'Halftime'
-										: status === 'STATUS_END_PERIOD'
-											? 'End of Quarter'
-											: status === 'STATUS_PRE_END_PERIOD'
-												? 'Quarter Break'
-												: currentPeriod !== null
-													? `${detectAppendedSuffix(currentPeriod)} quarter`
-													: 'In Progress'}
+									{currentPeriod !== null && currentPeriod > 4
+										? 'OVERTIME'
+										: status === 'STATUS_HALFTIME'
+											? 'Halftime'
+											: status === 'STATUS_END_PERIOD'
+												? 'End of Quarter'
+												: status === 'STATUS_PRE_END_PERIOD'
+													? 'Quarter Break'
+													: currentPeriod !== null
+														? `${detectAppendedSuffix(currentPeriod)} quarter`
+														: 'In Progress'}
 								</motion.h2>
 							)}
 							<motion.div
