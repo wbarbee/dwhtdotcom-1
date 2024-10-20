@@ -16,29 +16,18 @@ export default function Home() {
 	const [localGameData, setLocalGameData] = useState<Game | null>(null);
 
 	useEffect(() => {
-		console.log('Home component rendered');
-		console.log('Current game data:', currentGameData);
-	});
-
-	useEffect(() => {
 		if (currentGameData) {
-			console.log('Updating local game data');
 			setLocalGameData(currentGameData);
 		}
 	}, [currentGameData]);
 
 	if (fullGameDataIsLoading || loading) {
-		console.log('Loading...');
 		return <Loading />;
 	}
 
-	console.log('Rendering ScoreCard with data:', localGameData);
-
 	return (
 		<div className='relative w-full h-full'>
-			<div className='absolute top-4 right-4'>
-				{/* Add any top-right corner elements here */}
-			</div>
+			<div className='absolute top-4 right-4'></div>
 			<div className='flex items-center justify-center w-full h-full'>
 				<ScoreCard
 					currentGameData={localGameData}
@@ -46,9 +35,7 @@ export default function Home() {
 					error={error}
 				/>
 			</div>
-			<div className='absolute bottom-4 left-4'>
-				{/* Add any bottom-left corner elements here */}
-			</div>
+			<div className='absolute bottom-4 left-4'></div>
 			<div className='absolute bottom-4 right-4'>
 				<Tooltip
 					content={

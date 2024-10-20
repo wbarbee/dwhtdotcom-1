@@ -67,12 +67,24 @@ export default function ScoreCard({
 		try {
 			const newGameData = await refetchGameData(overrideMode || undefined);
 			if (newGameData && newGameData.length > 0) {
-				setCurrentGameData(newGameData[0]);
+				const currentGame = newGameData.find(
+					(game) =>
+						game.status === 'STATUS_CURRENT' ||
+						game.status === 'STATUS_IN_PROGRESS'
+				);
+				if (currentGame) {
+					setCurrentGameData(currentGame);
+				} else {
+					// If no current game, fall back to the first game in the array
+					setCurrentGameData(newGameData[0]);
+				}
 			}
 		} catch (error) {
 			console.error('Failed to refresh game data:', error);
 		} finally {
-			setIsRefreshing(false);
+			setTimeout(() => {
+				setIsRefreshing(false);
+			}, 1000);
 		}
 	}, [overrideMode, setCurrentGameData]);
 
@@ -126,6 +138,7 @@ export default function ScoreCard({
 		(isGameInProgress || status === 'STATUS_FINAL') && !isRefreshing;
 	const showPeriod = isGameInProgress && currentPeriod && !isRefreshing;
 	const showRefreshButton = isGameInProgress;
+	console.log('showRefreshButton', showRefreshButton, status);
 
 	const backgroundImageUrl = isDarkMode
 		? modeData.backgroundImageNight
@@ -256,7 +269,7 @@ export default function ScoreCard({
 					</motion.div>
 				</CardBody>
 				<div className='absolute bottom-2 right-2 flex gap-2'>
-					{/* {showRefreshButton && (
+					{showRefreshButton && (
 						<Button
 							isIconOnly
 							className='bg-transparent text-black dark:text-white rounded-full'
@@ -266,7 +279,7 @@ export default function ScoreCard({
 							isLoading={isRefreshing}>
 							{!isRefreshing && <RefreshCw size={16} />}
 						</Button>
-					)} */}
+					)}
 					<FullScoreModal result={currentGameData.result} />
 				</div>
 			</Card>
