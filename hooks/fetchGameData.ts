@@ -19,7 +19,7 @@ const fetchLiveGameData = async (eventId: string): Promise<any> => {
 	return response.json();
 };
 
-const fetchData = async (forceRefresh: boolean = false): Promise<Game[]> => {
+const fetchData = async (): Promise<Game[]> => {
 	const url = `${API_FULL_SCHEDULE}&_=${Date.now()}`; // Always add a timestamp to prevent caching
 	const response = await fetch(url, {
 		cache: 'no-store', // Ensure we're always getting fresh data
@@ -144,27 +144,47 @@ const fetchData = async (forceRefresh: boolean = false): Promise<Game[]> => {
 	return processedGames;
 };
 
-export const fetchGameData = async (overrideMode?: string): Promise<Game[]> => {
-	if (IS_DEV_MODE && USE_MOCK_DATA && overrideMode) {
-		console.warn('Using mock data in dev mode with override:', overrideMode);
-		// Implement mock data generation here if needed
-		return [];
+export const fetchGameData = async (
+	overrideMode?: string,
+	setIsRefreshing?: (isRefreshing: boolean) => void
+): Promise<Game[]> => {
+	if (setIsRefreshing) setIsRefreshing(true);
+	try {
+		if (IS_DEV_MODE && USE_MOCK_DATA && overrideMode) {
+			console.warn('Using mock data in dev mode with override:', overrideMode);
+			// Implement mock data generation here if needed
+			return [];
+		}
+		const data = await fetchData();
+		// Add a minimum delay of 1 second to ensure the spinner is visible
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+		return data;
+	} finally {
+		if (setIsRefreshing) setIsRefreshing(false);
 	}
-	return fetchData(true); // Always force a refresh
 };
 
 export const refetchGameData = async (
-	overrideMode?: string
+	overrideMode?: string,
+	setIsRefreshing?: (isRefreshing: boolean) => void
 ): Promise<Game[]> => {
-	if (IS_DEV_MODE && USE_MOCK_DATA && overrideMode) {
-		console.warn(
-			'Refetching mock data in dev mode with override:',
-			overrideMode
-		);
-		// Implement mock data generation here if needed
-		return [];
+	if (setIsRefreshing) setIsRefreshing(true);
+	try {
+		if (IS_DEV_MODE && USE_MOCK_DATA && overrideMode) {
+			console.warn(
+				'Refetching mock data in dev mode with override:',
+				overrideMode
+			);
+			// Implement mock data generation here if needed
+			return [];
+		}
+		const data = await fetchData();
+		// Add a minimum delay of 1 second to ensure the spinner is visible
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+		return data;
+	} finally {
+		if (setIsRefreshing) setIsRefreshing(false);
 	}
-	return fetchData(true); // Force a refresh
 };
 
 export const fetchLiveGame = async (

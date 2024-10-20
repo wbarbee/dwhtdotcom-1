@@ -58,8 +58,6 @@ export default function ScoreCard({
 		);
 	}, [currentGameData]);
 
-	const isDevMode = process.env.NODE_ENV === 'development';
-
 	const handleRefresh = useCallback(async () => {
 		setIsRefreshing(true);
 		try {
@@ -67,7 +65,9 @@ export default function ScoreCard({
 		} catch (error) {
 			console.error('Failed to refresh game data:', error);
 		} finally {
-			setIsRefreshing(false);
+			setTimeout(() => {
+				setIsRefreshing(false);
+			}, 1000);
 		}
 	}, [refreshData]);
 

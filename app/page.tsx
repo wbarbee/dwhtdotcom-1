@@ -10,10 +10,6 @@ import { Tooltip } from '@nextui-org/tooltip';
 export default function Home() {
 	const { currentGameData, loading, error, refreshData } = useCurrentGameData();
 
-	useEffect(() => {
-		console.log('Current game data in Home component:', currentGameData);
-	}, [currentGameData]);
-
 	if (loading) return <Loading />;
 
 	return (

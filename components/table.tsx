@@ -27,8 +27,6 @@ export default function StatsTable() {
 	const [isMobile, setIsMobile] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 
-	console.log('Games:', games);
-
 	useEffect(() => {
 		const checkIfMobile = () => {
 			setIsMobile(window.innerWidth <= 640);
