@@ -66,6 +66,7 @@ export default function ScoreCard({
 		setIsRefreshing(true);
 		try {
 			const newGameData = await refetchGameData(overrideMode || undefined);
+			console.log('newGameData', newGameData);
 			if (newGameData && newGameData.length > 0) {
 				const currentGame = newGameData.find(
 					(game) =>
@@ -133,12 +134,11 @@ export default function ScoreCard({
 	} = currentGameData;
 
 	const isGameInProgress =
-		status === 'STATUS_CURRENT' || status === 'STATUS_IN_PROGRESS';
+		status !== 'STATUS_FINAL' && status !== 'STATUS_SCHEDULED';
 	const showScore =
 		(isGameInProgress || status === 'STATUS_FINAL') && !isRefreshing;
 	const showPeriod = isGameInProgress && currentPeriod && !isRefreshing;
 	const showRefreshButton = isGameInProgress;
-	console.log('showRefreshButton', showRefreshButton, status);
 
 	const backgroundImageUrl = isDarkMode
 		? modeData.backgroundImageNight

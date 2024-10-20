@@ -25,6 +25,8 @@ export interface Game {
 		| 'STATUS_SCHEDULED'
 		| 'STATUS_CURRENT'
 		| 'STATUS_IN_PROGRESS'
+		| 'STATUS_END_PERIOD'
+		| 'STATUS_PRE_END_PERIOD'
 		| 'STATUS_FINAL';
 	result: 'win' | 'loss' | 'upcoming';
 	isTexasHome: boolean;

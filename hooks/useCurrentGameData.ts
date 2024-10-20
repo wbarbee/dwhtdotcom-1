@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Game } from '../types';
-import { fetchGameData, refetchGameData } from './fetchGameData';
+import { fetchGameData, refetchGameData, fetchLiveGame } from './fetchGameData';
 import { formatCurrentEventData } from '../utils/formatCurrentEventData';
 
 export function useCurrentGameData() {
@@ -13,22 +13,32 @@ export function useCurrentGameData() {
 	const loadGameData = async (mode?: string) => {
 		try {
 			setLoading(true);
+			console.log('Starting to load game data. Mode:', mode);
+
 			const data =
 				mode && mode !== 'auto'
 					? await refetchGameData(mode)
 					: await fetchGameData();
 			setAllGames(data);
 
+			console.log('Fetched games:', data);
+
 			let relevantGame: Game | undefined;
 
 			if (mode && mode !== 'auto' && data.length === 1) {
 				relevantGame = data[0];
+				console.log('Override mode, using single game:', relevantGame);
 			} else {
 				const now = new Date();
+				console.log('Current date:', now);
 
 				// Sort games by date, most recent first
 				const sortedGames = data.sort(
 					(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+				);
+				console.log(
+					'Sorted games:',
+					sortedGames.map((g) => ({ id: g.id, date: g.date, status: g.status }))
 				);
 
 				// Find the current or in-progress game
@@ -37,16 +47,40 @@ export function useCurrentGameData() {
 						game.status === 'STATUS_CURRENT' ||
 						game.status === 'STATUS_IN_PROGRESS'
 				);
+				console.log('Current or in-progress game:', relevantGame);
+
+				if (relevantGame) {
+					console.log(
+						'Attempting to fetch live data for game:',
+						relevantGame.id
+					);
+					// Fetch live data for the current game
+					const liveGameData = await fetchLiveGame(
+						relevantGame.id,
+						relevantGame
+					);
+					if (liveGameData) {
+						relevantGame = liveGameData;
+						console.log('Updated with live game data:', relevantGame);
+					} else {
+						console.log('Failed to fetch live game data');
+					}
+				}
 
 				if (!relevantGame) {
+					console.log('No current game found, looking for upcoming game');
 					// Find the next upcoming game
 					relevantGame = sortedGames.find((game) => {
 						const gameDate = new Date(game.date);
 						return game.status === 'STATUS_SCHEDULED' && gameDate > now;
 					});
+					console.log('Next upcoming game:', relevantGame);
 				}
 
 				if (!relevantGame) {
+					console.log(
+						'No upcoming game found, looking for recently completed game'
+					);
 					// Find the most recently completed game (within the last 48 hours)
 					relevantGame = sortedGames.find((game) => {
 						const gameDate = new Date(game.date);
@@ -54,32 +88,40 @@ export function useCurrentGameData() {
 							(now.getTime() - gameDate.getTime()) / (1000 * 60 * 60);
 						return game.status === 'STATUS_FINAL' && hoursDiff <= 48;
 					});
+					console.log('Recently completed game:', relevantGame);
 				}
 
 				if (!relevantGame) {
+					console.log('No recent game found, using most recent game in data');
 					// If none of the above, use the most recent game
 					relevantGame = sortedGames[0];
+					console.log('Fallback to most recent game:', relevantGame);
 				}
 			}
 
 			if (relevantGame) {
+				console.log('Setting current game data:', relevantGame);
 				setCurrentGameData(formatCurrentEventData(relevantGame));
 			} else {
+				console.log('No relevant game found');
 				setCurrentGameData(null);
 			}
 		} catch (err) {
 			setError('Failed to fetch game data');
-			console.error(err);
+			console.error('Error in loadGameData:', err);
 		} finally {
 			setLoading(false);
+			console.log('Finished loading game data');
 		}
 	};
 
 	useEffect(() => {
+		console.log('useEffect triggered, calling loadGameData');
 		loadGameData();
 	}, []);
 
 	const handleOverrideChange = async (mode: string | null) => {
+		console.log('handleOverrideChange called with mode:', mode);
 		setOverrideMode(mode);
 		await loadGameData(mode || undefined);
 	};

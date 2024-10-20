@@ -1,6 +1,7 @@
 import { Game } from '../types';
 
 export function formatCurrentEventData(event: Partial<Game>): Game {
+	console.log(event.homeTeamScore);
 	return {
 		id: event.id ?? '',
 		home: event.home ?? '',
