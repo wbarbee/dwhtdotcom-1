@@ -30,7 +30,7 @@ const fetchData = async (forceRefresh: boolean = false): Promise<Game[]> => {
 	}
 	const data = await response.json();
 
-	console.log('Raw schedule data:', data);
+	console.log('Raw schedule data:', data.events);
 
 	const processedGames = await Promise.all(
 		data.events.map(async (event: any) => {
@@ -44,10 +44,14 @@ const fetchData = async (forceRefresh: boolean = false): Promise<Game[]> => {
 				(team: any) => team.id === '251'
 			);
 
-			const getScore = (team: any) =>
-				team.score && typeof team.score === 'string'
-					? parseInt(team.score, 10)
-					: null;
+			const getScore = (team: any) => {
+				if (team.score && team.score.value) {
+					return parseInt(team.score.value, 10);
+				} else if (team.score && typeof team.score === 'string') {
+					return parseInt(team.score, 10);
+				}
+				return null;
+			};
 
 			const isNeutralSite = event.competitions[0].neutralSite;
 			const isTexasHome = texasTeam.homeAway === 'home';
@@ -133,7 +137,6 @@ const fetchData = async (forceRefresh: boolean = false): Promise<Game[]> => {
 				}
 			}
 
-			console.log('Processed game data:', game);
 			return game;
 		})
 	);
@@ -170,7 +173,6 @@ export const fetchLiveGame = async (
 ): Promise<Game | null> => {
 	try {
 		const liveData = await fetchLiveGameData(eventId);
-		console.log('Live game data:', liveData);
 
 		if (
 			!liveData ||
@@ -228,8 +230,6 @@ export const fetchLiveGame = async (
 			status: competition.status.type.name,
 			isTexasHome: texasTeam.homeAway === 'home',
 		};
-
-		console.log('Updated live game data:', updatedGame);
 
 		return updatedGame;
 	} catch (error) {

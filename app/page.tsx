@@ -8,8 +8,7 @@ import { Link } from '@nextui-org/link';
 import { Tooltip } from '@nextui-org/tooltip';
 
 export default function Home() {
-	const { currentGameData, allGames, loading, error, refreshData } =
-		useCurrentGameData();
+	const { currentGameData, loading, error, refreshData } = useCurrentGameData();
 
 	useEffect(() => {
 		console.log('Current game data in Home component:', currentGameData);
