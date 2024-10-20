@@ -3,9 +3,13 @@ import { Game } from '../types';
 import { fetchGameData, fetchLiveGame } from './fetchGameData';
 
 const isGameInProgress = (status: string) => {
-	return ['STATUS_IN_PROGRESS', 'STATUS_HALFTIME', 'STATUS_CURRENT'].includes(
-		status
-	);
+	return [
+		'STATUS_IN_PROGRESS',
+		'STATUS_HALFTIME',
+		'STATUS_CURRENT',
+		'STATUS_END_PERIOD',
+		'STATUS_PRE_END_PERIOD',
+	].includes(status);
 };
 
 export function useCurrentGameData() {

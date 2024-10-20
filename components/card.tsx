@@ -9,7 +9,6 @@ import { useIsDarkMode } from '../hooks/useIsDarkMode';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { Game } from '../types';
-import DevOverride from './dev-override';
 import gameModes from '../constants/gameModes';
 
 interface ScoreCardProps {
@@ -127,7 +126,6 @@ export default function ScoreCard({
 
 	return (
 		<>
-			<DevOverride overrideVisible={isDevMode} refreshData={refreshData} />
 			<Card
 				isBlurred
 				className='border-none bg-background/60 dark:bg-default-100/50 max-w-[810px] w-[90%] -mt-[1rem] md:mt-0'

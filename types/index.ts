@@ -26,3 +26,9 @@ export type Game = {
 		| 'STATUS_PRE_END_PERIOD';
 	isTexasHome: boolean;
 };
+
+export interface IconSvgProps extends React.SVGProps<SVGSVGElement> {
+	size?: number;
+	width?: number;
+	height?: number;
+}

@@ -1,4 +1,4 @@
-import { IconSvgProps } from '@/types';
+import { IconSvgProps } from '../../types';
 
 export const MoonIcon = ({
 	size = 24,

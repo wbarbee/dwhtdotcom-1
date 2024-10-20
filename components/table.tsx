@@ -117,7 +117,7 @@ export default function StatsTable() {
 									🤘?
 								</span>
 							)}
-							{['win', 'loss'].includes(game.result) && (
+							{/* {['win', 'loss'].includes(game.result) && (
 								<Chip
 									className='capitalize'
 									color={
@@ -133,7 +133,7 @@ export default function StatsTable() {
 										? cellValue
 										: JSON.stringify(cellValue)}
 								</Chip>
-							)}
+							)} */}
 						</div>
 					);
 				default:
