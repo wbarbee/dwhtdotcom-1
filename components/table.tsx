@@ -28,6 +28,7 @@ export default function StatsTable() {
 	const { games, error, refetch } = useGameData();
 	const [isMobile, setIsMobile] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
+	const [currentGameId, setCurrentGameId] = useState<string | null>(null);
 
 	useEffect(() => {
 		const checkIfMobile = () => {
@@ -45,6 +46,17 @@ export default function StatsTable() {
 			const timer = setTimeout(() => {
 				setIsLoading(false);
 			}, 1000);
+
+			// Find the current or next game
+			const now = new Date();
+			const currentOrNext = games
+				.filter((game) => !game.result) // Filter out games with results (past games)
+				.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // Sort by date
+				.find((game) => new Date(game.date) >= now); // Find first game that hasn't happened yet
+
+			if (currentOrNext) {
+				setCurrentGameId(currentOrNext.id);
+			}
 
 			return () => clearTimeout(timer);
 		}
@@ -198,7 +210,11 @@ export default function StatsTable() {
 						? renderSkeleton()
 						: games
 							? games.map((game: Game) => (
-									<TableRow key={game.id}>
+									<TableRow
+										key={game.id}
+										className={
+											game.id === currentGameId ? 'current-game-row' : ''
+										}>
 										{(columnKey) => (
 											<TableCell className='animate-fade-in'>
 												{renderCell(game, columnKey as keyof Game)}
