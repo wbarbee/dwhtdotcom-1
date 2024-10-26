@@ -7,10 +7,10 @@ import FullScoreModal from './modal';
 import { detectAppendedSuffix } from '../utils/stringUtils';
 import { useIsDarkMode } from '../hooks/useIsDarkMode';
 import { motion, AnimatePresence } from 'framer-motion';
-import gameModes from '../constants/gameModes';
-import Loading from './loading';
 
 import { Game } from '../types';
+import gameModes from '../constants/gameModes';
+import Loading from './loading';
 
 interface ScoreCardProps {
 	currentGameData: Game | null;
@@ -90,7 +90,8 @@ export default function ScoreCard({
 		const { status, result } = currentGameData;
 		if (isGameInProgress(status)) return 'current';
 		if (result === 'win' || result === 'loss') return result;
-		return isGameday ? 'pregame' : 'upcoming';
+		if (isGameday && status === 'STATUS_SCHEDULED') return 'pregame';
+		return 'upcoming';
 	}, [currentGameData, isGameday]);
 
 	const modeData =
@@ -115,7 +116,11 @@ export default function ScoreCard({
 	}
 
 	if (loading || !currentGameData) {
-		return <Loading />;
+		return (
+			<Card className='w-full h-full border-none bg-transparent flex items-center justify-center'>
+				<Loading />
+			</Card>
+		);
 	}
 
 	const {

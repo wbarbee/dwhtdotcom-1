@@ -24,6 +24,16 @@ const isWithin48Hours = (gameDate: string) => {
 	return hoursDiff <= 48;
 };
 
+const isGameday = (gameDate: string) => {
+	const now = new Date();
+	const gameDateObj = new Date(gameDate);
+	return (
+		gameDateObj.getDate() === now.getDate() &&
+		gameDateObj.getMonth() === now.getMonth() &&
+		gameDateObj.getFullYear() === now.getFullYear()
+	);
+};
+
 export function useCurrentGameData(initialOverrideMode?: string) {
 	const [currentGameData, setCurrentGameData] = useState<Game | null>(null);
 	const [allGames, setAllGames] = useState<Game[]>([]);
@@ -48,7 +58,14 @@ export function useCurrentGameData(initialOverrideMode?: string) {
 				// First, look for a game in progress
 				let relevantGame = data.find((game) => isGameInProgress(game.status));
 
-				// If no game in progress, look for a recently completed game within 48 hours
+				// If no game in progress, look for a scheduled game today
+				if (!relevantGame) {
+					relevantGame = data.find(
+						(game) => game.status === 'STATUS_SCHEDULED' && isGameday(game.date)
+					);
+				}
+
+				// If no game today, look for a recently completed game within 48 hours
 				if (!relevantGame) {
 					relevantGame = data.find(
 						(game) =>
