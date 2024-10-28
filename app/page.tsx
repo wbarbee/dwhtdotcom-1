@@ -26,7 +26,6 @@ export default function Home() {
 			'USE_MOCK_DATA:',
 			process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true'
 		);
-		console.log('Current overrideMode:', overrideMode);
 	}, [overrideMode]);
 
 	const handleRefreshData = async (

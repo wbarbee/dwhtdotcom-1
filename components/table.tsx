@@ -66,16 +66,15 @@ export default function StatsTable() {
 		(game: Game, columnKey: keyof Game) => {
 			const cellValue = game[columnKey];
 
-			const showRanking =
-				Number(game.awayTeamRank) < 50 &&
-				!isMobile &&
-				game.status === 'STATUS_FINAL';
+			const showRanking = !isMobile && game.status === 'STATUS_FINAL';
 
 			switch (columnKey) {
 				case 'away':
 					return (
 						<span className={getTeamStyle(game.away, game)}>
-							{game.awayTeamRank && showRanking
+							{game.awayTeamRank &&
+							showRanking &&
+							Number(game.awayTeamRank) < 50
 								? `[${game.awayTeamRank}] `
 								: ''}
 							{isMobile ? game.awayTeamAbbrev : game.away}

@@ -239,14 +239,18 @@ export default function ScoreCard({
 								variants={itemVariants}>
 								<div className='flex flex-col gap-0'>
 									<h3 className='font-semibold text-foreground/90'>
-										<span className='font-light text-xs ml-1 mr-1'>
-											[{awayTeamRank}]
-										</span>
+										{Number(awayTeamRank) < 50 && (
+											<span className='font-light text-xs ml-1 mr-1'>
+												[{awayTeamRank}]
+											</span>
+										)}
 										{isMobile ? awayTeamAbbrev : away}
 										<span className='mx-2'>vs</span>
-										<span className='font-light text-xs ml-1 mr-1'>
-											[{homeTeamRank}]
-										</span>
+										{Number(homeTeamRank) < 50 && (
+											<span className='font-light text-xs ml-1 mr-1'>
+												[{homeTeamRank}]
+											</span>
+										)}
 										{isMobile ? homeTeamAbbrev : home}
 									</h3>
 									<p
