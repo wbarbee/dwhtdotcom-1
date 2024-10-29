@@ -33,7 +33,7 @@ export default function FullScoreModal({ result }: FullScoreModalProps) {
 				classNames={{
 					base: isMobile
 						? 'max-h-[100vh] m-0 rounded-none animate-fade-in'
-						: 'max-h-[90vh] m-2 rounded-lg animate-fade-in',
+						: 'max-h-[85vh] m-2 rounded-lg animate-fade-in',
 					closeButton: 'hover:bg-white/5 active:bg-white/10',
 				}}>
 				<ModalContent>

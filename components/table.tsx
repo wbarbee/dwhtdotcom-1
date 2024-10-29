@@ -12,6 +12,7 @@ import {
 	Skeleton,
 } from '@nextui-org/react';
 import useGameData from '../hooks/useGameData';
+import { useCurrentGameData } from '../hooks/useCurrentGameData';
 import { Game } from '../types';
 
 const columns = [
@@ -26,6 +27,7 @@ const isTexas = (teamName: string) => teamName.includes('Texas Longhorns');
 
 export default function StatsTable() {
 	const { games, error, refetch } = useGameData();
+	const { currentGameData } = useCurrentGameData();
 	const [isMobile, setIsMobile] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 
@@ -162,7 +164,7 @@ export default function StatsTable() {
 						{columns.map((column) => (
 							<TableCell key={column.uid}>
 								<Skeleton className='w-full'>
-									<div className='h-3 w-full mb-1 rounded-lg bg-default-200'></div>
+									<div className='h-3 w-full mb-2 rounded-lg bg-default-200'></div>
 								</Skeleton>
 							</TableCell>
 						))}
@@ -197,7 +199,13 @@ export default function StatsTable() {
 						? renderSkeleton()
 						: games
 							? games.map((game: Game) => (
-									<TableRow key={game.id}>
+									<TableRow
+										key={game.id}
+										className={
+											currentGameData && currentGameData.id === game.id
+												? 'bg-[#ffdb9680] rounded-md'
+												: ''
+										}>
 										{(columnKey) => (
 											<TableCell className='animate-fade-in'>
 												{renderCell(game, columnKey as keyof Game)}
