@@ -25,6 +25,16 @@ const columns = [
 
 const isTexas = (teamName: string) => teamName.includes('Texas Longhorns');
 
+const isGameday = (gameDate: string) => {
+	const now = new Date();
+	const gameDateObj = new Date(gameDate);
+	return (
+		gameDateObj.getDate() === now.getDate() &&
+		gameDateObj.getMonth() === now.getMonth() &&
+		gameDateObj.getFullYear() === now.getFullYear()
+	);
+};
+
 export default function StatsTable() {
 	const { games, error, refetch } = useGameData();
 	const { currentGameData } = useCurrentGameData();
@@ -198,21 +208,30 @@ export default function StatsTable() {
 					{isLoading
 						? renderSkeleton()
 						: games
-							? games.map((game: Game) => (
-									<TableRow
-										key={game.id}
-										className={
-											currentGameData && currentGameData.id === game.id
-												? 'bg-[#ffdb9680] dark:bg-[#fc963cbb] rounded-md'
-												: ''
-										}>
-										{(columnKey) => (
-											<TableCell className='animate-fade-in'>
-												{renderCell(game, columnKey as keyof Game)}
-											</TableCell>
-										)}
-									</TableRow>
-								))
+							? games.map((game: Game) => {
+									const isToday = isGameday(game.date);
+									const isHighlighted =
+										currentGameData && currentGameData.id === game.id;
+									let rowClass = '';
+
+									if (isHighlighted) {
+										rowClass = 'bg-[#ffdb9680] dark:bg-[#fb9f4fba]';
+									} else if (isToday && game.status === 'STATUS_SCHEDULED') {
+										rowClass = 'bg-[#c2e6c080] dark:bg-[#2d8a2fbb]';
+									}
+
+									return (
+										<TableRow
+											key={game.id}
+											className={`${rowClass} rounded-md`}>
+											{(columnKey) => (
+												<TableCell className='animate-fade-in'>
+													{renderCell(game, columnKey as keyof Game)}
+												</TableCell>
+											)}
+										</TableRow>
+									);
+								})
 							: renderSkeleton()}
 				</TableBody>
 			</Table>
