@@ -203,7 +203,7 @@ export default function StatsTable() {
 										key={game.id}
 										className={
 											currentGameData && currentGameData.id === game.id
-												? 'bg-[#ffdb9680] rounded-md'
+												? 'bg-[#ffdb9680] dark:bg-[#fc963cbb] rounded-md'
 												: ''
 										}>
 										{(columnKey) => (
