@@ -215,9 +215,11 @@ export default function StatsTable() {
 									let rowClass = '';
 
 									if (isHighlighted) {
-										rowClass = 'bg-[#ffdb9680] dark:bg-[#fb9f4fba]';
+										rowClass =
+											'border-l-[6px] border-l-orange-300 dark:border-l-orange-800 bg-[#ffdb9680] dark:bg-[#fb9f4fba]';
 									} else if (isToday && game.status === 'STATUS_SCHEDULED') {
-										rowClass = 'bg-[#c2e6c080] dark:bg-[#2d8a2fbb]';
+										rowClass =
+											'border-l-5 border-l-green-400 dark:border-l-green-800 bg-[#c2e6c080] dark:bg-[#2d8a2fbb]';
 									}
 
 									return (
