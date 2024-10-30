@@ -5,6 +5,7 @@ import Providers from './providers';
 import { ThemeProvider } from 'next-themes';
 import { ThemeSwitch } from '@/components/theme-switch';
 import { fontSans } from '@/config/fonts';
+import InfoButton from '@/components/info-button';
 
 const SITE_URL = 'https://www.didwehookthem.com';
 const OPEN_GRAPH_IMAGE = `${SITE_URL}/opengraph-image.png`;
@@ -124,6 +125,7 @@ export default function RootLayout({
 								enableSystem>
 								{children}
 							</ThemeProvider>
+							<InfoButton />
 						</main>
 						<footer className='w-full items-center justify-center py-3 hidden'>
 							<p>
