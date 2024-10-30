@@ -6,7 +6,7 @@
 
 @layer base {
 	body {
-		@apply min-h-screen bg-gradient-to-br from-burntOrange/70 via-gray-600 to-burntOrange/80 dark:from-burntOrange/30 dark:via-gray-800 dark:to-burntOrange/40;
+		@apply bg-gradient-to-br from-burntOrange/70 via-gray-600 to-burntOrange/80 dark:from-burntOrange/30 dark:via-gray-800 dark:to-burntOrange/40;
 	}
 }
 
