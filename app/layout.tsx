@@ -127,12 +127,6 @@ export default function RootLayout({
 							</ThemeProvider>
 							<InfoButton />
 						</main>
-						<footer className='w-full items-center justify-center py-3 hidden'>
-							<p>
-								&copy; {new Date().getFullYear()} Did we hook them? All rights
-								reserved.
-							</p>
-						</footer>
 					</div>
 				</Providers>
 			</body>
