@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useViewport } from '../hooks/useViewport';
 import { Card, CardBody, Button, Spinner } from '@nextui-org/react';
@@ -115,10 +115,76 @@ export default function ScoreCard({
 		);
 	}
 
-	if (loading || !currentGameData) {
+	if (loading) {
 		return (
 			<Card className='w-full h-full border-none bg-transparent flex items-center justify-center'>
 				<Loading />
+			</Card>
+		);
+	}
+
+	if (!currentGameData) {
+		const modeData = gameModes.offseason;
+		return (
+			<Card
+				isBlurred
+				className='border-none bg-background/60 dark:bg-default-100/50 max-w-[465px] md:max-w-[810px] w-[90%] -mt-[1rem] md:mt-0'
+				fullWidth
+				shadow='sm'
+			>
+				<CardBody>
+					<motion.div
+						className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center'
+						variants={contentVariants}
+						initial='hidden'
+						animate='visible'
+					>
+						<div className='relative col-span-6 md:col-span-4 flex items-center justify-center'>
+							<div
+								className='w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center'
+								style={{
+									backgroundImage: `url(${isDarkMode ? modeData.backgroundImageNight : modeData.backgroundImage})`,
+								}}
+							>
+								{currentMode !== 'auto' && (
+									<span
+										className={modeData.hookEmClasses}
+										role='img'
+										aria-label='Hook em Horns'
+									>
+										🤘
+									</span>
+								)}
+							</div>
+						</div>
+						<motion.div
+							className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-4 md:py-2'
+							variants={itemVariants}
+						>
+							<motion.div
+								className='flex flex-col mt-0 mb-0 gap-1'
+								variants={itemVariants}
+							>
+								<p className='text-2xl md:text-3xl font-espn italic text-gray-800 dark:text-gray-400 mb-2'>
+									{modeData.title}
+								</p>
+							</motion.div>
+							<motion.div
+								className='mt-2 flex justify-center'
+								variants={itemVariants}
+							>
+								<div className='flex flex-col gap-2'>
+									<p className='text-lg text-foreground/90'>
+										Check back when the season starts
+									</p>
+									<p className='text-sm text-foreground/80'>
+										We'll have live game updates and scores
+									</p>
+								</div>
+							</motion.div>
+						</motion.div>
+					</motion.div>
+				</CardBody>
 			</Card>
 		);
 	}
@@ -155,24 +221,28 @@ export default function ScoreCard({
 				isBlurred
 				className='border-none bg-background/60 dark:bg-default-100/50 max-w-[465px] md:max-w-[810px] w-[90%] -mt-[1rem] md:mt-0'
 				fullWidth
-				shadow='sm'>
+				shadow='sm'
+			>
 				<CardBody>
 					<motion.div
 						className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center'
 						variants={contentVariants}
 						initial='hidden'
-						animate='visible'>
+						animate='visible'
+					>
 						<div className='relative col-span-6 md:col-span-4 flex items-center justify-center'>
 							<div
 								className='w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center'
 								style={{
 									backgroundImage: `url(${backgroundImageUrl})`,
-								}}>
+								}}
+							>
 								{status !== 'STATUS_SCHEDULED' && (
 									<span
 										className={modeData.hookEmClasses}
 										role='img'
-										aria-label='Hook em Horns'>
+										aria-label='Hook em Horns'
+									>
 										🤘
 									</span>
 								)}
@@ -180,11 +250,13 @@ export default function ScoreCard({
 						</div>
 						<motion.div
 							className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-4 md:py-2'
-							variants={itemVariants}>
+							variants={itemVariants}
+						>
 							{(modeData.title || currentMode === 'pregame') && (
 								<motion.div
 									className='flex flex-col mt-0 mb-0 gap-1'
-									variants={itemVariants}>
+									variants={itemVariants}
+								>
 									<p
 										className={`text-2xl md:text-3xl font-espn italic ${
 											currentMode === 'win'
@@ -192,7 +264,8 @@ export default function ScoreCard({
 												: currentMode === 'loss'
 													? 'text-red-500'
 													: 'text-gray-800 dark:text-gray-400 mb-2'
-										} ${status === 'STATUS_FINAL' ? 'mb-4' : 'mb-0'}`}>
+										} ${status === 'STATUS_FINAL' ? 'mb-4' : 'mb-0'}`}
+									>
 										{getDynamicTitle(currentMode)}
 									</p>
 								</motion.div>
@@ -205,7 +278,8 @@ export default function ScoreCard({
 										initial={{ opacity: 0, scale: 0.8 }}
 										animate={{ opacity: 1, scale: 1 }}
 										exit={{ opacity: 0, scale: 0.8 }}
-										transition={{ duration: 0.3 }}>
+										transition={{ duration: 0.3 }}
+									>
 										{score}
 									</motion.h1>
 								) : isRefreshing ? (
@@ -220,7 +294,8 @@ export default function ScoreCard({
 							{showPeriod && (
 								<motion.h2
 									className='mt-[0.25rem] mb-[0.5rem] font-oxanium font-light text-gray-700 dark:text-gray-400'
-									variants={itemVariants}>
+									variants={itemVariants}
+								>
 									{currentPeriod !== null && currentPeriod > 4
 										? 'OVERTIME'
 										: status === 'STATUS_HALFTIME'
@@ -236,7 +311,8 @@ export default function ScoreCard({
 							)}
 							<motion.div
 								className='mt-2 flex justify-center'
-								variants={itemVariants}>
+								variants={itemVariants}
+							>
 								<div className='flex flex-col gap-0'>
 									<h3 className='font-semibold text-foreground/90'>
 										{Number(awayTeamRank) < 50 && (
@@ -256,7 +332,8 @@ export default function ScoreCard({
 									<p
 										className={`${
 											status === 'STATUS_SCHEDULED' ? 'mt-2' : ''
-										} text-sm text-foreground/80`}>
+										} text-sm text-foreground/80`}
+									>
 										{location} -- {formattedDate}
 									</p>
 									<p className='mt-3 mb-0 text-md text-gray-700 dark:text-gray-300 font-light font-menlo'>
@@ -267,7 +344,8 @@ export default function ScoreCard({
 												transform: 'rotate(180deg)',
 												display: 'inline-block',
 											}}
-											className='ml-1'>
+											className='ml-1'
+										>
 											<span>🤘</span>
 										</span>
 									</p>
@@ -284,7 +362,8 @@ export default function ScoreCard({
 							size='md'
 							aria-label='Refresh data'
 							onClick={handleRefresh}
-							isLoading={isRefreshing}>
+							isLoading={isRefreshing}
+						>
 							{!isRefreshing && <RefreshCw size={16} />}
 						</Button>
 					)}

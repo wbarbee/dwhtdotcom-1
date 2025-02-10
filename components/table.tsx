@@ -125,7 +125,8 @@ export default function StatsTable() {
 									style={{
 										display: 'inline-block',
 										transform: 'rotate(180deg)',
-									}}>
+									}}
+								>
 									🤘
 								</span>
 							) : (
@@ -144,7 +145,8 @@ export default function StatsTable() {
 												: 'default'
 									}
 									size='sm'
-									variant='flat'>
+									variant='flat'
+								>
 									{typeof cellValue === 'string'
 										? cellValue
 										: JSON.stringify(cellValue)}
@@ -196,7 +198,8 @@ export default function StatsTable() {
 		<div className='w-full overflow-x-auto'>
 			<Table
 				aria-label='University of Texas Longhorns 2023 Season Record'
-				className='min-w-full'>
+				className='min-w-full'
+			>
 				<TableHeader columns={columns}>
 					{(column) => (
 						<TableColumn key={column.uid} align='center'>
@@ -204,37 +207,65 @@ export default function StatsTable() {
 						</TableColumn>
 					)}
 				</TableHeader>
-				<TableBody>
-					{isLoading
-						? renderSkeleton()
-						: games
-							? games.map((game: Game) => {
-									const isToday = isGameday(game.date);
-									const isHighlighted =
-										currentGameData && currentGameData.id === game.id;
-									let rowClass = '';
+				<TableBody
+					items={
+						isLoading
+							? Array(12).fill(null)
+							: !games || games.length === 0
+								? [null]
+								: games
+					}
+					emptyContent={
+						!isLoading &&
+						(!games || games.length === 0) && (
+							<div className='text-center py-4'>
+								<p className='text-lg'>No games scheduled</p>
+								<p className='text-sm text-gray-500'>
+									Check back during the season for game updates
+								</p>
+							</div>
+						)
+					}
+				>
+					{(item) => {
+						if (isLoading || !item) {
+							return (
+								<TableRow key={`skeleton-${Math.random()}`}>
+									{columns.map((column) => (
+										<TableCell key={column.uid}>
+											<Skeleton className='w-full'>
+												<div className='h-3 w-full mb-2 rounded-lg bg-default-200'></div>
+											</Skeleton>
+										</TableCell>
+									))}
+								</TableRow>
+							);
+						}
 
-									if (isHighlighted) {
-										rowClass =
-											'border-l-[6px] border-l-orange-300 dark:border-l-orange-800 bg-[#ffdb9680] dark:bg-[#fb9f4fba]';
-									} else if (isToday && game.status === 'STATUS_SCHEDULED') {
-										rowClass =
-											'border-l-5 border-l-green-400 dark:border-l-green-800 bg-[#c2e6c080] dark:bg-[#2d8a2fbb]';
-									}
+						const game = item as Game;
+						const isToday = isGameday(game.date);
+						const isHighlighted =
+							currentGameData && currentGameData.id === game.id;
+						let rowClass = '';
 
-									return (
-										<TableRow
-											key={game.id}
-											className={`${rowClass} rounded-md`}>
-											{(columnKey) => (
-												<TableCell className='animate-fade-in'>
-													{renderCell(game, columnKey as keyof Game)}
-												</TableCell>
-											)}
-										</TableRow>
-									);
-								})
-							: renderSkeleton()}
+						if (isHighlighted) {
+							rowClass =
+								'border-l-[6px] border-l-orange-300 dark:border-l-orange-800 bg-[#ffdb9680] dark:bg-[#fb9f4fba]';
+						} else if (isToday && game.status === 'STATUS_SCHEDULED') {
+							rowClass =
+								'border-l-5 border-l-green-400 dark:border-l-green-800 bg-[#c2e6c080] dark:bg-[#2d8a2fbb]';
+						}
+
+						return (
+							<TableRow key={game.id} className={`${rowClass} rounded-md`}>
+								{(columnKey) => (
+									<TableCell className='animate-fade-in'>
+										{renderCell(game, columnKey as keyof Game)}
+									</TableCell>
+								)}
+							</TableRow>
+						);
+					}}
 				</TableBody>
 			</Table>
 		</div>

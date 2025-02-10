@@ -2,7 +2,7 @@ import { Game } from '../types';
 import { mockGames, getGameByMode } from '../utils/mockData';
 
 const API_FULL_SCHEDULE =
-	'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/texas/schedule?startDate=2024-08-01&endDate=2025-03-31';
+	'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/texas/schedule?startDate=2025-08-01&endDate=2026-03-31';
 
 const API_LIVE_GAME =
 	'https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=';
@@ -32,6 +32,12 @@ const fetchData = async (): Promise<Game[]> => {
 	const data = await response.json();
 
 	console.log('Raw schedule data:', data.events);
+
+	// Handle off-season case where events array is empty
+	if (!data.events || data.events.length === 0) {
+		console.log('No scheduled games found (likely off-season)');
+		return [];
+	}
 
 	const processedGames = await Promise.all(
 		data.events.map(async (event: any) => {
