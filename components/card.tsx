@@ -144,6 +144,8 @@ export default function ScoreCard({
 								className='w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center'
 								style={{
 									backgroundImage: `url(${isDarkMode ? modeData.backgroundImageNight : modeData.backgroundImage})`,
+									backgroundPosition: 'top',
+									backgroundSize: 'contain',
 								}}
 							>
 								{currentMode !== 'auto' && (

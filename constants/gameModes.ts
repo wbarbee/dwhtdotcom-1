@@ -1,9 +1,9 @@
 const gameModes = {
 	offseason: {
-		backgroundImage: '/images/i.png',
-		backgroundImageNight: '/images/i.png',
+		backgroundImage: '/images/gwen.jpg',
+		backgroundImageNight: '/images/gwen.jpg',
 		title: 'OFF SEASON',
-		hookEmClasses: 'text-6xl',
+		hookEmClasses: 'text-6xl background-position-[-400px] top-[50px]',
 	},
 	win: {
 		backgroundImage: '/images/hank.png',
