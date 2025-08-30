@@ -17,16 +17,15 @@ const isGameInProgress = (status: string) => {
 	].includes(status);
 };
 
-const isWithin48Hours = (gameDate: string) => {
-	const now = new Date();
-	const gameDateObj = new Date(gameDate);
-	const hoursDiff = (now.getTime() - gameDateObj.getTime()) / (1000 * 60 * 60);
+const isWithin48Hours = (gameTimestamp: number) => {
+	const now = Date.now();
+	const hoursDiff = (now - gameTimestamp) / (1000 * 60 * 60);
 	return hoursDiff <= 48;
 };
 
-const isGameday = (gameDate: string) => {
+const isGameday = (gameTimestamp: number) => {
 	const now = new Date();
-	const gameDateObj = new Date(gameDate);
+	const gameDateObj = new Date(gameTimestamp);
 	return (
 		gameDateObj.getDate() === now.getDate() &&
 		gameDateObj.getMonth() === now.getMonth() &&
@@ -61,7 +60,8 @@ export function useCurrentGameData(initialOverrideMode?: string) {
 				// If no game in progress, look for a scheduled game today
 				if (!relevantGame) {
 					relevantGame = data.find(
-						(game) => game.status === 'STATUS_SCHEDULED' && isGameday(game.date)
+						(game) =>
+							game.status === 'STATUS_SCHEDULED' && isGameday(game.timestamp)
 					);
 				}
 
@@ -70,7 +70,7 @@ export function useCurrentGameData(initialOverrideMode?: string) {
 					relevantGame = data.find(
 						(game) =>
 							game.status === 'STATUS_FINAL' &&
-							isWithin48Hours(game.date) &&
+							isWithin48Hours(game.timestamp) &&
 							['win', 'loss'].includes(game.result)
 					);
 				}
@@ -78,7 +78,7 @@ export function useCurrentGameData(initialOverrideMode?: string) {
 				// If no recent completed game, look for the next upcoming game
 				if (!relevantGame) {
 					relevantGame = data.find((game) => {
-						const gameDate = new Date(game.date);
+						const gameDate = new Date(game.timestamp);
 						return game.status === 'STATUS_SCHEDULED' && gameDate > now;
 					});
 				}
@@ -87,9 +87,7 @@ export function useCurrentGameData(initialOverrideMode?: string) {
 				if (!relevantGame && data.length > 0) {
 					relevantGame = data
 						.filter((game) => game.status === 'STATUS_FINAL')
-						.sort(
-							(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-						)[0];
+						.sort((a, b) => b.timestamp - a.timestamp)[0];
 				}
 
 				if (
@@ -116,6 +114,30 @@ export function useCurrentGameData(initialOverrideMode?: string) {
 	useEffect(() => {
 		loadGameData();
 	}, [loadGameData]);
+
+	useEffect(() => {
+		const handleVisibility = () => {
+			if (document.visibilityState === 'visible') {
+				loadGameData();
+			}
+		};
+		document.addEventListener('visibilitychange', handleVisibility);
+		return () =>
+			document.removeEventListener('visibilitychange', handleVisibility);
+	}, [loadGameData]);
+
+	useEffect(() => {
+		if (!currentGameData) return;
+		const shouldPoll =
+			isGameInProgress(currentGameData.status) ||
+			(currentGameData.status === 'STATUS_SCHEDULED' &&
+				isGameday(currentGameData.timestamp));
+		if (!shouldPoll) return;
+		const id = setInterval(() => {
+			loadGameData();
+		}, 60000);
+		return () => clearInterval(id);
+	}, [currentGameData, loadGameData]);
 
 	const refreshData = useCallback(
 		async (newOverrideMode?: string) => {

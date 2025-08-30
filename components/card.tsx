@@ -263,9 +263,9 @@ export default function ScoreCard({
 										className={`text-2xl md:text-3xl font-espn italic ${
 											currentMode === 'win'
 												? 'text-burntOrange dark:text-burntOrange'
-												: currentMode === 'loss'
-													? 'text-red-500'
-													: 'text-gray-800 dark:text-gray-400 mb-2'
+											: currentMode === 'loss'
+												? 'text-red-500'
+												: 'text-gray-800 dark:text-gray-400 mb-2'
 										} ${status === 'STATUS_FINAL' ? 'mb-4' : 'mb-0'}`}
 									>
 										{getDynamicTitle(currentMode)}
@@ -301,14 +301,14 @@ export default function ScoreCard({
 									{currentPeriod !== null && currentPeriod > 4
 										? 'OVERTIME'
 										: status === 'STATUS_HALFTIME'
-											? 'Halftime'
-											: status === 'STATUS_END_PERIOD'
-												? 'End of Quarter'
-												: status === 'STATUS_PRE_END_PERIOD'
-													? 'Quarter Break'
-													: currentPeriod !== null
-														? `${detectAppendedSuffix(currentPeriod)} quarter`
-														: 'In Progress'}
+										? 'Halftime'
+										: status === 'STATUS_END_PERIOD'
+										? 'End of Quarter'
+										: status === 'STATUS_PRE_END_PERIOD'
+										? 'Quarter Break'
+										: currentPeriod !== null
+										? `${detectAppendedSuffix(currentPeriod)} quarter`
+										: 'In Progress'}
 								</motion.h2>
 							)}
 							<motion.div

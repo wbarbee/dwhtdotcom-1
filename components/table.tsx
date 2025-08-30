@@ -1,6 +1,12 @@
 'use client';
-import { useCallback, useState, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { RefreshCw } from 'lucide-react';
+import { useViewport } from '../hooks/useViewport';
 import {
+	Card,
+	CardBody,
+	Button,
+	Spinner,
 	Table,
 	TableHeader,
 	TableColumn,
@@ -8,266 +14,487 @@ import {
 	TableRow,
 	TableCell,
 	Chip,
-	Button,
-	Skeleton,
 } from '@nextui-org/react';
-import useGameData from '../hooks/useGameData';
-import { useCurrentGameData } from '../hooks/useCurrentGameData';
+import FullScoreModal from './modal';
+import { detectAppendedSuffix } from '../utils/stringUtils';
+import { useIsDarkMode } from '../hooks/useIsDarkMode';
+import { motion, AnimatePresence } from 'framer-motion';
+
 import { Game } from '../types';
+import gameModes from '../constants/gameModes';
+import Loading from './loading';
 
-const columns = [
-	{ name: 'AWAY', uid: 'away' },
-	{ name: 'HOME', uid: 'home' },
-	{ name: 'HOOKED THEM?', uid: 'score' },
-	{ name: 'LOCATION', uid: 'location' },
-	{ name: 'DATE', uid: 'date' },
-];
+import { fetchGameData } from '../hooks/fetchGameData';
 
-const isTexas = (teamName: string) => teamName.includes('Texas Longhorns');
+interface ScoreCardProps {
+	currentGameData: Game | null;
+	refreshData: () => Promise<void>;
+	error: string | null;
+	loading: boolean;
+	onLoadingChange?: (loading: boolean) => void;
+}
 
-const isGameday = (gameDate: string) => {
-	const now = new Date();
-	const gameDateObj = new Date(gameDate);
-	return (
-		gameDateObj.getDate() === now.getDate() &&
-		gameDateObj.getMonth() === now.getMonth() &&
-		gameDateObj.getFullYear() === now.getFullYear()
-	);
+const contentVariants = {
+	hidden: { opacity: 0, y: 20 },
+	visible: {
+		opacity: 1,
+		y: 0,
+		transition: { duration: 0.5, staggerChildren: 0.1 },
+	},
 };
 
-export default function StatsTable() {
-	const { games, error, refetch } = useGameData();
-	const { currentGameData } = useCurrentGameData();
-	const [isMobile, setIsMobile] = useState(false);
-	const [isLoading, setIsLoading] = useState(true);
+const itemVariants = {
+	hidden: { opacity: 0, y: 10 },
+	visible: {
+		opacity: 1,
+		y: 0,
+		transition: { duration: 0.3 },
+	},
+};
+
+const isGameInProgress = (status: Game['status']) =>
+	[
+		'STATUS_IN_PROGRESS',
+		'STATUS_HALFTIME',
+		'STATUS_CURRENT',
+		'STATUS_END_PERIOD',
+		'STATUS_PRE_END_PERIOD',
+		'STATUS_FIRST_QUARTER',
+		'STATUS_SECOND_QUARTER',
+		'STATUS_THIRD_QUARTER',
+		'STATUS_FOURTH_QUARTER',
+		'STATUS_OVERTIME',
+	].includes(status);
+
+export default function ScoreCard({
+	currentGameData,
+	refreshData,
+	error,
+	loading,
+	onLoadingChange,
+}: ScoreCardProps) {
+	const [isRefreshing, setIsRefreshing] = useState(false);
+	const { isMobile } = useViewport();
+	const isDarkMode = useIsDarkMode();
 
 	useEffect(() => {
-		const checkIfMobile = () => {
-			setIsMobile(window.innerWidth <= 640);
-		};
+		if (onLoadingChange) onLoadingChange(Boolean(loading || isRefreshing));
+	}, [loading, isRefreshing, onLoadingChange]);
 
-		checkIfMobile();
-		window.addEventListener('resize', checkIfMobile);
+	const isGameday = useMemo(() => {
+		if (!currentGameData) return false;
+		const gameDate = new Date(currentGameData.date);
+		const today = new Date();
+		return (
+			gameDate.getDate() === today.getDate() &&
+			gameDate.getMonth() === today.getMonth() &&
+			gameDate.getFullYear() === today.getFullYear()
+		);
+	}, [currentGameData]);
 
-		return () => window.removeEventListener('resize', checkIfMobile);
-	}, []);
-
-	useEffect(() => {
-		if (games && games.length > 0) {
-			const timer = setTimeout(() => {
-				setIsLoading(false);
+	const handleRefresh = useCallback(async () => {
+		setIsRefreshing(true);
+		try {
+			await refreshData();
+		} catch (error) {
+			console.error('Failed to refresh game data:', error);
+		} finally {
+			setTimeout(() => {
+				setIsRefreshing(false);
 			}, 1000);
-
-			return () => clearTimeout(timer);
 		}
-	}, [games]);
+	}, [refreshData]);
 
-	const getTeamStyle = (teamName: string, game: Game) => {
-		const isTexasTeam = isTexas(teamName);
-		if (isTexasTeam && game.result === 'win') {
-			return 'font-bold text-green-600';
-		} else if (!isTexasTeam && game.result === 'loss') {
-			return 'font-bold text-red-600';
-		} else if (game.result === 'loss' || game.result === 'win') {
-			return 'text-gray-500';
+	const currentMode = useMemo(() => {
+		if (!currentGameData) return 'auto';
+		const { status, result } = currentGameData;
+		if (isGameInProgress(status)) return 'current';
+		if (result === 'win' || result === 'loss') return result;
+		if (isGameday && status === 'STATUS_SCHEDULED') return 'pregame';
+		return 'upcoming';
+	}, [currentGameData, isGameday]);
+
+	const modeData =
+		gameModes[currentMode === 'pregame' ? 'upcoming' : currentMode];
+
+	const getDynamicTitle = (mode: keyof typeof gameModes | 'pregame') => {
+		if (mode === 'pregame') {
+			return 'GAMEDAY';
 		}
-		return '';
+		if (mode === 'upcoming' && isGameday) {
+			return 'GAMEDAY';
+		}
+		return gameModes[mode].title;
 	};
-
-	const renderCell = useCallback(
-		(game: Game, columnKey: keyof Game) => {
-			const cellValue = game[columnKey];
-
-			const showRanking = !isMobile && game.status === 'STATUS_FINAL';
-
-			switch (columnKey) {
-				case 'away':
-					return (
-						<span className={getTeamStyle(game.away, game)}>
-							{game.awayTeamRank &&
-							showRanking &&
-							Number(game.awayTeamRank) < 50
-								? `[${game.awayTeamRank}] `
-								: ''}
-							{isMobile ? game.awayTeamAbbrev : game.away}
-						</span>
-					);
-				case 'home':
-					return (
-						<span className={getTeamStyle(game.home, game)}>
-							{game.homeTeamRank && showRanking
-								? `[${game.homeTeamRank}] `
-								: ''}
-							{isMobile ? game.homeTeamAbbrev : game.home}
-						</span>
-					);
-				case 'location':
-					return (
-						<span>
-							{isMobile && game.location === 'DKR-Texas Memorial Stadium'
-								? 'DKR'
-								: game.location}{' '}
-							{game.neutralSite && (
-								<span className='font-bold text-red-400 ml-[1px]'>*</span>
-							)}
-						</span>
-					);
-				case 'score':
-					return (
-						<div className='flex items-center space-x-2'>
-							{game.result === 'win' ? (
-								<span className='text-xl text-burntOrange font-gothic font-bold'>
-									🤘
-								</span>
-							) : game.result === 'loss' ? (
-								<span
-									className='text-xl'
-									style={{
-										display: 'inline-block',
-										transform: 'rotate(180deg)',
-									}}
-								>
-									🤘
-								</span>
-							) : (
-								<span className='text-xl text-burntOrange font-gothic font-bold'>
-									🤘?
-								</span>
-							)}
-							{['win', 'loss'].includes(game.result) && (
-								<Chip
-									className='capitalize'
-									color={
-										game.result === 'win'
-											? 'success'
-											: game.result === 'loss'
-												? 'danger'
-												: 'default'
-									}
-									size='sm'
-									variant='flat'
-								>
-									{typeof cellValue === 'string'
-										? cellValue
-										: JSON.stringify(cellValue)}
-								</Chip>
-							)}
-						</div>
-					);
-				default:
-					return (
-						<div className='truncate'>
-							{typeof cellValue === 'string'
-								? cellValue
-								: JSON.stringify(cellValue)}
-						</div>
-					);
-			}
-		},
-		[isMobile]
-	);
-
-	const renderSkeleton = () => (
-		<>
-			{Array(12)
-				.fill(null)
-				.map((_, index) => (
-					<TableRow key={`skeleton-${index}`}>
-						{columns.map((column) => (
-							<TableCell key={column.uid}>
-								<Skeleton className='w-full'>
-									<div className='h-3 w-full mb-2 rounded-lg bg-default-200'></div>
-								</Skeleton>
-							</TableCell>
-						))}
-					</TableRow>
-				))}
-		</>
-	);
 
 	if (error) {
 		return (
-			<div>
-				<div>Error: {error.message}</div>
-				<Button onClick={refetch}>Retry</Button>
+			<Card className='w-[300px] h-[200px] flex items-center justify-center'>
+				<p className='text-danger'>{error}</p>
+			</Card>
+		);
+	}
+
+	if (loading) {
+		return (
+			<Card className='w-full h-full border-none bg-transparent flex items-center justify-center'>
+				<Loading />
+			</Card>
+		);
+	}
+
+	if (!currentGameData) {
+		const modeData = gameModes.offseason;
+		return (
+			<Card
+				isBlurred
+				className='border-none bg-background/60 dark:bg-default-100/50 max-w-[465px] md:max-w-[810px] w-[90%] -mt-[1rem] md:mt-0'
+				fullWidth
+				shadow='sm'
+			>
+				<CardBody>
+					<motion.div
+						className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center'
+						variants={contentVariants}
+						initial='hidden'
+						animate='visible'
+					>
+						<div className='relative col-span-6 md:col-span-4 flex items-center justify-center'>
+							<div
+								className='w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center'
+								style={{
+									backgroundImage: `url(${isDarkMode ? modeData.backgroundImageNight : modeData.backgroundImage})`,
+									backgroundPosition: 'top',
+									backgroundSize: 'contain',
+								}}
+							>
+								{currentMode !== 'auto' && (
+									<span
+										className={modeData.hookEmClasses}
+										role='img'
+										aria-label='Hook em Horns'
+									>
+										🤘
+									</span>
+								)}
+							</div>
+						</div>
+						<motion.div
+							className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-4 md:py-2'
+							variants={itemVariants}
+						>
+							<motion.div
+								className='flex flex-col mt-0 mb-0 gap-1'
+								variants={itemVariants}
+							>
+								<p className='text-2xl md:text-3xl font-espn italic text-gray-800 dark:text-gray-400 mb-2'>
+									{modeData.title}
+								</p>
+							</motion.div>
+							<motion.div
+								className='mt-2 flex justify-center'
+								variants={itemVariants}
+							>
+								<div className='flex flex-col gap-2'>
+									<p className='text-lg text-foreground/90'>
+										Check back when the season starts
+									</p>
+									<p className='text-sm text-foreground/80'>
+										We'll have live game updates and scores
+									</p>
+								</div>
+							</motion.div>
+						</motion.div>
+					</motion.div>
+				</CardBody>
+			</Card>
+		);
+	}
+
+	const {
+		status,
+		score,
+		currentPeriod,
+		home,
+		away,
+		homeTeamRank,
+		awayTeamRank,
+		homeTeamAbbrev,
+		awayTeamAbbrev,
+		location,
+		date,
+		longhornsRecord,
+	} = currentGameData;
+
+	const showScore =
+		(isGameInProgress(status) || status === 'STATUS_FINAL') && !isRefreshing;
+	const showPeriod = isGameInProgress(status) && !isRefreshing;
+	const showRefreshButton = isGameInProgress(status);
+
+	const backgroundImageUrl = isDarkMode
+		? modeData.backgroundImageNight
+		: modeData.backgroundImage;
+
+	const formattedDate = new Date(date).toLocaleDateString();
+
+	return (
+		<>
+			<Card
+				isBlurred
+				className='border-none bg-background/60 dark:bg-default-100/50 max-w-[465px] md:max-w-[810px] w-[90%] -mt-[1rem] md:mt-0'
+				fullWidth
+				shadow='sm'
+			>
+				<CardBody>
+					<motion.div
+						className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center'
+						variants={contentVariants}
+						initial='hidden'
+						animate='visible'
+					>
+						<div className='relative col-span-6 md:col-span-4 flex items-center justify-center'>
+							<div
+								className='w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center'
+								style={{
+									backgroundImage: `url(${backgroundImageUrl})`,
+								}}
+							>
+								{status !== 'STATUS_SCHEDULED' && (
+									<span
+										className={modeData.hookEmClasses}
+										role='img'
+										aria-label='Hook em Horns'
+									>
+										🤘
+									</span>
+								)}
+							</div>
+						</div>
+						<motion.div
+							className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-4 md:py-2'
+							variants={itemVariants}
+						>
+							{(modeData.title || currentMode === 'pregame') && (
+								<motion.div
+									className='flex flex-col mt-0 mb-0 gap-1'
+									variants={itemVariants}
+								>
+									<p
+										className={`text-2xl md:text-3xl font-espn italic ${
+											currentMode === 'win'
+												? 'text-burntOrange dark:text-burntOrange'
+												: currentMode === 'loss'
+													? 'text-red-500'
+													: 'text-gray-800 dark:text-gray-400 mb-2'
+										} ${status === 'STATUS_FINAL' ? 'mb-4' : 'mb-0'}`}
+									>
+										{getDynamicTitle(currentMode)}
+									</p>
+								</motion.div>
+							)}
+							<AnimatePresence mode='wait'>
+								{showScore ? (
+									<motion.h1
+										className='text-6xl font-medium font-oxanium'
+										key='score'
+										initial={{ opacity: 0, scale: 0.8 }}
+										animate={{ opacity: 1, scale: 1 }}
+										exit={{ opacity: 0, scale: 0.8 }}
+										transition={{ duration: 0.3 }}
+									>
+										{score}
+									</motion.h1>
+								) : isRefreshing ? (
+									<Spinner
+										size='lg'
+										color='default'
+										labelColor='foreground'
+										className='mb-6'
+									/>
+								) : null}
+							</AnimatePresence>
+							{showPeriod && (
+								<motion.h2
+									className='mt-[0.25rem] mb-[0.5rem] font-oxanium font-light text-gray-700 dark:text-gray-400'
+									variants={itemVariants}
+								>
+									{currentPeriod !== null && currentPeriod > 4
+										? 'OVERTIME'
+										: status === 'STATUS_HALFTIME'
+											? 'Halftime'
+											: status === 'STATUS_END_PERIOD'
+												? 'End of Quarter'
+												: status === 'STATUS_PRE_END_PERIOD'
+													? 'Quarter Break'
+													: currentPeriod !== null
+														? `${detectAppendedSuffix(currentPeriod)} quarter`
+														: 'In Progress'}
+								</motion.h2>
+							)}
+							<motion.div
+								className='mt-2 flex justify-center'
+								variants={itemVariants}
+							>
+								<div className='flex flex-col gap-0'>
+									<h3 className='font-semibold text-foreground/90'>
+										{Number(awayTeamRank) < 50 && (
+											<span className='font-light text-xs ml-1 mr-1'>
+												[{awayTeamRank}]
+											</span>
+										)}
+										{isMobile ? awayTeamAbbrev : away}
+										<span className='mx-2'>vs</span>
+										{Number(homeTeamRank) < 50 && (
+											<span className='font-light text-xs ml-1 mr-1'>
+												[{homeTeamRank}]
+											</span>
+										)}
+										{isMobile ? homeTeamAbbrev : home}
+									</h3>
+									<p
+										className={`${
+											status === 'STATUS_SCHEDULED' ? 'mt-2' : ''
+										} text-sm text-foreground/80`}
+									>
+										{location} -- {formattedDate}
+									</p>
+									<p className='mt-3 mb-0 text-md text-gray-700 dark:text-gray-300 font-light font-menlo'>
+										<span className='text-md mr-1'>🤘</span>[
+										<b>{longhornsRecord}</b>]
+										<span
+											style={{
+												transform: 'rotate(180deg)',
+												display: 'inline-block',
+											}}
+											className='ml-1'
+										>
+											<span>🤘</span>
+										</span>
+									</p>
+								</div>
+							</motion.div>
+						</motion.div>
+					</motion.div>
+				</CardBody>
+				<div className='absolute bottom-2 right-2 flex gap-2'>
+					{showRefreshButton && (
+						<Button
+							isIconOnly
+							className='bg-transparent text-black dark:text-white rounded-full'
+							size='md'
+							aria-label='Refresh data'
+							onClick={handleRefresh}
+							isLoading={isRefreshing}
+						>
+							{!isRefreshing && <RefreshCw size={16} />}
+						</Button>
+					)}
+					<FullScoreModal result={currentGameData.result} />
+				</div>
+			</Card>
+		</>
+	);
+}
+
+export interface StatsTableProps {
+	onLoadingChange?: (loading: boolean) => void;
+}
+
+export function StatsTable({ onLoadingChange }: StatsTableProps) {
+	const [games, setGames] = useState<Game[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		let mounted = true;
+		if (onLoadingChange) onLoadingChange(true);
+		(async () => {
+			try {
+				const data = await fetchGameData();
+				if (!mounted) return;
+				setGames(Array.isArray(data) ? data : []);
+			} catch (e) {
+				if (!mounted) return;
+				setError('Failed to load game data');
+			} finally {
+				if (!mounted) return;
+				setIsLoading(false);
+				if (onLoadingChange) onLoadingChange(false);
+			}
+		})();
+		return () => {
+			mounted = false;
+		};
+	}, [onLoadingChange]);
+
+	if (error) {
+		return (
+			<div className='w-full flex items-center justify-center py-12'>
+				<p className='text-danger'>{error}</p>
+			</div>
+		);
+	}
+
+	if (isLoading) {
+		return (
+			<div className='w-full flex items-center justify-center py-12'>
+				<Spinner size='lg' color='default' labelColor='foreground' />
+			</div>
+		);
+	}
+
+	if (!games || games.length === 0) {
+		return (
+			<div className='w-full flex items-center justify-center py-12'>
+				<p className='text-foreground/80'>No games scheduled.</p>
 			</div>
 		);
 	}
 
 	return (
-		<div className='w-full overflow-x-auto'>
-			<Table
-				aria-label='University of Texas Longhorns 2023 Season Record'
-				className='min-w-full'
-			>
-				<TableHeader columns={columns}>
-					{(column) => (
-						<TableColumn key={column.uid} align='center'>
-							{column.name}
-						</TableColumn>
-					)}
-				</TableHeader>
-				<TableBody
-					items={
-						isLoading
-							? Array(12).fill(null)
-							: !games || games.length === 0
-								? [null]
-								: games
-					}
-					emptyContent={
-						!isLoading &&
-						(!games || games.length === 0) && (
-							<div className='text-center py-4'>
-								<p className='text-lg'>No games scheduled</p>
-								<p className='text-sm text-gray-500'>
-									Check back during the season for game updates
-								</p>
-							</div>
-						)
-					}
-				>
-					{(item) => {
-						if (isLoading || !item) {
-							return (
-								<TableRow key={`skeleton-${Math.random()}`}>
-									{columns.map((column) => (
-										<TableCell key={column.uid}>
-											<Skeleton className='w-full'>
-												<div className='h-3 w-full mb-2 rounded-lg bg-default-200'></div>
-											</Skeleton>
-										</TableCell>
-									))}
-								</TableRow>
-							);
-						}
-
-						const game = item as Game;
-						const isToday = isGameday(game.date);
-						const isHighlighted =
-							currentGameData && currentGameData.id === game.id;
-						let rowClass = '';
-
-						if (isHighlighted) {
-							rowClass =
-								'border-l-[6px] border-l-orange-300 dark:border-l-orange-800 bg-[#ffdb9680] dark:bg-[#fb9f4fba]';
-						} else if (isToday && game.status === 'STATUS_SCHEDULED') {
-							rowClass =
-								'border-l-5 border-l-green-400 dark:border-l-green-800 bg-[#c2e6c080] dark:bg-[#2d8a2fbb]';
-						}
-
-						return (
-							<TableRow key={game.id} className={`${rowClass} rounded-md`}>
-								{(columnKey) => (
-									<TableCell className='animate-fade-in'>
-										{renderCell(game, columnKey as keyof Game)}
-									</TableCell>
+		<Table aria-label='Full game data table' removeWrapper fullWidth>
+			<TableHeader>
+				<TableColumn>Date</TableColumn>
+				<TableColumn>Opponent</TableColumn>
+				<TableColumn>Location</TableColumn>
+				<TableColumn>Status</TableColumn>
+				<TableColumn>Score</TableColumn>
+				<TableColumn>Result</TableColumn>
+			</TableHeader>
+			<TableBody>
+				{games.map((g) => {
+					const opponent = g.isTexasHome ? g.away : g.home;
+					return (
+						<TableRow key={g.id}>
+							<TableCell>{g.date}</TableCell>
+							<TableCell>{opponent}</TableCell>
+							<TableCell>
+								{g.location}
+								{g.neutralSite && (
+									<span className='ml-1 align-middle text-xs'>*</span>
 								)}
-							</TableRow>
-						);
-					}}
-				</TableBody>
-			</Table>
-		</div>
+							</TableCell>
+							<TableCell>
+								{g.status?.replace('STATUS_', '').toLowerCase()}
+							</TableCell>
+							<TableCell>{g.score || ''}</TableCell>
+							<TableCell>
+								{g.result === 'win' || g.result === 'loss' ? (
+									<Chip
+										size='sm'
+										color={g.result === 'win' ? 'success' : 'danger'}
+										variant='flat'
+									>
+										{g.result === 'win' ? 'hooked' : 'not hooked'}
+									</Chip>
+								) : (
+									<span className='text-foreground/70'>upcoming</span>
+								)}
+							</TableCell>
+						</TableRow>
+					);
+				})}
+			</TableBody>
+		</Table>
 	);
 }
