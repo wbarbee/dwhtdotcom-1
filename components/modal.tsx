@@ -93,10 +93,10 @@ function StatsTable({
 			<TableBody>
 				{games.map((g) => {
 					const opponent = g.isTexasHome ? g.away : g.home;
-					const ha = g.isTexasHome
-						? 'Home'
-						: g.neutralSite
-							? 'Neutral'
+					const ha = g.neutralSite
+						? 'Neutral'
+						: g.isTexasHome
+							? 'Home'
 							: 'Away';
 					return (
 						<TableRow key={g.id}>
@@ -106,7 +106,9 @@ function StatsTable({
 							<TableCell>
 								{g.location}
 								{g.neutralSite && (
-									<span className='ml-1 align-middle text-xs'>*</span>
+									<span className='ml-1 align-middle text-xs text-red-600'>
+										*
+									</span>
 								)}
 							</TableCell>
 							<TableCell>
@@ -167,18 +169,20 @@ export default function FullScoreModal({ result }: FullScoreModalProps) {
 								<StatsTable onLoadingChange={setIsTableLoading} />
 							</ModalBody>
 							<ModalFooter>
-								<div className='text-xs absolute left-12 md:left-[4rem] bottom-8'>
-									<span className='font-bold text-red-400'>*</span> = neutral
-									site game
-								</div>
 								{!isTableLoading && (
-									<Button
-										onPress={onClose}
-										size='sm'
-										className='bg-burntOrange hover:bg-orange-700 text-white font-normal py-2 px-4 rounded-[3px] transition-colors duration-200 ease-in-out shadow-md hover:shadow-lg'
-									>
-										Close
-									</Button>
+									<>
+										<div className='text-xs absolute bottom-8 left-10'>
+											<span className='font-bold text-red-400'>*</span> =
+											neutral site game
+										</div>
+										<Button
+											onPress={onClose}
+											size='sm'
+											className='bg-burntOrange hover:bg-orange-700 text-white font-normal py-2 px-4 rounded-[3px] transition-colors duration-200 ease-in-out shadow-md hover:shadow-lg'
+										>
+											Close
+										</Button>
+									</>
 								)}
 							</ModalFooter>
 						</>
