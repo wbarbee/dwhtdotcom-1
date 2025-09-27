@@ -22,21 +22,20 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
 	const isSSR = useIsSSR();
 
 	const onChange = () => {
-		theme === 'light' ? setTheme('dark') : setTheme('light');
+		if (theme === 'dark') {
+			setTheme('light');
+		} else {
+			setTheme('dark');
+		}
 	};
+	const shouldShowLightIcon = isSSR || theme === 'light';
 
-	const {
-		Component,
-		slots,
-		isSelected,
-		getBaseProps,
-		getInputProps,
-		getWrapperProps,
-	} = useSwitch({
-		isSelected: theme === 'light' || isSSR,
-		'aria-label': `Switch to ${theme === 'light' || isSSR ? 'dark' : 'light'} mode`,
-		onChange,
-	});
+	const { Component, slots, getBaseProps, getInputProps, getWrapperProps } =
+		useSwitch({
+			isSelected: shouldShowLightIcon,
+			'aria-label': `Switch to ${shouldShowLightIcon ? 'dark' : 'light'} mode`,
+			onChange,
+		});
 
 	return (
 		<Component
@@ -46,7 +45,8 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
 					className,
 					classNames?.base
 				),
-			})}>
+			})}
+		>
 			<VisuallyHidden>
 				<input {...getInputProps()} />
 			</VisuallyHidden>
@@ -67,8 +67,9 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
 						],
 						classNames?.wrapper
 					),
-				})}>
-				{!isSelected || isSSR ? <SunIcon /> : <MoonIcon />}
+				})}
+			>
+				{shouldShowLightIcon ? <SunIcon /> : <MoonIcon />}
 			</div>
 		</Component>
 	);
