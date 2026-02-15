@@ -52,7 +52,7 @@ export default function Home() {
 				currentOverrideMode={overrideMode}
 				refreshData={handleRefreshData}
 			/>
-			<div className='flex flex-col items-center w-full min-h-screen gap-4 pt-12 pb-8 px-4'>
+			<div className='flex flex-col items-center w-full gap-4 pt-[8vh] pb-8 px-4'>
 				{/* Season Record Bar */}
 				{hasCompletedGames && !loading && (
 					<div className='w-[90%] max-w-[810px]'>
