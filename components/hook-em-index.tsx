@@ -97,7 +97,7 @@ function CircularGauge({ score, grade }: { score: number; grade: string }) {
 				<span className='text-3xl font-score font-bold text-foreground'>
 					<AnimatedNumber value={score} />
 				</span>
-				<span className={`text-sm font-display font-bold ${gradeColor}`}>
+				<span className={`text-lg font-score font-bold ${gradeColor}`}>
 					{grade}
 				</span>
 			</div>
@@ -185,7 +185,7 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 				<div className='flex items-center gap-4'>
 					<CircularGauge score={index.score} grade={index.grade} />
 				</div>
-				<span className='text-[10px] text-foreground/30'>
+				<span className='text-xs text-foreground/50'>
 					{expanded ? 'tap to collapse' : 'tap for breakdown'}
 				</span>
 

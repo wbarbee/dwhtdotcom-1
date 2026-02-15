@@ -8,7 +8,6 @@ import {
 	ModalFooter,
 	Button,
 	Spinner,
-	Chip,
 	useDisclosure,
 } from '@nextui-org/react';
 import { useMediaQuery } from '@react-hook/media-query';
@@ -126,19 +125,9 @@ function ScheduleList({
 								</span>
 							)}
 							{g.result === 'win' ? (
-								<Chip
-									size='sm'
-									className='bg-accent-green/15 text-accent-green border-none text-xs min-w-[28px] h-5'
-								>
-									W
-								</Chip>
+								<span className='text-lg min-w-[28px] text-center' role='img' aria-label='Win'>🤘</span>
 							) : g.result === 'loss' ? (
-								<Chip
-									size='sm'
-									className='bg-accent-red/15 text-accent-red border-none text-xs min-w-[28px] h-5'
-								>
-									L
-								</Chip>
+								<span className='text-lg min-w-[28px] text-center rotate-180 inline-block' role='img' aria-label='Loss'>🤘</span>
 							) : (
 								<span className='text-xs text-foreground/30 min-w-[28px] text-center'>
 									--
@@ -158,9 +147,9 @@ const CalendarIcon = ({ size = 14 }: { size?: number }) => (
 
 function getDefaultSeasonLabel(): string {
 	const now = new Date();
-	// If we're in Jan-Jul, the most recent season started the previous year
-	const seasonYear = now.getMonth() < 7 ? now.getFullYear() - 1 : now.getFullYear();
-	return `${seasonYear}`;
+	// During off-season (Jan-Aug), the upcoming season is the current year
+	// During active season (Sep-Dec), it's also the current year
+	return `${now.getFullYear()}`;
 }
 
 export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps) {
@@ -200,7 +189,7 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 					base: isMobile
 						? 'max-h-[100vh] m-0 rounded-none animate-fade-in bg-surface-50 dark:bg-surface-950'
 						: 'max-h-[85vh] m-2 rounded-xl animate-fade-in glass-card',
-					closeButton: 'hover:bg-white/5 active:bg-white/10',
+					closeButton: 'top-3 right-3 hover:bg-white/5 active:bg-white/10',
 					body: 'px-4 py-2',
 				}}
 			>

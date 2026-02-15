@@ -5,6 +5,7 @@ import ScoreCard from '../components/card';
 import SeasonRecord from '../components/season-record';
 import RivalryTracker from '../components/rivalry-tracker';
 import HookEmIndex from '../components/hook-em-index';
+import LastSeasonResults from '../components/last-season-results';
 import DevOverride from '../components/dev-override';
 import { useCurrentGameData } from '../hooks/useCurrentGameData';
 
@@ -40,6 +41,7 @@ export default function Home() {
 	};
 
 	const hasCompletedGames = allGames.some((g) => g.status === 'STATUS_FINAL');
+	const isOffseason = !hasCompletedGames;
 
 	return (
 		<div className='relative w-full min-h-screen dot-grid'>
@@ -64,13 +66,13 @@ export default function Home() {
 					loading={loading}
 				/>
 
-				{/* Tabs: Rivalries & Hook Them Index */}
+				{/* Tabs */}
 				{!loading && (
 					<div className='w-[90%] max-w-[810px]'>
 						<Tabs
 							aria-label='Content tabs'
 							variant='underlined'
-							defaultSelectedKey={hasCompletedGames ? 'rivalries' : 'index'}
+							defaultSelectedKey={isOffseason ? 'index' : 'rivalries'}
 							classNames={{
 								tabList:
 									'gap-6 w-full relative rounded-none p-0 border-b border-white/5',
@@ -87,11 +89,18 @@ export default function Home() {
 									</div>
 								</Tab>
 							)}
-							<Tab key='index' title={hasCompletedGames ? 'Hook Them Index' : "Last Season's Hook Them Index"}>
+							<Tab key='index' title={isOffseason ? "Last Season's Hook Them Index" : 'Hook Them Index'}>
 								<div className='pt-3'>
 									<HookEmIndex games={allGames} />
 								</div>
 							</Tab>
+							{isOffseason && (
+								<Tab key='last-season-results' title="Last Season's Hooks">
+									<div className='pt-3'>
+										<LastSeasonResults />
+									</div>
+								</Tab>
+							)}
 						</Tabs>
 					</div>
 				)}
