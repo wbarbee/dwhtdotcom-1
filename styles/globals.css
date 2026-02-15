@@ -104,6 +104,14 @@
 }
 
 @layer utilities {
+	.scrollbar-hide {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
+	.scrollbar-hide::-webkit-scrollbar {
+		display: none;
+	}
+
 	.animate-pulse-opacity {
 		animation: pulse-opacity 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 	}
@@ -225,6 +233,19 @@
 
 .bg-content1 {
 	box-shadow: none;
+}
+
+/* Force NextUI tabs to scroll horizontally on mobile */
+[data-slot="base"] {
+	overflow-x: auto !important;
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+[data-slot="base"]::-webkit-scrollbar {
+	display: none;
+}
+[data-slot="tabList"] {
+	flex-wrap: nowrap !important;
 }
 
 .rotate-180 {

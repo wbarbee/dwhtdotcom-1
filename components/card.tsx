@@ -172,10 +172,10 @@ export default function ScoreCard({
 							{offseasonMode.title}
 						</motion.p>
 						<motion.div className='flex flex-col gap-2' variants={itemVariants}>
-							<p className='text-lg text-foreground/80'>
+							<p className='text-md text-foreground/80 font-gothic'>
 								Check back when the season starts
 							</p>
-							<p className='text-sm text-foreground/50'>
+							<p className='text-sm text-foreground/50 font-gothic'>
 								We'll have live game updates and scores
 							</p>
 						</motion.div>
@@ -317,9 +317,9 @@ export default function ScoreCard({
 								<p className={`${status === 'STATUS_SCHEDULED' ? 'mt-2' : ''} text-sm text-foreground/50`}>
 									{location} &middot; {formattedDate}
 								</p>
-								<p className='mt-3 mb-0 text-sm text-foreground/60 font-mono tracking-wide'>
-									{longhornsRecord}
-								</p>
+								<p className='mt-3 mb-0 text-xs text-foreground/40 tracking-wide'>
+								Season Record: <span className='font-mono text-foreground/60'>{longhornsRecord}</span>
+							</p>
 							</div>
 						</motion.div>
 					</motion.div>

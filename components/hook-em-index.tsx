@@ -9,7 +9,13 @@ interface HookEmIndexProps {
 	games: Game[];
 }
 
-function AnimatedNumber({ value, duration = 1.5 }: { value: number; duration?: number }) {
+function AnimatedNumber({
+	value,
+	duration = 1.5,
+}: {
+	value: number;
+	duration?: number;
+}) {
 	const [display, setDisplay] = useState(0);
 
 	useEffect(() => {
@@ -44,8 +50,8 @@ const FACTOR_LABELS: Record<string, { label: string; max: number }> = {
 };
 
 function CircularGauge({ score, grade }: { score: number; grade: string }) {
-	const radius = 58;
-	const stroke = 8;
+	const radius = 75;
+	const stroke = 9;
 	const circumference = 2 * Math.PI * radius;
 	const offset = circumference - (score / 100) * circumference;
 
@@ -68,11 +74,11 @@ function CircularGauge({ score, grade }: { score: number; grade: string }) {
 					: '#dc2626';
 
 	return (
-		<div className='relative w-[150px] h-[150px] flex items-center justify-center'>
-			<svg width='150' height='150' className='-rotate-90'>
+		<div className='relative w-[190px] h-[190px] md:w-[220px] md:h-[220px] flex items-center justify-center'>
+			<svg viewBox='0 0 190 190' className='-rotate-90 w-full h-full'>
 				<circle
-					cx='75'
-					cy='75'
+					cx='95'
+					cy='95'
 					r={radius}
 					fill='none'
 					stroke='currentColor'
@@ -80,8 +86,8 @@ function CircularGauge({ score, grade }: { score: number; grade: string }) {
 					className='text-white/5'
 				/>
 				<motion.circle
-					cx='75'
-					cy='75'
+					cx='95'
+					cy='95'
 					r={radius}
 					fill='none'
 					stroke={strokeColor}
@@ -113,7 +119,7 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 
 	const completedCount = useMemo(
 		() => games.filter((g) => g.status === 'STATUS_FINAL').length,
-		[games]
+		[games],
 	);
 
 	// If no completed games in current data, fetch previous season
@@ -134,7 +140,10 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 					setFallbackGames(data);
 					// Derive season year from first game
 					const firstDate = new Date(data[0].date);
-					const year = firstDate.getMonth() >= 7 ? firstDate.getFullYear() : firstDate.getFullYear() - 1;
+					const year =
+						firstDate.getMonth() >= 7
+							? firstDate.getFullYear()
+							: firstDate.getFullYear() - 1;
 					setSeasonLabel(`${year}`);
 				}
 			} catch {
@@ -143,11 +152,15 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 				if (mounted) setFallbackLoading(false);
 			}
 		})();
-		return () => { mounted = false; };
+		return () => {
+			mounted = false;
+		};
 	}, [completedCount]);
 
 	const activeGames = completedCount > 0 ? games : (fallbackGames ?? []);
-	const activeCompleted = activeGames.filter((g) => g.status === 'STATUS_FINAL').length;
+	const activeCompleted = activeGames.filter(
+		(g) => g.status === 'STATUS_FINAL',
+	).length;
 	const index = useMemo(() => calculateHookEmIndex(activeGames), [activeGames]);
 
 	if (fallbackLoading) {
@@ -161,14 +174,16 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 	if (activeCompleted === 0) {
 		return (
 			<div className='glass-card p-6 flex items-center justify-center'>
-				<span className='text-foreground/40 text-sm'>Play some games first</span>
+				<span className='text-foreground/40 text-sm'>
+					Play some games first
+				</span>
 			</div>
 		);
 	}
 
 	return (
 		<div
-			className='glass-card px-6 pt-6 pb-8 cursor-pointer select-none'
+			className='glass-card px-6 md:px-2 pt-6 pb-4 cursor-pointer select-none'
 			onClick={() => setExpanded((v) => !v)}
 		>
 			<motion.div
@@ -177,57 +192,84 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 				animate={{ opacity: 1 }}
 				transition={{ duration: 0.3 }}
 			>
-				<div className='flex flex-col items-center gap-1'>
-					<span className='text-lg font-display italic text-foreground tracking-wide'>
+				<div className='flex flex-col items-center gap-1 mb-2'>
+					<span className='text-lg font-display italic text-foreground tracking-wide text-center'>
 						{seasonLabel ? `${seasonLabel} Season` : ''} Hook Them Index
 					</span>
 				</div>
-				<div className='flex items-center gap-4'>
-					<CircularGauge score={index.score} grade={index.grade} />
+
+				{/* Desktop: side-by-side layout / Mobile: stacked */}
+				<div className='flex flex-col md:flex-row items-center gap-2 md:gap-0 w-full md:px-4'>
+					{/* Gauge */}
+					<div className='flex-shrink-0 md:w-[38%] flex items-center justify-center md:py-2'>
+						<CircularGauge score={index.score} grade={index.grade} />
+					</div>
+
+					{/* Factor Breakdown — always visible on desktop, expandable on mobile */}
+					<div className='flex flex-col items-center md:items-stretch w-full md:w-[62%] md:justify-center'>
+						<span className='inline-flex md:hidden items-center gap-1.5 px-4 py-1.5 mb-3 rounded-full border border-burntOrange/30 text-burntOrange text-xs font-medium cursor-pointer hover:bg-burntOrange/10 transition-colors'>
+							{expanded ? 'tap to collapse' : 'tap for breakdown'}
+							<svg
+								width='10'
+								height='10'
+								viewBox='0 0 10 10'
+								fill='none'
+								stroke='currentColor'
+								strokeWidth='1.5'
+								strokeLinecap='round'
+								strokeLinejoin='round'
+								className={`transition-transform ${expanded ? 'rotate-180' : ''}`}
+							>
+								<path d='M2 4l3 3 3-3' />
+							</svg>
+						</span>
+
+						{/* Desktop: always show / Mobile: expandable */}
+						<AnimatePresence>
+							{(expanded || typeof window !== 'undefined') && (
+								<motion.div
+									className={`w-full flex-col gap-3 md:border-l md:border-foreground/10 md:px-10 ${expanded ? 'flex' : 'hidden md:flex'}`}
+									initial={{ height: 0, opacity: 0 }}
+									animate={{ height: 'auto', opacity: 1 }}
+									exit={{ height: 0, opacity: 0 }}
+									transition={{ duration: 0.25, ease: 'easeInOut' }}
+									style={{ overflow: 'hidden' }}
+								>
+									{Object.entries(index.factors).map(([key, value]) => {
+										const meta = FACTOR_LABELS[key];
+										if (!meta) return null;
+										const pct = (value / meta.max) * 100;
+
+										return (
+											<div key={key} className='flex flex-col gap-1'>
+												<div className='flex items-center justify-between'>
+													<span className='text-xs text-foreground/50'>
+														{meta.label}
+													</span>
+													<span className='text-xs font-mono text-foreground/60'>
+														{value}/{meta.max}
+													</span>
+												</div>
+												<div className='h-1.5 bg-white/5 rounded-full overflow-hidden'>
+													<motion.div
+														className='h-full bg-burntOrange rounded-full'
+														initial={{ width: 0 }}
+														animate={{ width: `${pct}%` }}
+														transition={{
+															duration: 1,
+															delay: 0.3,
+															ease: 'easeOut',
+														}}
+													/>
+												</div>
+											</div>
+										);
+									})}
+								</motion.div>
+							)}
+						</AnimatePresence>
+					</div>
 				</div>
-				<span className='inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-burntOrange/30 text-burntOrange text-xs font-medium cursor-pointer hover:bg-burntOrange/10 transition-colors'>
-					{expanded ? 'tap to collapse' : 'tap for breakdown'}
-					<svg width='10' height='10' viewBox='0 0 10 10' fill='none' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' className={`transition-transform ${expanded ? 'rotate-180' : ''}`}><path d='M2 4l3 3 3-3'/></svg>
-				</span>
-
-				{/* Factor Breakdown — expandable */}
-				<AnimatePresence>
-					{expanded && (
-						<motion.div
-							className='w-full max-w-[320px] flex flex-col gap-3'
-							initial={{ height: 0, opacity: 0 }}
-							animate={{ height: 'auto', opacity: 1 }}
-							exit={{ height: 0, opacity: 0 }}
-							transition={{ duration: 0.25, ease: 'easeInOut' }}
-							style={{ overflow: 'hidden' }}
-						>
-							{Object.entries(index.factors).map(([key, value]) => {
-								const meta = FACTOR_LABELS[key];
-								if (!meta) return null;
-								const pct = (value / meta.max) * 100;
-
-								return (
-									<div key={key} className='flex flex-col gap-1'>
-										<div className='flex items-center justify-between'>
-											<span className='text-xs text-foreground/50'>{meta.label}</span>
-											<span className='text-xs font-mono text-foreground/60'>
-												{value}/{meta.max}
-											</span>
-										</div>
-										<div className='h-1.5 bg-white/5 rounded-full overflow-hidden'>
-											<motion.div
-												className='h-full bg-burntOrange rounded-full'
-												initial={{ width: 0 }}
-												animate={{ width: `${pct}%` }}
-												transition={{ duration: 1, delay: 0.3, ease: 'easeOut' }}
-											/>
-										</div>
-									</div>
-								);
-							})}
-						</motion.div>
-					)}
-				</AnimatePresence>
 			</motion.div>
 		</div>
 	);

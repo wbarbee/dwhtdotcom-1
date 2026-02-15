@@ -76,10 +76,11 @@ export default function Home() {
 							variant='underlined'
 							defaultSelectedKey={isOffseason ? 'index' : 'rivalries'}
 							classNames={{
+								base: 'w-full overflow-x-auto scrollbar-hide',
 								tabList:
-									'gap-6 w-full relative rounded-none p-0 border-b border-white/5',
+									'gap-6 w-max relative rounded-none p-0 border-b border-white/5 flex-nowrap',
 								cursor: 'w-full bg-burntOrange transition-all duration-300',
-								tab: 'max-w-fit px-0 h-10',
+								tab: 'max-w-fit px-0 h-10 whitespace-nowrap',
 								tabContent:
 									'group-data-[selected=true]:text-burntOrange text-foreground/40 text-sm font-display',
 								panel: 'animate-fade-in',

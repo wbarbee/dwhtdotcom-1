@@ -1,6 +1,6 @@
 const Loading = () => {
 	return (
-		<div className='mb-4rem md:mb-0 flex flex-col justify-center align-center w-full h-screen animate-fade-in'>
+		<div className='flex flex-col justify-center items-center w-full min-h-[70vh] animate-fade-in'>
 			<h1 className='my-0 text-[6cqw] md:text-[4cqw] lg:text-[3cqw] text-burntOrange text-center font-espn font-normal italic'>
 				Did we hook them?
 			</h1>
