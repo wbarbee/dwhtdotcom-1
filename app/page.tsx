@@ -1,12 +1,22 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { Tabs, Tab } from '@nextui-org/react';
 import ScoreCard from '../components/card';
+import SeasonRecord from '../components/season-record';
+import RivalryTracker from '../components/rivalry-tracker';
+import HookEmIndex from '../components/hook-em-index';
 import DevOverride from '../components/dev-override';
 import { useCurrentGameData } from '../hooks/useCurrentGameData';
 
 export default function Home() {
-	const { currentGameData, loading, error, refreshData, overrideMode } =
-		useCurrentGameData();
+	const {
+		currentGameData,
+		allGames,
+		loading,
+		error,
+		refreshData,
+		overrideMode,
+	} = useCurrentGameData();
 	const [overrideVisible, setOverrideVisible] = useState(false);
 
 	useEffect(() => {
@@ -15,46 +25,76 @@ export default function Home() {
 		} else {
 			setOverrideVisible(false);
 		}
-
-		// Log debug information
-		console.log('IS_DEV_MODE:', process.env.NODE_ENV === 'development');
-		console.log(
-			'USE_MOCK_DATA:',
-			process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true'
-		);
 	}, [overrideMode]);
 
 	const handleRefreshData = async (
 		newOverrideMode?: string,
-		setIsRefreshing?: (isRefreshing: boolean) => void
+		setIsRefreshing?: (isRefreshing: boolean) => void,
 	) => {
 		if (setIsRefreshing) setIsRefreshing(true);
 		try {
 			await refreshData(newOverrideMode);
-			// Log the new override mode
-			console.log('New overrideMode:', newOverrideMode);
 		} finally {
 			if (setIsRefreshing) setIsRefreshing(false);
 		}
 	};
 
+	const hasCompletedGames = allGames.some((g) => g.status === 'STATUS_FINAL');
+
 	return (
-		<div className='relative w-full h-full'>
+		<div className='relative w-full min-h-screen dot-grid'>
 			<DevOverride
 				overrideVisible={overrideVisible}
 				currentOverrideMode={overrideMode}
 				refreshData={handleRefreshData}
 			/>
-			<div className='absolute top-4 right-4'>
-				{/* Add any top-right corner elements here */}
-			</div>
-			<div className='flex items-center justify-center w-full h-full'>
+			<div className='flex flex-col items-center justify-center w-full min-h-screen gap-4 pt-4 pb-8 px-4'>
+				{/* Season Record Bar */}
+				{hasCompletedGames && !loading && (
+					<div className='w-[90%] max-w-[810px]'>
+						<SeasonRecord games={allGames} />
+					</div>
+				)}
+
+				{/* Hero Card */}
 				<ScoreCard
 					currentGameData={currentGameData}
 					refreshData={() => handleRefreshData(overrideMode)}
 					error={error}
 					loading={loading}
 				/>
+
+				{/* Tabs: Rivalries & Hook Them Index */}
+				{!loading && (
+					<div className='w-[90%] max-w-[810px]'>
+						<Tabs
+							aria-label='Content tabs'
+							variant='underlined'
+							defaultSelectedKey={hasCompletedGames ? 'rivalries' : 'index'}
+							classNames={{
+								tabList:
+									'gap-6 w-full relative rounded-none p-0 border-b border-white/5',
+								cursor: 'w-full bg-burntOrange',
+								tab: 'max-w-fit px-0 h-10',
+								tabContent:
+									'group-data-[selected=true]:text-burntOrange text-foreground/40 text-sm font-display',
+							}}
+						>
+							{hasCompletedGames && (
+								<Tab key='rivalries' title='Rivalries'>
+									<div className='pt-3'>
+										<RivalryTracker games={allGames} />
+									</div>
+								</Tab>
+							)}
+							<Tab key='index' title={hasCompletedGames ? 'Hook Them Index' : "Last Season's Hook Them Index"}>
+								<div className='pt-3'>
+									<HookEmIndex games={allGames} />
+								</div>
+							</Tab>
+						</Tabs>
+					</div>
+				)}
 			</div>
 		</div>
 	);

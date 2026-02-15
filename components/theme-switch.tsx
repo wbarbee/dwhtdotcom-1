@@ -41,7 +41,7 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
 		<Component
 			{...getBaseProps({
 				className: clsx(
-					'px-px transition-opacity hover:opacity-80 cursor-pointer fixed top-6 right-6 z-[14]',
+					'px-px transition-all hover:opacity-80 cursor-pointer fixed top-5 right-5 z-[14]',
 					className,
 					classNames?.base
 				),
@@ -55,21 +55,22 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
 				className={slots.wrapper({
 					class: clsx(
 						[
-							'w-auto h-auto',
-							'bg-transparent',
-							'rounded-lg',
+							'w-8 h-8',
+							'bg-white/10 dark:bg-white/5',
+							'backdrop-blur-sm',
+							'border border-white/10',
+							'rounded-full',
 							'flex items-center justify-center',
-							'group-data-[selected=true]:bg-transparent',
-							'!text-default-500',
-							'pt-px',
-							'px-0',
-							'mx-0',
+							'group-data-[selected=true]:bg-white/10',
+							'!text-foreground/60',
+							'hover:!text-foreground',
+							'transition-colors',
 						],
 						classNames?.wrapper
 					),
 				})}
 			>
-				{shouldShowLightIcon ? <SunIcon /> : <MoonIcon />}
+				{shouldShowLightIcon ? <SunIcon size={16} /> : <MoonIcon size={16} />}
 			</div>
 		</Component>
 	);

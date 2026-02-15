@@ -7,8 +7,6 @@ import { ThemeSwitch } from '@/components/theme-switch';
 import { fontSans } from '@/config/fonts';
 import InfoButton from '@/components/info-button';
 
-const SITE_URL = 'https://www.didwehookthem.com';
-const OPEN_GRAPH_IMAGE = `${SITE_URL}/opengraph-image.png`;
 const SITE_DESCRIPTION =
 	'The ultimate source for finding out if we hooked them. Get real-time updates, statistics, and insights.';
 
@@ -50,14 +48,6 @@ export const metadata: Metadata = {
 		siteName: 'Did we hook them?',
 		title: 'Did we hook them? | A great source to find out if we hooked them',
 		description: SITE_DESCRIPTION,
-		images: [
-			{
-				url: OPEN_GRAPH_IMAGE,
-				width: 1200,
-				height: 630,
-				alt: 'Did we hook them? - OG Image',
-			},
-		],
 	},
 	icons: {
 		icon: [
@@ -117,7 +107,7 @@ export default function RootLayout({
 				)}>
 				<Providers>
 					<div className='relative flex flex-col h-screen'>
-						<main className='w-full max-w-screen mx-auto flex-grow'>
+						<main className='w-full max-w-screen mx-auto flex-grow h-full'>
 							<ThemeSwitch />
 							<ThemeProvider
 								attribute='class'

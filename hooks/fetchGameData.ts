@@ -1,14 +1,41 @@
 import { Game } from '../types';
 import { mockGames, getGameByMode } from '../utils/mockData';
 
-const API_FULL_SCHEDULE =
-	'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/texas/schedule?startDate=2025-08-01&endDate=2026-03-31';
+const API_SCHEDULE_BASE =
+	'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/texas/schedule';
 
 const API_LIVE_GAME =
 	'https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=';
 
 const IS_DEV_MODE = process.env.NODE_ENV === 'development';
 const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
+
+// SEC conference team IDs
+const SEC_TEAM_IDS = new Set([
+	'2', // Auburn
+	'8', // Alabama
+	'57', // Florida
+	'61', // Georgia
+	'96', // Kentucky
+	'97', // LSU
+	'99', // Mississippi State (Miss State)
+	'145', // Ole Miss
+	'142', // Missouri
+	'2032', // South Carolina
+	'249', // Tennessee
+	'245', // Texas A&M
+	'238', // Vanderbilt
+	'12', // Arkansas
+	'201', // Oklahoma
+]);
+
+const RIVALRY_MAP: Record<string, string> = {
+	'201': 'Red River Rivalry',
+	'245': 'Lone Star Showdown',
+	'2': 'Iron Skillet',
+	'12': 'Southwest Classic',
+	'97': 'Battle of the Bayou',
+};
 
 const fetchLiveGameData = async (eventId: string): Promise<any> => {
 	const response = await fetch(`${API_LIVE_GAME}${eventId}`, {
@@ -20,25 +47,19 @@ const fetchLiveGameData = async (eventId: string): Promise<any> => {
 	return response.json();
 };
 
-const fetchData = async (): Promise<Game[]> => {
-	const url = `${API_FULL_SCHEDULE}&_=${Date.now()}`; // Always add a timestamp to prevent caching
-	const response = await fetch(url, {
-		cache: 'no-store', // Ensure we're always getting fresh data
-	});
+const fetchSchedule = async (season?: number, seasonType?: number): Promise<any> => {
+	const params = new URLSearchParams();
+	if (season) params.set('season', String(season));
+	if (seasonType) params.set('seasontype', String(seasonType));
+	params.set('_', String(Date.now()));
+	const url = `${API_SCHEDULE_BASE}?${params.toString()}`;
+	const response = await fetch(url, { cache: 'no-store' });
+	if (!response.ok) throw new Error('Failed to fetch game data');
+	return response.json();
+};
 
-	if (!response.ok) {
-		throw new Error('Failed to fetch game data');
-	}
-	const data = await response.json();
-
-	console.log('Raw schedule data:', data.events);
-
-	// Handle off-season case where events array is empty
-	if (!data.events || data.events.length === 0) {
-		console.log('No scheduled games found (likely off-season)');
-		return [];
-	}
-
+const processEvents = async (data: any): Promise<Game[]> => {
+	if (!data.events || data.events.length === 0) return [];
 	const processedGames = await Promise.all(
 		data.events.map(async (event: any) => {
 			const homeTeam = event.competitions[0].competitors.find(
@@ -81,8 +102,27 @@ const fetchData = async (): Promise<Game[]> => {
 				if (gameStatus !== 'STATUS_FINAL') return 'upcoming';
 				if (texasTeam.winner) return 'win';
 				if (texasTeam.winner === false) return 'loss';
-				return 'upcoming'; // Default to upcoming if winner is not determined
+				return 'upcoming';
 			};
+
+			// Determine opponent data
+			const opponentTeam = isTexasHome ? awayTeam : homeTeam;
+			const opponentId = opponentTeam.id || opponentTeam.team?.id || '';
+			const opponentName = opponentTeam.team?.displayName || '';
+			const opponentLogo = opponentTeam.team?.logos?.[0]?.href;
+
+			// Calculate Texas-centric scores
+			const texasScore = isTexasHome ? homeScore : awayScore;
+			const oppScore = isTexasHome ? awayScore : homeScore;
+			const pointDifferential =
+				texasScore !== null && oppScore !== null
+					? texasScore - oppScore
+					: null;
+
+			// Rivalry and conference detection
+			const isRivalry = opponentId in RIVALRY_MAP;
+			const rivalryName = RIVALRY_MAP[opponentId];
+			const isConferenceGame = SEC_TEAM_IDS.has(opponentId);
 
 			let game: Game = {
 				id: event.id,
@@ -104,6 +144,15 @@ const fetchData = async (): Promise<Game[]> => {
 				result: determineResult(),
 				status: gameStatus,
 				isTexasHome: isTexasHome,
+				opponentId,
+				opponentName,
+				opponentLogo,
+				texasScore,
+				opponentScore: oppScore,
+				pointDifferential,
+				isRivalry,
+				rivalryName,
+				isConferenceGame,
 			};
 
 			// Always fetch live data for current or in-progress games
@@ -130,6 +179,9 @@ const fetchData = async (): Promise<Game[]> => {
 						homeScore = parseInt(liveHomeTeam.score || '0', 10);
 						awayScore = parseInt(liveAwayTeam.score || '0', 10);
 
+						const liveTexasScore = isTexasHome ? homeScore : awayScore;
+						const liveOppScore = isTexasHome ? awayScore : homeScore;
+
 						game = {
 							...game,
 							homeTeamScore: homeScore,
@@ -137,6 +189,9 @@ const fetchData = async (): Promise<Game[]> => {
 							score: calculateScore(homeScore, awayScore),
 							currentPeriod: liveCompetition.status.period,
 							status: liveCompetition.status.type.name,
+							texasScore: liveTexasScore,
+							opponentScore: liveOppScore,
+							pointDifferential: liveTexasScore - liveOppScore,
 						};
 					}
 				} catch (error) {
@@ -160,11 +215,11 @@ export const fetchGameData = async (
 		if (IS_DEV_MODE && USE_MOCK_DATA && overrideMode !== undefined) {
 			console.warn('Using mock data in dev mode with override:', overrideMode);
 			const mockGame = getGameByMode(overrideMode || 'scheduled');
-			await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate network delay
+			await new Promise((resolve) => setTimeout(resolve, 1000));
 			return [mockGame];
 		}
-		const data = await fetchData();
-		// Add a minimum delay of 1 second to ensure the spinner is visible
+		const scheduleData = await fetchSchedule();
+		const data = await processEvents(scheduleData);
 		await new Promise((resolve) => setTimeout(resolve, 1000));
 		return data;
 	} finally {
@@ -177,6 +232,40 @@ export const refetchGameData = async (
 	setIsRefreshing?: (isRefreshing: boolean) => void
 ): Promise<Game[]> => {
 	return fetchGameData(overrideMode, setIsRefreshing);
+};
+
+/**
+ * Fetch the upcoming season schedule (uses seasontype=2 to get future scheduled games).
+ * Used by the schedule modal.
+ */
+export const fetchUpcomingSchedule = async (): Promise<Game[]> => {
+	// Try default first (works during active season)
+	let data = await fetchSchedule();
+	if (data.events && data.events.length > 0) {
+		return processEvents(data);
+	}
+	// During preseason, ESPN needs seasontype=2 to return the upcoming regular season
+	const currentYear = new Date().getFullYear();
+	const seasonYear = new Date().getMonth() < 8 ? currentYear : currentYear + 1;
+	data = await fetchSchedule(seasonYear, 2);
+	if (data.events && data.events.length > 0) {
+		return processEvents(data);
+	}
+	return [];
+};
+
+/**
+ * Fetch the most recent completed season's games.
+ * Used by the Hook Them Index during off-season.
+ */
+export const fetchLastSeasonData = async (): Promise<Game[]> => {
+	const currentYear = new Date().getFullYear();
+	const recentSeason = new Date().getMonth() < 8 ? currentYear - 1 : currentYear;
+	const data = await fetchSchedule(recentSeason);
+	if (data.events && data.events.length > 0) {
+		return processEvents(data);
+	}
+	return [];
 };
 
 export const fetchLiveGame = async (
@@ -219,6 +308,9 @@ export const fetchLiveGame = async (
 
 		const homeScore = parseInt(homeTeam.score || '0', 10);
 		const awayScore = parseInt(awayTeam.score || '0', 10);
+		const isTexasHome = texasTeam.homeAway === 'home';
+		const texasScore = isTexasHome ? homeScore : awayScore;
+		const oppScore = isTexasHome ? awayScore : homeScore;
 
 		const updatedGame: Game = {
 			...originalGame,
@@ -234,7 +326,6 @@ export const fetchLiveGame = async (
 			awayTeamAbbrev: awayTeam.team.abbreviation,
 			homeTeamScore: homeScore,
 			awayTeamScore: awayScore,
-			// Keep the original location
 			neutralSite: competition.neutralSite || originalGame.neutralSite,
 			date: new Date(competition.date).toLocaleDateString(),
 			timestamp: new Date(competition.date).getTime(),
@@ -245,7 +336,10 @@ export const fetchLiveGame = async (
 					? 'loss'
 					: 'upcoming',
 			status: competition.status.type.name,
-			isTexasHome: texasTeam.homeAway === 'home',
+			isTexasHome,
+			texasScore,
+			opponentScore: oppScore,
+			pointDifferential: texasScore - oppScore,
 		};
 
 		return updatedGame;

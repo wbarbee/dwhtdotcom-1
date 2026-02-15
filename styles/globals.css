@@ -4,15 +4,88 @@
 @tailwind components;
 @tailwind utilities;
 
+/* CSS Custom Properties for glassmorphism */
+:root {
+	--glass-bg: rgba(255, 255, 255, 0.08);
+	--glass-border: rgba(255, 255, 255, 0.12);
+	--glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+	--glass-blur: 16px;
+}
+
+.dark {
+	--glass-bg: rgba(255, 255, 255, 0.05);
+	--glass-border: rgba(255, 255, 255, 0.08);
+	--glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
 @layer base {
 	body {
-		@apply bg-gradient-to-br from-burntOrange/70 via-gray-600 to-burntOrange/80 dark:from-burntOrange/30 dark:via-gray-800 dark:to-burntOrange/40;
+		@apply bg-surface-50 dark:bg-surface-950;
+		background-image:
+			radial-gradient(ellipse at 20% 50%, rgba(192, 87, 0, 0.06) 0%, transparent 50%),
+			radial-gradient(ellipse at 80% 20%, rgba(192, 87, 0, 0.04) 0%, transparent 50%),
+			radial-gradient(ellipse at 50% 100%, rgba(192, 87, 0, 0.03) 0%, transparent 40%);
+	}
+
+	.dark body,
+	body.dark {
+		background-image:
+			radial-gradient(ellipse at 20% 50%, rgba(192, 87, 0, 0.08) 0%, transparent 50%),
+			radial-gradient(ellipse at 80% 20%, rgba(192, 87, 0, 0.05) 0%, transparent 50%),
+			radial-gradient(ellipse at 50% 100%, rgba(192, 87, 0, 0.04) 0%, transparent 40%);
+	}
+}
+
+@layer components {
+	.glass-card {
+		background: var(--glass-bg);
+		backdrop-filter: blur(var(--glass-blur));
+		-webkit-backdrop-filter: blur(var(--glass-blur));
+		border: 1px solid var(--glass-border);
+		box-shadow: var(--glass-shadow);
+		border-radius: 1rem;
+	}
+
+	.dot-grid {
+		background-image: radial-gradient(
+			circle,
+			rgba(192, 87, 0, 0.06) 1px,
+			transparent 1px
+		);
+		background-size: 24px 24px;
+	}
+
+	.dark .dot-grid {
+		background-image: radial-gradient(
+			circle,
+			rgba(192, 87, 0, 0.08) 1px,
+			transparent 1px
+		);
 	}
 }
 
 @layer utilities {
 	.animate-pulse-opacity {
 		animation: pulse-opacity 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+	}
+
+	.text-gradient-orange {
+		background: linear-gradient(135deg, #c05700, #fb923c);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+
+	.border-glow {
+		box-shadow:
+			0 0 15px rgba(192, 87, 0, 0.15),
+			inset 0 0 15px rgba(192, 87, 0, 0.05);
+	}
+
+	.dark .border-glow {
+		box-shadow:
+			0 0 20px rgba(192, 87, 0, 0.2),
+			inset 0 0 20px rgba(192, 87, 0, 0.05);
 	}
 }
 
@@ -38,7 +111,7 @@
 	font-family: 'ESPN';
 	src: url('/fonts/esp_bdit.ttf') format('truetype');
 	font-weight: bold;
-	font-style: itlic;
+	font-style: italic;
 	font-display: swap;
 }
 
@@ -65,14 +138,6 @@
 	font-style: normal;
 	font-display: swap;
 }
-
-/* .loader {
-	width: 5rem;
-	height: 5rem;
-	margin: 2rem auto 0;
-	position: relative;
-	box-sizing: border-box;
-} */
 
 .bg-content1 {
 	box-shadow: none;

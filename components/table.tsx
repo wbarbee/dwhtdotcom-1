@@ -1,400 +1,8 @@
 'use client';
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { RefreshCw } from 'lucide-react';
-import { useViewport } from '../hooks/useViewport';
-import {
-	Card,
-	CardBody,
-	Button,
-	Spinner,
-	Table,
-	TableHeader,
-	TableColumn,
-	TableBody,
-	TableRow,
-	TableCell,
-	Chip,
-} from '@nextui-org/react';
-import FullScoreModal from './modal';
-import { detectAppendedSuffix } from '../utils/stringUtils';
-import { useIsDarkMode } from '../hooks/useIsDarkMode';
-import { motion, AnimatePresence } from 'framer-motion';
-
-import { Game } from '../types';
-import gameModes from '../constants/gameModes';
-import Loading from './loading';
-
+import { useState, useEffect } from 'react';
+import { Spinner, Chip } from '@nextui-org/react';
 import { fetchGameData } from '../hooks/fetchGameData';
-
-interface ScoreCardProps {
-	currentGameData: Game | null;
-	refreshData: () => Promise<void>;
-	error: string | null;
-	loading: boolean;
-	onLoadingChange?: (loading: boolean) => void;
-}
-
-const contentVariants = {
-	hidden: { opacity: 0, y: 20 },
-	visible: {
-		opacity: 1,
-		y: 0,
-		transition: { duration: 0.5, staggerChildren: 0.1 },
-	},
-};
-
-const itemVariants = {
-	hidden: { opacity: 0, y: 10 },
-	visible: {
-		opacity: 1,
-		y: 0,
-		transition: { duration: 0.3 },
-	},
-};
-
-const isGameInProgress = (status: Game['status']) =>
-	[
-		'STATUS_IN_PROGRESS',
-		'STATUS_HALFTIME',
-		'STATUS_CURRENT',
-		'STATUS_END_PERIOD',
-		'STATUS_PRE_END_PERIOD',
-		'STATUS_FIRST_QUARTER',
-		'STATUS_SECOND_QUARTER',
-		'STATUS_THIRD_QUARTER',
-		'STATUS_FOURTH_QUARTER',
-		'STATUS_OVERTIME',
-	].includes(status);
-
-export default function ScoreCard({
-	currentGameData,
-	refreshData,
-	error,
-	loading,
-	onLoadingChange,
-}: ScoreCardProps) {
-	const [isRefreshing, setIsRefreshing] = useState(false);
-	const { isMobile } = useViewport();
-	const isDarkMode = useIsDarkMode();
-
-	useEffect(() => {
-		if (onLoadingChange) onLoadingChange(Boolean(loading || isRefreshing));
-	}, [loading, isRefreshing, onLoadingChange]);
-
-	const isGameday = useMemo(() => {
-		if (!currentGameData) return false;
-		const gameDate = new Date(currentGameData.date);
-		const today = new Date();
-		return (
-			gameDate.getDate() === today.getDate() &&
-			gameDate.getMonth() === today.getMonth() &&
-			gameDate.getFullYear() === today.getFullYear()
-		);
-	}, [currentGameData]);
-
-	const handleRefresh = useCallback(async () => {
-		setIsRefreshing(true);
-		try {
-			await refreshData();
-		} catch (error) {
-			console.error('Failed to refresh game data:', error);
-		} finally {
-			setTimeout(() => {
-				setIsRefreshing(false);
-			}, 1000);
-		}
-	}, [refreshData]);
-
-	const currentMode = useMemo(() => {
-		if (!currentGameData) return 'auto';
-		const { status, result } = currentGameData;
-		if (isGameInProgress(status)) return 'current';
-		if (result === 'win' || result === 'loss') return result;
-		if (isGameday && status === 'STATUS_SCHEDULED') return 'pregame';
-		return 'upcoming';
-	}, [currentGameData, isGameday]);
-
-	const modeData =
-		gameModes[currentMode === 'pregame' ? 'upcoming' : currentMode];
-
-	const getDynamicTitle = (mode: keyof typeof gameModes | 'pregame') => {
-		if (mode === 'pregame') {
-			return 'GAMEDAY';
-		}
-		if (mode === 'upcoming' && isGameday) {
-			return 'GAMEDAY';
-		}
-		return gameModes[mode].title;
-	};
-
-	if (error) {
-		return (
-			<Card className='w-[300px] h-[200px] flex items-center justify-center'>
-				<p className='text-danger'>{error}</p>
-			</Card>
-		);
-	}
-
-	if (loading) {
-		return (
-			<Card className='w-full h-full border-none bg-transparent flex items-center justify-center'>
-				<Loading />
-			</Card>
-		);
-	}
-
-	if (!currentGameData) {
-		const modeData = gameModes.offseason;
-		return (
-			<Card
-				isBlurred
-				className='border-none bg-background/60 dark:bg-default-100/50 max-w-[465px] md:max-w-[810px] w-[90%] -mt-[1rem] md:mt-0'
-				fullWidth
-				shadow='sm'
-			>
-				<CardBody>
-					<motion.div
-						className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center'
-						variants={contentVariants}
-						initial='hidden'
-						animate='visible'
-					>
-						<div className='relative col-span-6 md:col-span-4 flex items-center justify-center'>
-							<div
-								className='w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center'
-								style={{
-									backgroundImage: `url(${isDarkMode ? modeData.backgroundImageNight : modeData.backgroundImage})`,
-									backgroundPosition: 'top',
-									backgroundSize: 'contain',
-								}}
-							>
-								{currentMode !== 'auto' && (
-									<span
-										className={modeData.hookEmClasses}
-										role='img'
-										aria-label='Hook em Horns'
-									>
-										🤘
-									</span>
-								)}
-							</div>
-						</div>
-						<motion.div
-							className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-4 md:py-2'
-							variants={itemVariants}
-						>
-							<motion.div
-								className='flex flex-col mt-0 mb-0 gap-1'
-								variants={itemVariants}
-							>
-								<p className='text-2xl md:text-3xl font-espn italic text-gray-800 dark:text-gray-400 mb-2'>
-									{modeData.title}
-								</p>
-							</motion.div>
-							<motion.div
-								className='mt-2 flex justify-center'
-								variants={itemVariants}
-							>
-								<div className='flex flex-col gap-2'>
-									<p className='text-lg text-foreground/90'>
-										Check back when the season starts
-									</p>
-									<p className='text-sm text-foreground/80'>
-										We'll have live game updates and scores
-									</p>
-								</div>
-							</motion.div>
-						</motion.div>
-					</motion.div>
-				</CardBody>
-			</Card>
-		);
-	}
-
-	const {
-		status,
-		score,
-		currentPeriod,
-		home,
-		away,
-		homeTeamRank,
-		awayTeamRank,
-		homeTeamAbbrev,
-		awayTeamAbbrev,
-		location,
-		date,
-		longhornsRecord,
-	} = currentGameData;
-
-	const showScore =
-		(isGameInProgress(status) || status === 'STATUS_FINAL') && !isRefreshing;
-	const showPeriod = isGameInProgress(status) && !isRefreshing;
-	const showRefreshButton = isGameInProgress(status);
-
-	const backgroundImageUrl = isDarkMode
-		? modeData.backgroundImageNight
-		: modeData.backgroundImage;
-
-	const formattedDate = new Date(date).toLocaleDateString();
-
-	return (
-		<>
-			<Card
-				isBlurred
-				className='border-none bg-background/60 dark:bg-default-100/50 max-w-[465px] md:max-w-[810px] w-[90%] -mt-[1rem] md:mt-0'
-				fullWidth
-				shadow='sm'
-			>
-				<CardBody>
-					<motion.div
-						className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center'
-						variants={contentVariants}
-						initial='hidden'
-						animate='visible'
-					>
-						<div className='relative col-span-6 md:col-span-4 flex items-center justify-center'>
-							<div
-								className='w-full h-full min-h-[240px] flex items-center justify-center shadow-md rounded-md bg-cover bg-center'
-								style={{
-									backgroundImage: `url(${backgroundImageUrl})`,
-								}}
-							>
-								{status !== 'STATUS_SCHEDULED' && (
-									<span
-										className={modeData.hookEmClasses}
-										role='img'
-										aria-label='Hook em Horns'
-									>
-										🤘
-									</span>
-								)}
-							</div>
-						</div>
-						<motion.div
-							className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-4 md:py-2'
-							variants={itemVariants}
-						>
-							{(modeData.title || currentMode === 'pregame') && (
-								<motion.div
-									className='flex flex-col mt-0 mb-0 gap-1'
-									variants={itemVariants}
-								>
-									<p
-										className={`text-2xl md:text-3xl font-espn italic ${
-											currentMode === 'win'
-												? 'text-burntOrange dark:text-burntOrange'
-												: currentMode === 'loss'
-													? 'text-red-500'
-													: 'text-gray-800 dark:text-gray-400 mb-2'
-										} ${status === 'STATUS_FINAL' ? 'mb-4' : 'mb-0'}`}
-									>
-										{getDynamicTitle(currentMode)}
-									</p>
-								</motion.div>
-							)}
-							<AnimatePresence mode='wait'>
-								{showScore ? (
-									<motion.h1
-										className='text-6xl font-medium font-oxanium'
-										key='score'
-										initial={{ opacity: 0, scale: 0.8 }}
-										animate={{ opacity: 1, scale: 1 }}
-										exit={{ opacity: 0, scale: 0.8 }}
-										transition={{ duration: 0.3 }}
-									>
-										{score}
-									</motion.h1>
-								) : isRefreshing ? (
-									<Spinner
-										size='lg'
-										color='default'
-										labelColor='foreground'
-										className='mb-6'
-									/>
-								) : null}
-							</AnimatePresence>
-							{showPeriod && (
-								<motion.h2
-									className='mt-[0.25rem] mb-[0.5rem] font-oxanium font-light text-gray-700 dark:text-gray-400'
-									variants={itemVariants}
-								>
-									{currentPeriod !== null && currentPeriod > 4
-										? 'OVERTIME'
-										: status === 'STATUS_HALFTIME'
-											? 'Halftime'
-											: status === 'STATUS_END_PERIOD'
-												? 'End of Quarter'
-												: status === 'STATUS_PRE_END_PERIOD'
-													? 'Quarter Break'
-													: currentPeriod !== null
-														? `${detectAppendedSuffix(currentPeriod)} quarter`
-														: 'In Progress'}
-								</motion.h2>
-							)}
-							<motion.div
-								className='mt-2 flex justify-center'
-								variants={itemVariants}
-							>
-								<div className='flex flex-col gap-0'>
-									<h3 className='font-semibold text-foreground/90'>
-										{Number(awayTeamRank) < 50 && (
-											<span className='font-light text-xs ml-1 mr-1'>
-												[{awayTeamRank}]
-											</span>
-										)}
-										{isMobile ? awayTeamAbbrev : away}
-										<span className='mx-2'>vs</span>
-										{Number(homeTeamRank) < 50 && (
-											<span className='font-light text-xs ml-1 mr-1'>
-												[{homeTeamRank}]
-											</span>
-										)}
-										{isMobile ? homeTeamAbbrev : home}
-									</h3>
-									<p
-										className={`${
-											status === 'STATUS_SCHEDULED' ? 'mt-2' : ''
-										} text-sm text-foreground/80`}
-									>
-										{location} -- {formattedDate}
-									</p>
-									<p className='mt-3 mb-0 text-md text-gray-700 dark:text-gray-300 font-light font-menlo'>
-										<span className='text-md mr-1'>🤘</span>[
-										<b>{longhornsRecord}</b>]
-										<span
-											style={{
-												transform: 'rotate(180deg)',
-												display: 'inline-block',
-											}}
-											className='ml-1'
-										>
-											<span>🤘</span>
-										</span>
-									</p>
-								</div>
-							</motion.div>
-						</motion.div>
-					</motion.div>
-				</CardBody>
-				<div className='absolute bottom-2 right-2 flex gap-2'>
-					{showRefreshButton && (
-						<Button
-							isIconOnly
-							className='bg-transparent text-black dark:text-white rounded-full'
-							size='md'
-							aria-label='Refresh data'
-							onClick={handleRefresh}
-							isLoading={isRefreshing}
-						>
-							{!isRefreshing && <RefreshCw size={16} />}
-						</Button>
-					)}
-					<FullScoreModal result={currentGameData.result} />
-				</div>
-			</Card>
-		</>
-	);
-}
+import { Game } from '../types';
 
 export interface StatsTableProps {
 	onLoadingChange?: (loading: boolean) => void;
@@ -430,7 +38,7 @@ export function StatsTable({ onLoadingChange }: StatsTableProps) {
 	if (error) {
 		return (
 			<div className='w-full flex items-center justify-center py-12'>
-				<p className='text-danger'>{error}</p>
+				<p className='text-accent-red'>{error}</p>
 			</div>
 		);
 	}
@@ -446,55 +54,71 @@ export function StatsTable({ onLoadingChange }: StatsTableProps) {
 	if (!games || games.length === 0) {
 		return (
 			<div className='w-full flex items-center justify-center py-12'>
-				<p className='text-foreground/80'>No games scheduled.</p>
+				<p className='text-foreground/60'>No games scheduled.</p>
 			</div>
 		);
 	}
 
 	return (
-		<Table aria-label='Full game data table' removeWrapper fullWidth>
-			<TableHeader>
-				<TableColumn>Date</TableColumn>
-				<TableColumn>Opponent</TableColumn>
-				<TableColumn>Location</TableColumn>
-				<TableColumn>Status</TableColumn>
-				<TableColumn>Score</TableColumn>
-				<TableColumn>Result</TableColumn>
-			</TableHeader>
-			<TableBody>
-				{games.map((g) => {
-					const opponent = g.isTexasHome ? g.away : g.home;
-					return (
-						<TableRow key={g.id}>
-							<TableCell>{g.date}</TableCell>
-							<TableCell>{opponent}</TableCell>
-							<TableCell>
-								{g.location}
-								{g.neutralSite && (
-									<span className='ml-1 align-middle text-xs'>*</span>
+		<div className='flex flex-col gap-2'>
+			{games.map((g) => {
+				const opponent = g.isTexasHome ? g.away : g.home;
+				const opponentRank = g.isTexasHome ? g.awayTeamRank : g.homeTeamRank;
+				const ha = g.neutralSite ? 'N' : g.isTexasHome ? 'vs' : '@';
+
+				return (
+					<div
+						key={g.id}
+						className='flex items-center justify-between px-4 py-3 rounded-lg bg-white/5 dark:bg-white/[0.03] border border-white/5 hover:bg-white/10 dark:hover:bg-white/[0.06] transition-colors'
+					>
+						<div className='flex items-center gap-3 min-w-0'>
+							<span className='text-xs text-foreground/40 font-mono w-[75px] shrink-0'>
+								{g.date}
+							</span>
+							<span className='text-xs text-foreground/30 w-5 text-center shrink-0'>
+								{ha}
+							</span>
+							<span className='text-sm text-foreground/90 truncate'>
+								{Number(opponentRank) < 50 && (
+									<span className='text-burntOrange text-xs font-bold mr-1'>
+										#{opponentRank}
+									</span>
 								)}
-							</TableCell>
-							<TableCell>
-								{g.status?.replace('STATUS_', '').toLowerCase()}
-							</TableCell>
-							<TableCell>{g.score || ''}</TableCell>
-							<TableCell>
-								{g.result === 'win' || g.result === 'loss' ? (
-									<Chip
-										size='sm'
-										color={g.result === 'win' ? 'success' : 'danger'}
-										variant='flat'
-									>
-										{g.result === 'win' ? 'hooked' : 'not hooked'}
-									</Chip>
-								) : (
-									<span className='text-foreground/70'>upcoming</span>
-								)}
-							</TableCell>
-						</TableRow>
-					);
-				})}
-			</TableBody>
-		</Table>
+								{opponent}
+							</span>
+							{g.neutralSite && (
+								<span className='text-[10px] text-accent-gold'>*</span>
+							)}
+						</div>
+						<div className='flex items-center gap-3 shrink-0'>
+							{g.score && (
+								<span className='text-sm font-score text-foreground/70'>
+									{g.score}
+								</span>
+							)}
+							{g.result === 'win' ? (
+								<Chip
+									size='sm'
+									className='bg-accent-green/15 text-accent-green border-none text-xs min-w-[28px] h-5'
+								>
+									W
+								</Chip>
+							) : g.result === 'loss' ? (
+								<Chip
+									size='sm'
+									className='bg-accent-red/15 text-accent-red border-none text-xs min-w-[28px] h-5'
+								>
+									L
+								</Chip>
+							) : (
+								<span className='text-xs text-foreground/30 min-w-[28px] text-center'>
+									--
+								</span>
+							)}
+						</div>
+					</div>
+				);
+			})}
+		</div>
 	);
 }
