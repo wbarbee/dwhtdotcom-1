@@ -19,12 +19,16 @@
 }
 
 @layer base {
+	button, [role="button"], [role="tab"], a, summary, [tabindex]:not([tabindex="-1"]) {
+		cursor: pointer;
+	}
+
 	body {
 		@apply bg-surface-50 dark:bg-surface-950;
 		background-image:
-			radial-gradient(ellipse at 20% 50%, rgba(192, 87, 0, 0.06) 0%, transparent 50%),
-			radial-gradient(ellipse at 80% 20%, rgba(192, 87, 0, 0.04) 0%, transparent 50%),
-			radial-gradient(ellipse at 50% 100%, rgba(192, 87, 0, 0.03) 0%, transparent 40%);
+			radial-gradient(ellipse at 20% 50%, rgba(192, 87, 0, 0.1) 0%, transparent 50%),
+			radial-gradient(ellipse at 80% 20%, rgba(192, 87, 0, 0.07) 0%, transparent 50%),
+			radial-gradient(ellipse at 50% 100%, rgba(192, 87, 0, 0.05) 0%, transparent 40%);
 	}
 
 	.dark body,
@@ -62,6 +66,41 @@
 			transparent 1px
 		);
 	}
+
+	/* Ambient floating orbs */
+	.ambient-orb {
+		position: fixed;
+		border-radius: 50%;
+		pointer-events: none;
+		z-index: 0;
+		filter: blur(100px);
+	}
+
+	.ambient-orb-1 {
+		width: 600px;
+		height: 600px;
+		background: radial-gradient(circle, rgba(192, 87, 0, 0.12) 0%, transparent 70%);
+		top: -10%;
+		right: -8%;
+		animation: float-orb-1 20s ease-in-out infinite;
+	}
+
+	.ambient-orb-2 {
+		width: 500px;
+		height: 500px;
+		background: radial-gradient(circle, rgba(192, 87, 0, 0.09) 0%, transparent 70%);
+		bottom: -10%;
+		left: -8%;
+		animation: float-orb-2 25s ease-in-out infinite;
+	}
+
+	.dark .ambient-orb-1 {
+		background: radial-gradient(circle, rgba(192, 87, 0, 0.2) 0%, transparent 70%);
+	}
+
+	.dark .ambient-orb-2 {
+		background: radial-gradient(circle, rgba(192, 87, 0, 0.15) 0%, transparent 70%);
+	}
 }
 
 @layer utilities {
@@ -89,6 +128,21 @@
 	}
 }
 
+@keyframes fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.animate-fade-in {
+	animation: fade-in 0.3s ease-out;
+}
+
 @keyframes pulse-opacity {
 	0%,
 	100% {
@@ -96,6 +150,36 @@
 	}
 	50% {
 		opacity: 0.5;
+	}
+}
+
+@keyframes float-orb-1 {
+	0%, 100% {
+		transform: translate(0, 0) scale(1);
+	}
+	25% {
+		transform: translate(-60px, 80px) scale(1.1);
+	}
+	50% {
+		transform: translate(40px, 120px) scale(0.95);
+	}
+	75% {
+		transform: translate(-30px, 40px) scale(1.05);
+	}
+}
+
+@keyframes float-orb-2 {
+	0%, 100% {
+		transform: translate(0, 0) scale(1);
+	}
+	25% {
+		transform: translate(50px, -70px) scale(1.05);
+	}
+	50% {
+		transform: translate(-40px, -100px) scale(1.1);
+	}
+	75% {
+		transform: translate(30px, -50px) scale(0.95);
 	}
 }
 

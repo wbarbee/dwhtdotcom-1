@@ -44,13 +44,15 @@ export default function Home() {
 	const isOffseason = !hasCompletedGames;
 
 	return (
-		<div className='relative w-full min-h-screen dot-grid'>
+		<div className='relative w-full min-h-screen dot-grid overflow-hidden'>
+			<div className='ambient-orb ambient-orb-1' aria-hidden='true' />
+			<div className='ambient-orb ambient-orb-2' aria-hidden='true' />
 			<DevOverride
 				overrideVisible={overrideVisible}
 				currentOverrideMode={overrideMode}
 				refreshData={handleRefreshData}
 			/>
-			<div className='flex flex-col items-center justify-center w-full min-h-screen gap-4 pt-4 pb-8 px-4'>
+			<div className='flex flex-col items-center w-full min-h-screen gap-4 pt-12 pb-8 px-4'>
 				{/* Season Record Bar */}
 				{hasCompletedGames && !loading && (
 					<div className='w-[90%] max-w-[810px]'>
@@ -76,10 +78,11 @@ export default function Home() {
 							classNames={{
 								tabList:
 									'gap-6 w-full relative rounded-none p-0 border-b border-white/5',
-								cursor: 'w-full bg-burntOrange',
+								cursor: 'w-full bg-burntOrange transition-all duration-300',
 								tab: 'max-w-fit px-0 h-10',
 								tabContent:
 									'group-data-[selected=true]:text-burntOrange text-foreground/40 text-sm font-display',
+								panel: 'animate-fade-in',
 							}}
 						>
 							{hasCompletedGames && (
@@ -89,7 +92,14 @@ export default function Home() {
 									</div>
 								</Tab>
 							)}
-							<Tab key='index' title={isOffseason ? "Last Season's Hook Them Index" : 'Hook Them Index'}>
+							<Tab
+								key='index'
+								title={
+									isOffseason
+										? "Last Season's Hook Them Index"
+										: 'Hook Them Index'
+								}
+							>
 								<div className='pt-3'>
 									<HookEmIndex games={allGames} />
 								</div>

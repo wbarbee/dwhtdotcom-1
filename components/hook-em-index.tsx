@@ -168,7 +168,7 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 
 	return (
 		<div
-			className='glass-card p-6 cursor-pointer select-none'
+			className='glass-card px-6 pt-6 pb-8 cursor-pointer select-none'
 			onClick={() => setExpanded((v) => !v)}
 		>
 			<motion.div
@@ -178,15 +178,16 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 				transition={{ duration: 0.3 }}
 			>
 				<div className='flex flex-col items-center gap-1'>
-					<span className='text-lg font-display italic text-gradient-orange tracking-wide'>
+					<span className='text-lg font-display italic text-foreground tracking-wide'>
 						{seasonLabel ? `${seasonLabel} Season` : ''} Hook Them Index
 					</span>
 				</div>
 				<div className='flex items-center gap-4'>
 					<CircularGauge score={index.score} grade={index.grade} />
 				</div>
-				<span className='text-xs text-foreground/50'>
+				<span className='inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-burntOrange/30 text-burntOrange text-xs font-medium cursor-pointer hover:bg-burntOrange/10 transition-colors'>
 					{expanded ? 'tap to collapse' : 'tap for breakdown'}
+					<svg width='10' height='10' viewBox='0 0 10 10' fill='none' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' className={`transition-transform ${expanded ? 'rotate-180' : ''}`}><path d='M2 4l3 3 3-3'/></svg>
 				</span>
 
 				{/* Factor Breakdown — expandable */}
