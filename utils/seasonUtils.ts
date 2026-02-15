@@ -87,8 +87,8 @@ export function calculateHookEmIndex(games: Game[]): HookEmIndex {
 		const oppRank = g.isTexasHome ? g.awayTeamRank : g.homeTeamRank;
 		return Number(oppRank) < 26;
 	});
-	const sov = totalGames > 0 ? (rankedWins.length / totalGames) * 20 : 0;
-	const strengthOfVictory = Math.min(sov * 2, 20); // Scale up, cap at 20
+	// 7 points per ranked win, capped at 20 (3 ranked wins nearly maxes it)
+	const strengthOfVictory = Math.min(rankedWins.length * 7, 20);
 
 	// Factor 3: Rivalry bonus (0-10 points)
 	const rivalryGames = completed.filter((g) => g.isRivalry);
@@ -105,7 +105,7 @@ export function calculateHookEmIndex(games: Game[]): HookEmIndex {
 			? wins.reduce((sum, g) => sum + (g.pointDifferential ?? 0), 0) /
 				wins.length
 			: 0;
-	const marginFactor = Math.min((avgMargin / 28) * 15, 15); // 28+ pt avg = max
+	const marginFactor = Math.min((avgMargin / 17) * 15, 15); // 17+ pt avg (~2.5 score game) = max
 
 	// Factor 5: Ranking bonus (0-15 points)
 	// Based on current Texas ranking
@@ -118,7 +118,7 @@ export function calculateHookEmIndex(games: Game[]): HookEmIndex {
 		: 99;
 	const rankNum = Number(texasRank);
 	const rankingBonus =
-		rankNum >= 50 ? 0 : rankNum <= 1 ? 15 : Math.max(0, 15 - rankNum * 0.6);
+		rankNum >= 50 ? 0 : rankNum <= 1 ? 15 : Math.max(0, 15 - rankNum * 0.25);
 
 	const totalScore = Math.round(
 		winPercentage +
@@ -143,12 +143,17 @@ export function calculateHookEmIndex(games: Game[]): HookEmIndex {
 }
 
 export function getHookEmGrade(score: number): string {
-	if (score >= 90) return 'A+';
-	if (score >= 80) return 'A';
-	if (score >= 70) return 'B+';
-	if (score >= 60) return 'B';
-	if (score >= 50) return 'C+';
-	if (score >= 40) return 'C';
-	if (score >= 30) return 'D';
+	if (score >= 97) return 'A+';
+	if (score >= 93) return 'A';
+	if (score >= 90) return 'A-';
+	if (score >= 87) return 'B+';
+	if (score >= 83) return 'B';
+	if (score >= 80) return 'B-';
+	if (score >= 77) return 'C+';
+	if (score >= 73) return 'C';
+	if (score >= 70) return 'C-';
+	if (score >= 67) return 'D+';
+	if (score >= 63) return 'D';
+	if (score >= 60) return 'D-';
 	return 'F';
 }
