@@ -43,12 +43,21 @@ export default function Home() {
 	const hasCompletedGames = allGames.some((g) => g.status === 'STATUS_FINAL');
 	const isOffseason = !hasCompletedGames;
 
-	// Derive season label from game data (e.g., "'25-'26")
+	// Derive season label (e.g., "'25-'26")
+	// During off-season, derive from current date (last season); during season, from game data
 	const seasonLabel = (() => {
-		if (allGames.length === 0) return '';
-		const firstGame = [...allGames].sort((a, b) => a.timestamp - b.timestamp)[0];
-		const startDate = new Date(firstGame.timestamp);
-		const startYear = startDate.getMonth() >= 7 ? startDate.getFullYear() : startDate.getFullYear() - 1;
+		const now = new Date();
+		let startYear: number;
+		if (isOffseason) {
+			// Off-season: before August means last season started previous year
+			startYear = now.getMonth() < 7 ? now.getFullYear() - 1 : now.getFullYear();
+		} else if (allGames.length > 0) {
+			const firstGame = [...allGames].sort((a, b) => a.timestamp - b.timestamp)[0];
+			const firstDate = new Date(firstGame.timestamp);
+			startYear = firstDate.getMonth() >= 7 ? firstDate.getFullYear() : firstDate.getFullYear() - 1;
+		} else {
+			return '';
+		}
 		const endYear = startYear + 1;
 		return `'${String(startYear).slice(-2)}-'${String(endYear).slice(-2)}`;
 	})();

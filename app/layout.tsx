@@ -106,8 +106,8 @@ export default function RootLayout({
 					fontSans.variable
 				)}>
 				<Providers>
-					<div className='relative flex flex-col h-screen'>
-						<main className='w-full max-w-screen mx-auto flex-grow h-full'>
+					<div className='relative flex flex-col min-h-screen'>
+						<main className='w-full max-w-screen mx-auto flex-grow'>
 							<ThemeSwitch />
 							<ThemeProvider
 								attribute='class'

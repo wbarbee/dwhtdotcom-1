@@ -4,7 +4,7 @@ import { Tooltip } from '@nextui-org/tooltip';
 
 const InfoButton = () => {
 	return (
-		<div className='absolute bottom-4 right-4'>
+		<div className='fixed bottom-4 right-4'>
 			<Tooltip
 				content={
 					<div className='font-menlo text-xs text-center py-2' color='default'>
