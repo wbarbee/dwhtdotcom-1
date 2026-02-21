@@ -70,8 +70,9 @@ export default function LastSeasonResults() {
 							className='flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 cursor-default'
 						>
 							<div className='flex items-center gap-2 sm:gap-3 min-w-0'>
-								<span className='text-[11px] text-foreground/40 font-mono shrink-0'>
-									{shortDate}
+								<span className='text-[11px] sm:text-xs text-foreground/40 font-mono shrink-0'>
+									<span className='sm:hidden'>{shortDate}</span>
+									<span className='hidden sm:inline'>{g.date}</span>
 								</span>
 								<span className='text-xs text-foreground/30 w-4 sm:w-5 text-center shrink-0'>
 									{ha}
