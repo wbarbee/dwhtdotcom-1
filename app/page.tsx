@@ -107,8 +107,8 @@ export default function Home() {
 								key='index'
 								title={
 									isOffseason
-										? "Last Season's Hook Them Index"
-										: 'Hook Them Index'
+										? `${seasonLabel} Hook 'Em Index`
+										: "Hook 'Em Index"
 								}
 							>
 								<div className='pt-3'>
@@ -116,7 +116,7 @@ export default function Home() {
 								</div>
 							</Tab>
 							{isOffseason && (
-								<Tab key='last-season-results' title="Last Season's Outcomes">
+								<Tab key='last-season-results' title={`${seasonLabel} Results`}>
 									<div className='pt-3'>
 										<LastSeasonResults />
 									</div>
