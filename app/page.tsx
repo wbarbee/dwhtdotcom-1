@@ -125,7 +125,7 @@ export default function Home() {
 								</div>
 							</Tab>
 							{isOffseason && (
-								<Tab key='last-season-results' title={`${seasonLabel} Results`}>
+								<Tab key='last-season-results' title={`${seasonLabel} Recap`}>
 									<div className='pt-3'>
 										<LastSeasonResults />
 									</div>

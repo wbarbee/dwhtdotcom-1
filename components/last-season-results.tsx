@@ -51,8 +51,8 @@ export default function LastSeasonResults() {
 	}
 
 	return (
-		<div className='glass-card p-4'>
-			<div className='flex flex-col gap-2'>
+		<div className='glass-card p-2 sm:p-4 cursor-default'>
+			<div className='flex flex-col'>
 				{games.map((g) => {
 					const opponent = g.isTexasHome ? g.away : g.home;
 					const opponentRank = g.isTexasHome ? g.awayTeamRank : g.homeTeamRank;
@@ -61,20 +61,22 @@ export default function LastSeasonResults() {
 						: g.isTexasHome
 							? 'vs'
 							: '@';
+					// Strip year — it's already in the tab header
+					const shortDate = g.date?.replace(/\/\d{4}$/, '') ?? g.date;
 
 					return (
 						<div
 							key={g.id}
-							className='flex items-center justify-between px-4 py-3 rounded-lg bg-white/5 dark:bg-white/[0.03] border border-white/5'
+							className='flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 cursor-default'
 						>
-							<div className='flex items-center gap-3 min-w-0'>
-								<span className='text-xs text-foreground/40 font-mono w-[75px] shrink-0'>
-									{g.date}
+							<div className='flex items-center gap-2 sm:gap-3 min-w-0'>
+								<span className='text-[11px] text-foreground/40 font-mono shrink-0'>
+									{shortDate}
 								</span>
-								<span className='text-xs text-foreground/30 w-5 text-center shrink-0'>
+								<span className='text-xs text-foreground/30 w-4 sm:w-5 text-center shrink-0'>
 									{ha}
 								</span>
-								<span className='text-sm text-foreground/90 truncate'>
+								<span className='text-xs sm:text-sm text-foreground/90 truncate'>
 									{Number(opponentRank) < 50 && (
 										<span className='text-burntOrange text-xs font-bold mr-1'>
 											#{opponentRank}
@@ -86,18 +88,18 @@ export default function LastSeasonResults() {
 									<span className='text-[10px] text-accent-gold'>*</span>
 								)}
 							</div>
-							<div className='flex items-center gap-3 shrink-0'>
+							<div className='flex items-center gap-2 sm:gap-3 shrink-0'>
 								{g.score && (
-									<span className='text-sm font-score text-foreground/70'>
+									<span className='text-xs sm:text-sm font-score text-foreground/70'>
 										{g.score}
 									</span>
 								)}
 								{g.result === 'win' ? (
-									<span className='text-lg min-w-[28px] text-center' role='img' aria-label='Win'>🤘</span>
+									<span className='text-base sm:text-lg min-w-[24px] sm:min-w-[28px] text-center' role='img' aria-label='Win'>🤘</span>
 								) : g.result === 'loss' ? (
-									<span className='text-lg min-w-[28px] text-center rotate-180 inline-block' role='img' aria-label='Loss'>🤘</span>
+									<span className='text-base sm:text-lg min-w-[24px] sm:min-w-[28px] text-center rotate-180 inline-block' role='img' aria-label='Loss'>🤘</span>
 								) : (
-									<span className='text-xs text-foreground/30 min-w-[28px] text-center'>
+									<span className='text-xs text-foreground/30 min-w-[24px] sm:min-w-[28px] text-center'>
 										--
 									</span>
 								)}
