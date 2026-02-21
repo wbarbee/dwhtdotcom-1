@@ -106,7 +106,7 @@ export default function Home() {
 								</div>
 							</Tab>
 							{isOffseason && (
-								<Tab key='last-season-results' title="Last Season's Hooks">
+								<Tab key='last-season-results' title="Last Season's Outcomes">
 									<div className='pt-3'>
 										<LastSeasonResults />
 									</div>
