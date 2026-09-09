@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Tabs, Tab } from '@nextui-org/react';
 import ScoreCard from '../components/card';
 import SeasonRecord from '../components/season-record';
-import RivalryTracker from '../components/rivalry-tracker';
+import { ScheduleList } from '../components/modal';
 import HookEmIndex from '../components/hook-em-index';
 import LastSeasonResults from '../components/last-season-results';
 import DevOverride from '../components/dev-override';
@@ -49,8 +49,8 @@ export default function Home() {
 		const now = new Date();
 		let startYear: number;
 		if (isOffseason) {
-			// Off-season: before August means last season started previous year
-			startYear = now.getMonth() < 7 ? now.getFullYear() - 1 : now.getFullYear();
+			// Match the season requested by fetchLastSeasonData.
+			startYear = now.getMonth() < 8 ? now.getFullYear() - 1 : now.getFullYear();
 		} else if (allGames.length > 0) {
 			const firstGame = [...allGames].sort((a, b) => a.timestamp - b.timestamp)[0];
 			const firstDate = new Date(firstGame.timestamp);
@@ -91,9 +91,10 @@ export default function Home() {
 				{!loading && (
 					<div className='w-[90%] max-w-[810px]'>
 						<Tabs
+							key={isOffseason ? 'offseason' : 'season'}
 							aria-label='Content tabs'
 							variant='underlined'
-							defaultSelectedKey={isOffseason ? 'index' : 'rivalries'}
+							defaultSelectedKey={isOffseason ? 'last-season-results' : 'index'}
 							classNames={{
 								base: 'w-full overflow-x-auto scrollbar-hide',
 								tabList:
@@ -105,10 +106,10 @@ export default function Home() {
 								panel: 'animate-fade-in',
 							}}
 						>
-							{hasCompletedGames && (
-								<Tab key='rivalries' title='Rivalries'>
+							{isOffseason && (
+								<Tab key='last-season-results' title={`${seasonLabel} Record`}>
 									<div className='pt-3'>
-										<RivalryTracker games={allGames} />
+										<LastSeasonResults />
 									</div>
 								</Tab>
 							)}
@@ -116,18 +117,21 @@ export default function Home() {
 								key='index'
 								title={
 									isOffseason
-										? `${seasonLabel} Hook 'Em Index`
-										: "Hook 'Em Index"
+										? `${seasonLabel} Hook Them Index`
+										: 'Hook Them Index'
 								}
 							>
 								<div className='pt-3'>
 									<HookEmIndex games={allGames} />
 								</div>
 							</Tab>
-							{isOffseason && (
-								<Tab key='last-season-results' title={`${seasonLabel} Recap`}>
-									<div className='pt-3'>
-										<LastSeasonResults />
+							{!isOffseason && (
+								<Tab key='schedule' title='Schedule'>
+									<div className='glass-card p-2 sm:p-4 mt-3'>
+										<ScheduleList />
+										<p className='text-[10px] text-foreground/30 mt-2 px-4'>
+											<span className='text-accent-gold'>*</span> neutral site
+										</p>
 									</div>
 								</Tab>
 							)}

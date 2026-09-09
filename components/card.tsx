@@ -200,7 +200,6 @@ export default function ScoreCard({
 		awayTeamAbbrev,
 		location,
 		date,
-		longhornsRecord,
 	} = currentGameData;
 
 	const showScore =
@@ -317,9 +316,6 @@ export default function ScoreCard({
 								<p className={`${status === 'STATUS_SCHEDULED' ? 'mt-2' : ''} text-sm text-foreground/50`}>
 									{location} &middot; {formattedDate}
 								</p>
-								<p className='mt-3 mb-0 text-xs text-foreground/40 tracking-wide'>
-								Season Record: <span className='font-mono text-foreground/60'>{longhornsRecord}</span>
-							</p>
 							</div>
 						</motion.div>
 					</motion.div>

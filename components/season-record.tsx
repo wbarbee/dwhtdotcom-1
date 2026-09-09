@@ -22,64 +22,68 @@ export default function SeasonRecord({ games }: SeasonRecordProps) {
 
 	return (
 		<motion.div
-			className='glass-card px-5 py-3 flex items-center justify-center gap-4 md:gap-6 flex-wrap'
+			className='glass-card px-4 py-4 flex items-start justify-center gap-4 sm:gap-6 flex-wrap'
 			initial={{ opacity: 0, y: -10 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.4, delay: 0.2 }}
 		>
 			{/* Rank Badge */}
 			{record.texasRank && (
-				<div className='flex items-center gap-1'>
-					<span className='text-xs text-foreground/40 uppercase tracking-wider'>
-						#
+				<div className='flex flex-col items-center gap-1 border-r border-foreground/15 pr-4 sm:pr-6'>
+					<span className='text-[10px] text-foreground/50 uppercase tracking-widest'>
+						Rank
 					</span>
 					<span className='text-2xl font-score font-bold text-gradient-orange'>
-						{record.texasRank}
+						#{record.texasRank}
 					</span>
 				</div>
 			)}
 
-			{/* W-L Record */}
-			<div className='flex items-center gap-2'>
-				<span className='text-2xl font-score font-bold text-accent-green'>
-					{record.wins}
+			{/* Overall record and game results */}
+			<div className='flex flex-col items-center gap-1'>
+				<span className='text-[10px] text-foreground/50 uppercase tracking-widest'>
+					Overall
 				</span>
-				<span className='text-foreground/30 text-lg'>-</span>
-				<span className='text-2xl font-score font-bold text-accent-red'>
-					{record.losses}
-				</span>
+				<div className='flex items-center gap-2' aria-label={`${record.wins} wins, ${record.losses} losses`}>
+					<span className='text-2xl font-score font-bold text-accent-green'>
+						{record.wins}
+					</span>
+					<span className='text-foreground/30 text-lg'>-</span>
+					<span className='text-2xl font-score font-bold text-accent-red'>
+						{record.losses}
+					</span>
+				</div>
+				<div className='flex flex-wrap justify-center gap-1 max-w-[96px] mt-1' aria-label='Game results'>
+					{completedGames.map((g) => (
+						<span
+							key={g.id}
+							className={`w-1.5 h-1.5 rounded-full ${
+								g.result === 'win' ? 'bg-accent-green' : 'bg-accent-red'
+							}`}
+							role='img'
+							aria-label={`${g.result === 'win' ? 'Win' : 'Loss'} vs ${g.opponentName}`}
+							title={`${g.result === 'win' ? 'W' : 'L'} vs ${g.opponentName}`}
+						/>
+					))}
+				</div>
 			</div>
 
 			{/* Conference Record */}
 			{(record.conferenceWins > 0 || record.conferenceLosses > 0) && (
-				<div className='flex items-center gap-1'>
-					<span className='text-xs text-foreground/40 uppercase tracking-wider mr-1'>
+				<div className='flex flex-col items-center gap-1 border-l border-foreground/15 pl-4 sm:pl-6'>
+					<span className='text-[10px] text-foreground/50 uppercase tracking-widest'>
 						SEC
 					</span>
-					<span className='text-sm font-score text-foreground/70'>
+					<span className='text-2xl font-score text-foreground/70'>
 						{record.conferenceWins}-{record.conferenceLosses}
 					</span>
 				</div>
 			)}
 
-			{/* Pip Indicators */}
-			<div className='flex items-center gap-1'>
-				{completedGames.map((g) => (
-					<span
-						key={g.id}
-						className={`w-2 h-2 rounded-full ${
-							g.result === 'win'
-								? 'bg-accent-green'
-								: 'bg-accent-red'
-						}`}
-						title={`${g.result === 'win' ? 'W' : 'L'} vs ${g.opponentName}`}
-					/>
-				))}
-			</div>
-
 			{/* Streak */}
 			{record.streak > 1 && record.streakType !== 'none' && (
-				<div className='flex items-center gap-1'>
+				<div className='flex flex-col items-center gap-2 border-l border-foreground/15 pl-4 sm:pl-6'>
+					<span className='text-[10px] text-foreground/50 uppercase tracking-widest'>Streak</span>
 					<span
 						className={`text-xs font-mono font-bold px-2 py-0.5 rounded-full ${
 							record.streakType === 'W'

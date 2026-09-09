@@ -19,7 +19,7 @@ interface FullScoreModalProps {
 	variant?: 'icon' | 'wide';
 }
 
-function ScheduleList({
+export function ScheduleList({
 	onLoadingChange,
 	onSeasonChange,
 }: {
