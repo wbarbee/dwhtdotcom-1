@@ -4,7 +4,7 @@ import { Tooltip } from '@nextui-org/tooltip';
 
 const InfoButton = () => {
 	return (
-		<div className='fixed bottom-4 right-4'>
+		<div className='fixed bottom-3 right-3 z-40'>
 			<Tooltip
 				content={
 					<div className='font-menlo text-xs text-center py-2' color='default'>
@@ -26,7 +26,7 @@ const InfoButton = () => {
 					aria-label='About question mark'
 					color='default'
 					variant='solid'
-					className='rounded-full min-w-0 text-xs p-2 w-[25px] h-[25px] opacity-60 hover:opacity-100 transition-all ease-in-out duration-400 z-[40]'>
+					className='rounded-full min-w-0 text-xs p-2 w-[25px] h-[25px] opacity-60 hover:opacity-100 transition-opacity duration-300'>
 					?
 				</Button>
 			</Tooltip>

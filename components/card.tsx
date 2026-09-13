@@ -207,6 +207,7 @@ export default function ScoreCard({
 	const showScore =
 		(isGameInProgress(status) || status === 'STATUS_FINAL') && !isRefreshing;
 	const showPeriod = isGameInProgress(status) && !isRefreshing;
+	// Manual refresh is only useful mid-game; hide it for finals / upcoming
 	const showRefreshButton = isGameInProgress(status);
 
 	const backgroundImageUrl = isDarkMode
@@ -224,7 +225,8 @@ export default function ScoreCard({
 
 	return (
 		<div className={`glass-card ${modeAccentClass} max-w-[465px] md:max-w-[810px] w-[90%] overflow-hidden relative`}>
-			<div className='p-5'>
+			{/* Extra bottom padding reserves space for the absolute action buttons */}
+			<div className={`p-5 ${showRefreshButton ? 'pb-14' : 'pb-12'}`}>
 				<motion.div
 					className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center'
 					variants={contentVariants}
@@ -307,15 +309,22 @@ export default function ScoreCard({
 							className='mt-2 flex justify-center'
 							variants={itemVariants}
 						>
-							<div className='flex flex-col gap-1'>
-								<h3 className='font-semibold text-foreground/90 text-base'>
+							<div className='flex flex-col gap-1 max-w-full'>
+								<h3 className='font-semibold text-foreground/90 text-base px-4'>
 									<RankBadge rank={awayTeamRank} />
 									{isMobile ? awayTeamAbbrev : away}
 									<span className='mx-2 text-foreground/40 font-light'>vs</span>
 									<RankBadge rank={homeTeamRank} />
 									{isMobile ? homeTeamAbbrev : home}
 								</h3>
-								<p className={`${status === 'STATUS_SCHEDULED' ? 'mt-2' : ''} text-sm text-foreground/50 px-10`}>
+								{/* Wider right inset when refresh + calendar are both present */}
+								<p
+									className={`${status === 'STATUS_SCHEDULED' ? 'mt-2' : ''} text-sm text-foreground/50 ${
+										showRefreshButton
+											? 'pl-4 pr-24 sm:px-12'
+											: 'px-10'
+									}`}
+								>
 									{location} &middot; {formattedDate}
 								</p>
 							</div>

@@ -229,12 +229,12 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 			onClick={() => setExpanded((v) => !v)}
 		>
 			<motion.div
-				className='flex flex-col items-center gap-4 w-full'
+				className='flex flex-col items-center gap-4 md:gap-2 w-full'
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
 				transition={{ duration: 0.3 }}
 			>
-				<div className='flex flex-col items-center gap-1 mb-1'>
+				<div className='flex flex-col items-center gap-1'>
 					<span className='text-lg font-display italic text-foreground tracking-wide text-center'>
 						{seasonLabel ? `${seasonLabel} Season` : ''} Hook Them Index
 					</span>
@@ -248,7 +248,7 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 				</div>
 
 				{/* Desktop: side-by-side layout / Mobile: stacked */}
-				<div className='flex flex-col md:flex-row items-center gap-2 md:gap-0 w-full md:px-4'>
+				<div className='flex flex-col md:flex-row items-center md:items-start gap-2 md:gap-0 w-full md:px-4 md:pt-2'>
 					{/* Gauge */}
 					<div className='flex-shrink-0 md:w-[38%] flex items-center justify-center md:py-2'>
 						<CircularGauge
@@ -259,7 +259,7 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 					</div>
 
 					{/* Factor Breakdown — always visible on desktop, expandable on mobile */}
-					<div className='flex flex-col items-center md:items-stretch w-full md:w-[62%] md:justify-center'>
+					<div className='flex flex-col items-center md:items-stretch w-full md:w-[62%] md:justify-start md:pt-3'>
 						<span className='inline-flex md:hidden items-center gap-1.5 px-4 py-1.5 mb-3 rounded-full border border-burntOrange/30 text-burntOrange text-xs font-medium cursor-pointer hover:bg-burntOrange/10 transition-colors'>
 							{expanded ? 'tap to collapse' : 'tap for breakdown'}
 							<svg

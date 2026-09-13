@@ -153,11 +153,42 @@ function getDefaultSeasonLabel(): string {
 	return `${now.getFullYear()}`;
 }
 
+/** NextUI/React Aria can leave body scroll-lock / pointer-events after a full-screen mobile close. */
+function unlockPageInteraction() {
+	const unlock = () => {
+		document.body.style.removeProperty('overflow');
+		document.body.style.removeProperty('padding-right');
+		document.body.style.removeProperty('pointer-events');
+		document.documentElement.style.removeProperty('overflow');
+		document.documentElement.style.removeProperty('padding-right');
+		document.body.removeAttribute('data-scroll-locked');
+	};
+	unlock();
+	// Run again after exit animation / React Aria cleanup settles
+	requestAnimationFrame(unlock);
+	window.setTimeout(unlock, 50);
+	window.setTimeout(unlock, 320);
+}
+
 export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps) {
-	const { isOpen, onOpen, onOpenChange } = useDisclosure();
+	const { isOpen, onOpen, onClose } = useDisclosure();
 	const isMobile = useMediaQuery('(max-width: 640px)');
 	const [isTableLoading, setIsTableLoading] = useState(true);
 	const [seasonLabel, setSeasonLabel] = useState(getDefaultSeasonLabel);
+
+	useEffect(() => {
+		if (isOpen) return;
+		unlockPageInteraction();
+	}, [isOpen]);
+
+	const handleOpenChange = (open: boolean) => {
+		if (open) {
+			onOpen();
+		} else {
+			onClose();
+			unlockPageInteraction();
+		}
+	};
 
 	return (
 		<>
@@ -183,13 +214,19 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 			)}
 			<Modal
 				isOpen={isOpen}
-				onOpenChange={onOpenChange}
+				onOpenChange={handleOpenChange}
 				scrollBehavior='inside'
 				size={isMobile ? 'full' : '2xl'}
+				// Full-screen mobile already covers the page; blocking scroll is what
+				// leaves iOS/Android unable to tap after close.
+				shouldBlockScroll={!isMobile}
+				disableAnimation={isMobile}
 				classNames={{
+					wrapper: isMobile ? '!h-[100dvh] items-stretch' : undefined,
 					base: isMobile
-						? 'max-h-[100vh] m-0 rounded-none animate-fade-in bg-surface-50 dark:bg-surface-950'
-						: 'max-h-[85vh] m-2 rounded-xl animate-fade-in glass-card',
+						? 'max-h-[100dvh] m-0 rounded-none bg-surface-50 dark:bg-surface-950'
+						: 'max-h-[85vh] m-2 rounded-xl glass-card',
+					backdrop: isMobile ? 'bg-surface-50 dark:bg-surface-950' : undefined,
 					closeButton: 'top-3 right-3 hover:bg-white/5 active:bg-white/10',
 					body: 'px-4 py-2',
 				}}
@@ -212,7 +249,10 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 											<span className='text-accent-gold'>*</span> neutral site
 										</span>
 										<Button
-											onPress={onClose}
+											onPress={() => {
+												onClose();
+												unlockPageInteraction();
+											}}
 											size='sm'
 											className='bg-burntOrange hover:bg-burntOrange-600 text-white font-medium rounded-lg transition-colors'
 										>
