@@ -1,5 +1,11 @@
-import { Game } from '../types';
-import { mockGames, getGameByMode } from '../utils/mockData';
+import {
+	Game,
+	GameSummaryLeader,
+	GameSummaryScoringPlay,
+	GameSummaryStats,
+	GameSummaryTeamStats,
+} from '../types';
+import { mockFullSeason, getGameByMode } from '../utils/mockData';
 import { normalizeRank } from '../utils/rankUtils';
 
 const UNRANKED = 99;
@@ -8,7 +14,6 @@ const API_SCHEDULE_BASE = '/api/schedule';
 const API_LIVE_GAME = '/api/game/';
 
 const IS_DEV_MODE = process.env.NODE_ENV === 'development';
-const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
 
 // SEC conference team IDs
 const SEC_TEAM_IDS = new Set([
@@ -219,10 +224,11 @@ export const fetchGameData = async (
 ): Promise<Game[]> => {
 	if (setIsRefreshing) setIsRefreshing(true);
 	try {
-		if (IS_DEV_MODE && USE_MOCK_DATA && overrideMode !== undefined) {
+		if (IS_DEV_MODE && overrideMode) {
 			console.warn('Using mock data in dev mode with override:', overrideMode);
-			const mockGame = getGameByMode(overrideMode || 'scheduled');
-			return [mockGame];
+			const mockGame = getGameByMode(overrideMode);
+			// Keep the fake season so the rest of the page doesn't flip to off-season.
+			return [mockGame, ...mockFullSeason];
 		}
 		const scheduleData = await fetchSchedule();
 		return processEvents(scheduleData);
@@ -353,4 +359,108 @@ export const fetchLiveGame = async (
 		console.error('Error fetching live game data:', error);
 		return null;
 	}
+};
+
+/**
+ * Fetch and normalize the ESPN summary payload for a completed game.
+ * Returns just the fields the expanded schedule row cares about:
+ *   - Per-team box-score highlights (yards, turnovers, possession, 3rd down)
+ *   - Texas leader lines (passing / rushing / receiving)
+ *   - Scoring plays for the drive-log view
+ */
+const KEY_STAT_NAMES = new Set([
+	'totalYards',
+	'netPassingYards',
+	'rushingYards',
+	'turnovers',
+	'thirdDownEff',
+	'possessionTime',
+]);
+
+const KEY_STAT_LABELS: Record<string, string> = {
+	totalYards: 'Total Yards',
+	netPassingYards: 'Passing',
+	rushingYards: 'Rushing',
+	turnovers: 'Turnovers',
+	thirdDownEff: '3rd Down',
+	possessionTime: 'Possession',
+};
+
+const LEADER_CATEGORIES = new Set([
+	'passingYards',
+	'rushingYards',
+	'receivingYards',
+]);
+
+export const fetchGameSummaryStats = async (
+	eventId: string
+): Promise<GameSummaryStats | null> => {
+	const data = await fetchLiveGameData(eventId);
+	if (!data) return null;
+
+	const teams: GameSummaryTeamStats[] = (data?.boxscore?.teams || []).map(
+		(t: any): GameSummaryTeamStats => {
+			const rawStats: any[] = t.statistics || [];
+			// Preserve KEY_STAT_NAMES order for consistent side-by-side comparison
+			const stats = Array.from(KEY_STAT_NAMES)
+				.map((name) => {
+					const found = rawStats.find((s: any) => s.name === name);
+					if (!found) return null;
+					return {
+						label: KEY_STAT_LABELS[name] ?? found.label ?? name,
+						value: String(found.displayValue ?? found.value ?? ''),
+					};
+				})
+				.filter((s): s is { label: string; value: string } => s !== null);
+
+			return {
+				teamId: t.team?.id ?? '',
+				abbreviation: t.team?.abbreviation ?? '',
+				displayName: t.team?.displayName ?? t.team?.name ?? '',
+				isTexas: t.team?.id === '251',
+				stats,
+			};
+		}
+	);
+
+	const rawLeaders = data?.leaders;
+	let texasLeaders: GameSummaryLeader[] = [];
+	if (Array.isArray(rawLeaders)) {
+		const texasBucket = rawLeaders.find(
+			(l: any) => l?.team?.id === '251'
+		);
+		if (texasBucket?.leaders) {
+			texasLeaders = (texasBucket.leaders as any[])
+				.filter((cat: any) => LEADER_CATEGORIES.has(cat?.name))
+				.map((cat: any): GameSummaryLeader | null => {
+					const top = (cat.leaders || [])[0];
+					if (!top) return null;
+					return {
+						category: cat.displayName || cat.name,
+						athlete: top.athlete?.displayName || 'Unknown',
+						displayValue: top.displayValue || '',
+					};
+				})
+				.filter((l): l is GameSummaryLeader => l !== null);
+		}
+	}
+
+	const scoringPlays: GameSummaryScoringPlay[] = (data?.scoringPlays || []).map(
+		(p: any): GameSummaryScoringPlay => ({
+			id: String(p.id ?? `${p.period?.number}-${p.clock?.displayValue}`),
+			period: Number(p.period?.number ?? 0),
+			clock: p.clock?.displayValue ?? '',
+			teamAbbrev: p.team?.abbreviation ?? '',
+			text: p.text ?? '',
+			awayScore: Number(p.awayScore ?? 0),
+			homeScore: Number(p.homeScore ?? 0),
+		})
+	);
+
+	return {
+		eventId,
+		teams,
+		texasLeaders,
+		scoringPlays,
+	};
 };

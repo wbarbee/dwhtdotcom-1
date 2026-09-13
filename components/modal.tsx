@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
 	Modal,
 	ModalContent,
@@ -10,10 +10,12 @@ import {
 	Spinner,
 	useDisclosure,
 } from '@nextui-org/react';
+import { AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from '@react-hook/media-query';
 import { fetchUpcomingSchedule } from '../hooks/fetchGameData';
-import { Game } from '../types';
+import { Game, GameSummaryStats } from '../types';
 import { getOpponentRank } from '../utils/rankUtils';
+import GameSummary from './game-summary';
 
 interface FullScoreModalProps {
 	result?: 'win' | 'loss' | 'upcoming';
@@ -30,6 +32,10 @@ export function ScheduleList({
 	const [games, setGames] = useState<Game[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [expandedId, setExpandedId] = useState<string | null>(null);
+	const [statsCache, setStatsCache] = useState<
+		Record<string, GameSummaryStats>
+	>({});
 
 	useEffect(() => {
 		let mounted = true;
@@ -59,6 +65,12 @@ export function ScheduleList({
 			mounted = false;
 		};
 	}, [onLoadingChange]);
+
+	const cacheStats = useCallback((stats: GameSummaryStats) => {
+		setStatsCache((prev) =>
+			prev[stats.eventId] ? prev : { ...prev, [stats.eventId]: stats }
+		);
+	}, []);
 
 	if (error) {
 		return (
@@ -94,47 +106,103 @@ export function ScheduleList({
 					: g.isTexasHome
 						? 'vs'
 						: '@';
+				const isCompleted = g.status === 'STATUS_FINAL';
+				const isExpanded = isCompleted && expandedId === g.id;
+
+				const handleToggle = () => {
+					if (!isCompleted) return;
+					setExpandedId((prev) => (prev === g.id ? null : g.id));
+				};
+
+				const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+					if (!isCompleted) return;
+					if (e.key === 'Enter' || e.key === ' ') {
+						e.preventDefault();
+						handleToggle();
+					}
+				};
 
 				return (
-					<div
-						key={g.id}
-						className='flex items-center justify-between px-4 py-3 rounded-lg bg-white/5 dark:bg-white/[0.03] border border-white/5 hover:bg-white/10 dark:hover:bg-white/[0.06] transition-colors'
-					>
-						<div className='flex items-center gap-3 min-w-0'>
-							<span className='text-xs text-foreground/40 font-mono w-[75px] shrink-0'>
-								{g.date}
-							</span>
-							<span className='text-xs text-foreground/30 w-5 text-center shrink-0'>
-								{ha}
-							</span>
-							<span className='text-sm text-foreground/90 truncate'>
-								{opponentRank !== null && (
-									<span className='text-burntOrange text-xs font-bold mr-1'>
-										#{opponentRank}
+					<div key={g.id} className='flex flex-col'>
+						<div
+							role={isCompleted ? 'button' : undefined}
+							tabIndex={isCompleted ? 0 : undefined}
+							aria-expanded={isCompleted ? isExpanded : undefined}
+							aria-label={
+								isCompleted
+									? `${opponent}, ${g.score}. Tap to ${isExpanded ? 'collapse' : 'view'} stats`
+									: undefined
+							}
+							onClick={isCompleted ? handleToggle : undefined}
+							onKeyDown={isCompleted ? handleKeyDown : undefined}
+							className={`flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+								isCompleted
+									? `cursor-pointer bg-black/[0.02] dark:bg-white/[0.03] border hover:bg-black/[0.05] dark:hover:bg-white/[0.07] hover:border-black/10 dark:hover:border-white/10 focus:outline-none focus-visible:ring-1 focus-visible:ring-burntOrange/40 ${isExpanded ? 'border-burntOrange/30' : 'border-black/[0.06] dark:border-white/5'}`
+									: 'cursor-default bg-transparent border border-transparent'
+							}`}
+						>
+							<div className='flex items-center gap-3 min-w-0'>
+								<span className='text-xs text-foreground/40 font-mono w-[75px] shrink-0'>
+									{g.date}
+								</span>
+								<span className='text-xs text-foreground/30 w-5 text-center shrink-0'>
+									{ha}
+								</span>
+								<span className='text-sm text-foreground/90 truncate'>
+									{opponentRank !== null && (
+										<span className='text-burntOrange text-xs font-bold mr-1'>
+											#{opponentRank}
+										</span>
+									)}
+									{opponent}
+								</span>
+								{g.neutralSite && (
+									<span className='text-[10px] text-accent-gold'>*</span>
+								)}
+							</div>
+							<div className='flex items-center gap-3 shrink-0'>
+								{g.score && (
+									<span className='text-sm font-score text-foreground/70'>
+										{g.score}
 									</span>
 								)}
-								{opponent}
-							</span>
-							{g.neutralSite && (
-								<span className='text-[10px] text-accent-gold'>*</span>
-							)}
+								{g.result === 'win' ? (
+									<span className='text-lg min-w-[28px] text-center' role='img' aria-label='Win'>🤘</span>
+								) : g.result === 'loss' ? (
+									<span className='text-lg min-w-[28px] text-center rotate-180 inline-block' role='img' aria-label='Loss'>🤘</span>
+								) : (
+									<span className='text-xs text-foreground/30 min-w-[28px] text-center'>
+										--
+									</span>
+								)}
+								{isCompleted && (
+									<svg
+										width='10'
+										height='10'
+										viewBox='0 0 10 10'
+										fill='none'
+										stroke='currentColor'
+										strokeWidth='1.5'
+										strokeLinecap='round'
+										strokeLinejoin='round'
+										aria-hidden='true'
+										className={`text-foreground/30 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+									>
+										<path d='M2 4l3 3 3-3' />
+									</svg>
+								)}
+							</div>
 						</div>
-						<div className='flex items-center gap-3 shrink-0'>
-							{g.score && (
-								<span className='text-sm font-score text-foreground/70'>
-									{g.score}
-								</span>
+						<AnimatePresence initial={false}>
+							{isExpanded && (
+								<GameSummary
+									key={g.id}
+									eventId={g.id}
+									cached={statsCache[g.id] ?? null}
+									onLoaded={cacheStats}
+								/>
 							)}
-							{g.result === 'win' ? (
-								<span className='text-lg min-w-[28px] text-center' role='img' aria-label='Win'>🤘</span>
-							) : g.result === 'loss' ? (
-								<span className='text-lg min-w-[28px] text-center rotate-180 inline-block' role='img' aria-label='Loss'>🤘</span>
-							) : (
-								<span className='text-xs text-foreground/30 min-w-[28px] text-center'>
-									--
-								</span>
-							)}
-						</div>
+						</AnimatePresence>
 					</div>
 				);
 			})}

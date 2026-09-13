@@ -26,14 +26,12 @@ const DevOverride: React.FC<DevOverrideProps> = ({
 	refreshData,
 }) => {
 	const [selectedMode, setSelectedMode] = useState<string>(
-		currentOverrideMode || 'scheduled'
+		currentOverrideMode || 'live'
 	);
 	const [isRefreshing, setIsRefreshing] = useState(false);
 
 	useEffect(() => {
-		if (currentOverrideMode) {
-			setSelectedMode(currentOverrideMode);
-		}
+		setSelectedMode(currentOverrideMode || 'live');
 	}, [currentOverrideMode]);
 
 	if (!overrideVisible) return null;
@@ -41,7 +39,7 @@ const DevOverride: React.FC<DevOverrideProps> = ({
 	const handleModeChange = async (mode: string) => {
 		setSelectedMode(mode);
 		setIsRefreshing(true);
-		await refreshData(mode, setIsRefreshing);
+		await refreshData(mode === 'live' ? undefined : mode, setIsRefreshing);
 	};
 
 	const handleRefreshLiveData = async () => {
@@ -63,6 +61,7 @@ const DevOverride: React.FC<DevOverrideProps> = ({
 							aria-label='Mock data scenarios'
 							onAction={(key) => handleModeChange(key as string)}
 							className='max-h-[300px] overflow-y-auto dropdown-menu-override'>
+							<DropdownItem key='live'>Live</DropdownItem>
 							{Object.keys(mockGames).map((mode) => (
 								<DropdownItem key={mode}>
 									{mode.charAt(0).toUpperCase() + mode.slice(1)}

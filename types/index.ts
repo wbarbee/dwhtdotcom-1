@@ -76,6 +76,37 @@ export type HookEmIndex = {
 	};
 };
 
+export type GameSummaryTeamStats = {
+	teamId: string;
+	abbreviation: string;
+	displayName: string;
+	isTexas: boolean;
+	stats: { label: string; value: string }[];
+};
+
+export type GameSummaryLeader = {
+	category: string;
+	athlete: string;
+	displayValue: string;
+};
+
+export type GameSummaryScoringPlay = {
+	id: string;
+	period: number;
+	clock: string;
+	teamAbbrev: string;
+	text: string;
+	awayScore: number;
+	homeScore: number;
+};
+
+export type GameSummaryStats = {
+	eventId: string;
+	teams: GameSummaryTeamStats[];
+	texasLeaders: GameSummaryLeader[];
+	scoringPlays: GameSummaryScoringPlay[];
+};
+
 export interface IconSvgProps extends React.SVGProps<SVGSVGElement> {
 	size?: number;
 	width?: number;

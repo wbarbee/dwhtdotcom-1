@@ -173,6 +173,29 @@ export const mockFullSeason: Game[] = [
 	{ ...baseMockGame, id: '11', status: 'STATUS_SCHEDULED', result: 'upcoming', homeTeamScore: null, awayTeamScore: null, texasScore: null, opponentScore: null, pointDifferential: null, score: '', away: 'LSU Tigers', opponentId: '97', opponentName: 'LSU Tigers', isRivalry: false, rivalryName: undefined, isConferenceGame: true, homeTeamRank: 3, awayTeamRank: 8, date: '12/6/2025', timestamp: new Date('2025-12-06').getTime() },
 ];
 
+const timestampForMode = (mode: string): number => {
+	const now = Date.now();
+	switch (mode) {
+		case 'scheduled':
+			return now + 24 * 60 * 60 * 1000;
+		case 'preGame':
+			return now + 30 * 60 * 1000;
+		case 'finalWin':
+		case 'finalLoss':
+			return now - 48 * 60 * 60 * 1000 + 30 * 60 * 1000;
+		case 'oldGame':
+			return now - 72 * 60 * 60 * 1000;
+		default:
+			return now;
+	}
+};
+
 export const getGameByMode = (mode: string): Game => {
-	return mockGames[mode] || mockGames.scheduled;
+	const game = mockGames[mode] || mockGames.scheduled;
+	const timestamp = timestampForMode(mockGames[mode] ? mode : 'scheduled');
+	return {
+		...game,
+		timestamp,
+		date: new Date(timestamp).toLocaleDateString(),
+	};
 };

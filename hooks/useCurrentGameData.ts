@@ -90,10 +90,14 @@ export function useCurrentGameData(initialOverrideMode?: string) {
 	const overrideModeRef = useRef(overrideMode);
 	overrideModeRef.current = overrideMode;
 
-	const loadGameData = useCallback(async (modeOverride?: string) => {
+	const loadGameData = useCallback(async (modeOverride?: string | null) => {
 		const requestId = ++requestIdRef.current;
 		const activeMode =
-			modeOverride !== undefined ? modeOverride : overrideModeRef.current;
+			modeOverride === null
+				? undefined
+				: modeOverride !== undefined
+					? modeOverride
+					: overrideModeRef.current;
 		const isInitialLoad = !hasLoadedRef.current;
 
 		try {
@@ -168,11 +172,12 @@ export function useCurrentGameData(initialOverrideMode?: string) {
 
 	const refreshData = useCallback(
 		async (newOverrideMode?: string) => {
-			if (newOverrideMode !== undefined) {
+			if (newOverrideMode) {
 				setOverrideMode(newOverrideMode);
 				await loadGameData(newOverrideMode);
 			} else {
-				await loadGameData();
+				setOverrideMode(undefined);
+				await loadGameData(null);
 			}
 		},
 		[loadGameData]
