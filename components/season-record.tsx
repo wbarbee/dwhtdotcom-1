@@ -6,10 +6,18 @@ import { parseSeasonRecord } from '../utils/seasonUtils';
 
 interface SeasonRecordProps {
 	games: Game[];
+	/** The game the hero card is showing, so both rank badges agree. */
+	currentGame?: Game | null;
 }
 
-export default function SeasonRecord({ games }: SeasonRecordProps) {
-	const record = useMemo(() => parseSeasonRecord(games), [games]);
+export default function SeasonRecord({
+	games,
+	currentGame,
+}: SeasonRecordProps) {
+	const record = useMemo(
+		() => parseSeasonRecord(games, currentGame),
+		[games, currentGame]
+	);
 	const completedGames = useMemo(
 		() =>
 			games

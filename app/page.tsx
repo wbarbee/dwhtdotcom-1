@@ -75,7 +75,7 @@ export default function Home() {
 				{/* Season Record Bar */}
 				{hasCompletedGames && !loading && (
 					<div className='w-[90%] max-w-[810px]'>
-						<SeasonRecord games={allGames} />
+						<SeasonRecord games={allGames} currentGame={currentGameData} />
 					</div>
 				)}
 

@@ -1,11 +1,11 @@
 import { Game } from '../types';
 import { mockGames, getGameByMode } from '../utils/mockData';
+import { normalizeRank } from '../utils/rankUtils';
 
-const API_SCHEDULE_BASE =
-	'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/texas/schedule';
+const UNRANKED = 99;
 
-const API_LIVE_GAME =
-	'https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=';
+const API_SCHEDULE_BASE = '/api/schedule';
+const API_LIVE_GAME = '/api/game/';
 
 const IS_DEV_MODE = process.env.NODE_ENV === 'development';
 const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
@@ -35,7 +35,7 @@ const RIVALRY_MAP: Record<string, string> = {
 };
 
 const fetchLiveGameData = async (eventId: string): Promise<any> => {
-	const response = await fetch(`${API_LIVE_GAME}${eventId}`, {
+	const response = await fetch(`${API_LIVE_GAME}${eventId}?_=${Date.now()}`, {
 		cache: 'no-store',
 	});
 	if (!response.ok) {
@@ -152,10 +152,14 @@ const processEvents = async (data: any): Promise<Game[]> => {
 				isConferenceGame,
 			};
 
-			// Always fetch live data for current or in-progress games
+			// Prefer live summary while a game is underway — schedule CDN lags mid-game
 			if (
 				gameStatus === 'STATUS_CURRENT' ||
-				gameStatus === 'STATUS_IN_PROGRESS'
+				gameStatus === 'STATUS_IN_PROGRESS' ||
+				gameStatus === 'STATUS_HALFTIME' ||
+				gameStatus === 'STATUS_END_PERIOD' ||
+				gameStatus === 'STATUS_PRE_END_PERIOD' ||
+				gameStatus === 'STATUS_OVERTIME'
 			) {
 				try {
 					const liveData = await fetchLiveGameData(event.id);
@@ -186,6 +190,12 @@ const processEvents = async (data: any): Promise<Game[]> => {
 							score: calculateScore(homeScore, awayScore),
 							currentPeriod: liveCompetition.status.period,
 							status: liveCompetition.status.type.name,
+							// Keep the live ranks on the game too, so the record bar and
+							// the schedule list never lag the hero card's badges.
+							homeTeamRank:
+								normalizeRank(liveHomeTeam.rank) ?? game.homeTeamRank,
+							awayTeamRank:
+								normalizeRank(liveAwayTeam.rank) ?? game.awayTeamRank,
 							texasScore: liveTexasScore,
 							opponentScore: liveOppScore,
 							pointDifferential: liveTexasScore - liveOppScore,
@@ -212,13 +222,10 @@ export const fetchGameData = async (
 		if (IS_DEV_MODE && USE_MOCK_DATA && overrideMode !== undefined) {
 			console.warn('Using mock data in dev mode with override:', overrideMode);
 			const mockGame = getGameByMode(overrideMode || 'scheduled');
-			await new Promise((resolve) => setTimeout(resolve, 1000));
 			return [mockGame];
 		}
 		const scheduleData = await fetchSchedule();
-		const data = await processEvents(scheduleData);
-		await new Promise((resolve) => setTimeout(resolve, 1000));
-		return data;
+		return processEvents(scheduleData);
 	} finally {
 		if (setIsRefreshing) setIsRefreshing(false);
 	}
@@ -316,8 +323,12 @@ export const fetchLiveGame = async (
 			away: awayTeam.team.displayName,
 			longhornsRecord:
 				texasTeam.records?.[0]?.summary || originalGame.longhornsRecord,
-			homeTeamRank: homeTeam.rank,
-			awayTeamRank: awayTeam.rank,
+			// The summary header reports unranked as 0 (or omits it) while the
+			// schedule uses 99, so keep the schedule value when live has no rank.
+			homeTeamRank:
+				normalizeRank(homeTeam.rank) ?? originalGame.homeTeamRank ?? UNRANKED,
+			awayTeamRank:
+				normalizeRank(awayTeam.rank) ?? originalGame.awayTeamRank ?? UNRANKED,
 			currentPeriod: competition.status.period,
 			homeTeamAbbrev: homeTeam.team.abbreviation,
 			awayTeamAbbrev: awayTeam.team.abbreviation,

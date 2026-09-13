@@ -58,7 +58,7 @@ const FACTOR_LABELS: Record<
 	rivalryBonus: {
 		label: 'Rivalries',
 		max: 10,
-		hint: 'OU & A&M only — 0 until one is played',
+		hint: 'OU & A&M only — excluded from the score until one is played',
 	},
 	marginFactor: {
 		label: 'Margin',
@@ -239,8 +239,11 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 						{seasonLabel ? `${seasonLabel} Season` : ''} Hook Them Index
 					</span>
 					<span className='text-[11px] text-foreground/40 text-center max-w-sm leading-relaxed'>
-						Win rate, ranked wins (by opponent rank), OU/A&amp;M rivalries,
-						margin, and current ranking
+						Win rate, ranked wins (by opponent rank), margin, and current
+						ranking
+						{index.rivalryActive
+							? ', plus OU/A&M rivalries'
+							: ' — rivalries unlock after OU or A&M'}
 					</span>
 				</div>
 
@@ -288,7 +291,11 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 									{Object.entries(index.factors).map(([key, value]) => {
 										const meta = FACTOR_LABELS[key];
 										if (!meta) return null;
-										const pct = (value / meta.max) * 100;
+										const rivalryPending =
+											key === 'rivalryBonus' && !index.rivalryActive;
+										const pct = rivalryPending
+											? 0
+											: (value / meta.max) * 100;
 										const isOpen = openFactor === key;
 										const details =
 											index.breakdowns[
@@ -296,7 +303,10 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 											] ?? [];
 
 										return (
-											<div key={key} className='flex flex-col gap-1'>
+											<div
+												key={key}
+												className={`flex flex-col gap-1 ${rivalryPending ? 'opacity-50' : ''}`}
+											>
 												<button
 													type='button'
 													className='flex items-center justify-between text-left w-full group'
@@ -310,7 +320,7 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 														</span>
 													</span>
 													<span className='text-xs font-mono text-foreground/60'>
-														{value}/{meta.max}
+														{rivalryPending ? '—' : `${value}/${meta.max}`}
 													</span>
 												</button>
 												<div className='h-1.5 bg-white/5 rounded-full overflow-hidden'>

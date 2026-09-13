@@ -1,10 +1,57 @@
 import { Game, SeasonRecord, HookEmIndex, HookEmFactorBreakdown } from '../types';
+import { getOpponentRank, getTexasRank } from './rankUtils';
 
 const PROVISIONAL_GAME_THRESHOLD = 4;
 const QUALITY_WIN_CAP = 20;
 const MARGIN_PER_GAME_CAP = 21; // ~3 TDs — stops cupcake blowouts from maxing the bar
+const RIVALRY_MAX = 10;
+/** Points available before rivalry games; score is scaled to 100 until then. */
+const SCORE_MAX_WITHOUT_RIVALRY = 100 - RIVALRY_MAX;
 
-export function parseSeasonRecord(games: Game[]): SeasonRecord {
+const IN_PROGRESS_STATUSES: Game['status'][] = [
+	'STATUS_IN_PROGRESS',
+	'STATUS_HALFTIME',
+	'STATUS_CURRENT',
+	'STATUS_END_PERIOD',
+	'STATUS_PRE_END_PERIOD',
+	'STATUS_OVERTIME',
+];
+
+/**
+ * Texas' current rank.
+ *
+ * `currentGame` is the same object the hero score card renders, so when one is
+ * supplied both the record bar and the card badge always show the same number.
+ * Without it, fall back to the newest game that actually carries a rank —
+ * including a game in progress, whose poll position is fresher than the last
+ * completed game's.
+ */
+export function resolveTexasRank(
+	games: Game[],
+	currentGame?: Game | null
+): number | null {
+	const fromCurrent = getTexasRank(currentGame);
+	if (fromCurrent !== null) return fromCurrent;
+
+	const ranked = games
+		.filter(
+			(g) =>
+				g.status === 'STATUS_FINAL' || IN_PROGRESS_STATUSES.includes(g.status)
+		)
+		.sort((a, b) => b.timestamp - a.timestamp);
+
+	for (const game of ranked) {
+		const rank = getTexasRank(game);
+		if (rank !== null) return rank;
+	}
+
+	return null;
+}
+
+export function parseSeasonRecord(
+	games: Game[],
+	currentGame?: Game | null
+): SeasonRecord {
 	const completedGames = games.filter((g) => g.status === 'STATUS_FINAL');
 	const wins = completedGames.filter((g) => g.result === 'win').length;
 	const losses = completedGames.filter((g) => g.result === 'loss').length;
@@ -37,15 +84,7 @@ export function parseSeasonRecord(games: Game[]): SeasonRecord {
 		}
 	}
 
-	// Find Texas rank from most recent game
-	const mostRecent = sorted[0];
-	let texasRank: number | null = null;
-	if (mostRecent) {
-		const rank = mostRecent.isTexasHome
-			? mostRecent.homeTeamRank
-			: mostRecent.awayTeamRank;
-		texasRank = Number(rank) < 50 ? rank : null;
-	}
+	const texasRank = resolveTexasRank(games, currentGame);
 
 	return {
 		wins,
@@ -62,18 +101,10 @@ export function getRivalryGames(games: Game[]): Game[] {
 	return games.filter((g) => g.isRivalry);
 }
 
-function getOpponentRank(game: Game): number {
-	return Number(game.isTexasHome ? game.awayTeamRank : game.homeTeamRank);
-}
-
-function getTexasRank(game: Game): number {
-	return Number(game.isTexasHome ? game.homeTeamRank : game.awayTeamRank);
-}
-
 /** Points for a single ranked win. #1 ≈ 10, #25 ≈ 2. Road/neutral gets a small bump. */
 export function qualityWinPointsForGame(game: Game): number {
 	const rank = getOpponentRank(game);
-	if (rank < 1 || rank >= 26 || game.result !== 'win') return 0;
+	if (rank === null || rank > 25 || game.result !== 'win') return 0;
 
 	// Linear: #1 = 10, #25 = 2
 	let points = 2 + ((25 - rank) / 24) * 8;
@@ -85,9 +116,12 @@ export function qualityWinPointsForGame(game: Game): number {
 
 function shortOpponentLabel(game: Game): string {
 	const rank = getOpponentRank(game);
-	const name = game.opponentName.replace(/\s+(Longhorns|Sooners|Aggies|Tigers|Razorbacks|Bulldogs|Gators|Wildcats|Commodores|Rams|Miners)$/i, '')
-		|| game.opponentName;
-	const rankLabel = rank < 26 ? `#${rank} ` : '';
+	const name =
+		game.opponentName.replace(
+			/\s+(Longhorns|Sooners|Aggies|Tigers|Razorbacks|Bulldogs|Gators|Wildcats|Commodores|Rams|Miners)$/i,
+			''
+		) || game.opponentName;
+	const rankLabel = rank !== null ? `#${rank} ` : '';
 	const site = game.neutralSite ? ' (N)' : game.isTexasHome ? '' : ' (A)';
 	return `${rankLabel}${name}${site}`.trim();
 }
@@ -107,6 +141,7 @@ export function calculateHookEmIndex(games: Game[]): HookEmIndex {
 			score: 0,
 			grade: 'N/A',
 			provisional: true,
+			rivalryActive: false,
 			factors: {
 				winPercentage: 0,
 				strengthOfVictory: 0,
@@ -155,22 +190,26 @@ export function calculateHookEmIndex(games: Game[]): HookEmIndex {
 		qualityBreakdown.push({ label: 'No Top-25 wins yet', points: 0 });
 	}
 
-	// Factor 3: Rivalry bonus (0-10) — earned only after a rivalry is played
+	// Factor 3: Rivalry bonus (0-10) — inactive until OU/A&M is played
 	const rivalryGames = completed.filter((g) => g.isRivalry);
+	const rivalryActive = rivalryGames.length > 0;
 	const rivalryWins = rivalryGames.filter((g) => g.result === 'win');
-	const rivalryBonus =
-		rivalryGames.length > 0
-			? (rivalryWins.length / rivalryGames.length) * 10
-			: 0;
-	const rivalryBreakdown: HookEmFactorBreakdown[] =
-		rivalryGames.length > 0
-			? rivalryGames.map((g) => ({
-					label: `${g.rivalryName || shortOpponentLabel(g)} — ${
-						g.result === 'win' ? 'hooked' : 'not hooked'
-					}`,
-					points: g.result === 'win' ? Math.round(10 / rivalryGames.length) : 0,
-				}))
-			: [{ label: 'No rivalry games played yet', points: 0 }];
+	const rivalryBonus = rivalryActive
+		? (rivalryWins.length / rivalryGames.length) * RIVALRY_MAX
+		: 0;
+	const rivalryBreakdown: HookEmFactorBreakdown[] = rivalryActive
+		? rivalryGames.map((g) => ({
+				label: `${g.rivalryName || shortOpponentLabel(g)} — ${
+					g.result === 'win' ? 'hooked' : 'not hooked'
+				}`,
+				points: g.result === 'win' ? Math.round(RIVALRY_MAX / rivalryGames.length) : 0,
+			}))
+		: [
+				{
+					label: 'OU & A&M not played yet — excluded from score',
+					points: 0,
+				},
+			];
 
 	// Factor 4: Margin (0-15) — all games, per-game cap, losses count
 	const cappedDiffs = completed.map((g) => {
@@ -182,7 +221,10 @@ export function calculateHookEmIndex(games: Game[]): HookEmIndex {
 	// Map -21..+21 → 0..15 (0 differential ≈ 7.5)
 	const marginFactor = Math.max(
 		0,
-		Math.min(15, ((avgDiff + MARGIN_PER_GAME_CAP) / (MARGIN_PER_GAME_CAP * 2)) * 15)
+		Math.min(
+			15,
+			((avgDiff + MARGIN_PER_GAME_CAP) / (MARGIN_PER_GAME_CAP * 2)) * 15
+		)
 	);
 	const marginBreakdown: HookEmFactorBreakdown[] = [
 		{
@@ -208,35 +250,39 @@ export function calculateHookEmIndex(games: Game[]): HookEmIndex {
 			}),
 	];
 
-	// Factor 5: Ranking bonus (0-15) — current Texas rank
-	const sorted = [...completed].sort((a, b) => b.timestamp - a.timestamp);
-	const latest = sorted[0];
-	const rankNum = latest ? getTexasRank(latest) : 99;
+	// Factor 5: Ranking bonus (0-15) — same Texas rank as the record bar / card
+	const texasRank = resolveTexasRank(completed);
 	const rankingBonus =
-		rankNum >= 50 ? 0 : rankNum <= 1 ? 15 : Math.max(0, 15 - rankNum * 0.25);
+		texasRank === null
+			? 0
+			: texasRank <= 1
+				? 15
+				: Math.max(0, 15 - texasRank * 0.25);
 	const rankingBreakdown: HookEmFactorBreakdown[] = [
 		{
 			label:
-				rankNum < 50
-					? `Currently ranked #${rankNum}`
+				texasRank !== null
+					? `Currently ranked #${texasRank}`
 					: 'Currently unranked',
 			points: Math.round(rankingBonus),
 		},
 	];
 
-	const totalScore = Math.round(
-		winPercentage +
-			strengthOfVictory +
-			rivalryBonus +
-			marginFactor +
-			rankingBonus
-	);
-	const score = Math.min(totalScore, 100);
+	const earnedWithoutRivalry =
+		winPercentage + strengthOfVictory + marginFactor + rankingBonus;
+
+	// Until a rivalry is played, don't punish the grade for 10 unavailable points —
+	// scale the earned total from /90 up to a /100 display score.
+	const totalScore = rivalryActive
+		? earnedWithoutRivalry + rivalryBonus
+		: (earnedWithoutRivalry / SCORE_MAX_WITHOUT_RIVALRY) * 100;
+	const score = Math.min(Math.round(totalScore), 100);
 
 	return {
 		score,
 		grade: getHookEmGrade(score),
 		provisional,
+		rivalryActive,
 		factors: {
 			winPercentage: Math.round(winPercentage),
 			strengthOfVictory: Math.round(strengthOfVictory),

@@ -58,6 +58,8 @@ export type HookEmIndex = {
 	grade: string;
 	/** True when fewer than 4 games have been played — grade is early-season. */
 	provisional: boolean;
+	/** False until an OU/A&M rivalry game is completed — factor is excluded from scoring. */
+	rivalryActive: boolean;
 	factors: {
 		winPercentage: number;
 		strengthOfVictory: number;

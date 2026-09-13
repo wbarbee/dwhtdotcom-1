@@ -1,6 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Game } from '../types';
 import { fetchGameData, fetchLiveGame } from './fetchGameData';
+
+const MS_PER_HOUR = 1000 * 60 * 60;
+const RECENT_FINAL_WINDOW_MS = 48 * MS_PER_HOUR;
+/** Kickoff → final is roughly 3.5h; used so the 48h window starts at conclusion. */
+const APPROX_GAME_DURATION_MS = 3.5 * MS_PER_HOUR;
 
 const isGameInProgress = (status: string) => {
 	return [
@@ -17,10 +22,12 @@ const isGameInProgress = (status: string) => {
 	].includes(status);
 };
 
-const isWithin48Hours = (gameTimestamp: number) => {
-	const now = Date.now();
-	const hoursDiff = (now - gameTimestamp) / (1000 * 60 * 60);
-	return hoursDiff <= 48;
+const getApproxEndTime = (game: Game) => game.timestamp + APPROX_GAME_DURATION_MS;
+
+/** True for the 48 hours after a final is estimated to have ended. */
+const isRecentlyConcluded = (game: Game) => {
+	if (game.status !== 'STATUS_FINAL') return false;
+	return Date.now() - getApproxEndTime(game) <= RECENT_FINAL_WINDOW_MS;
 };
 
 const isGameday = (gameTimestamp: number) => {
@@ -33,6 +40,43 @@ const isGameday = (gameTimestamp: number) => {
 	);
 };
 
+const getMostRecentFinal = (games: Game[]) =>
+	games
+		.filter((game) => game.status === 'STATUS_FINAL')
+		.sort((a, b) => b.timestamp - a.timestamp)[0];
+
+/**
+ * Pick which game the hero card should show.
+ * Upcoming is gated: never show the next scheduled game until 48h after
+ * the previous final has concluded.
+ */
+export function selectRelevantGame(data: Game[], now = new Date()): Game | null {
+	if (data.length === 0) return null;
+
+	const inProgress = data.find((game) => isGameInProgress(game.status));
+	if (inProgress) return inProgress;
+
+	const todayScheduled = data.find(
+		(game) => game.status === 'STATUS_SCHEDULED' && isGameday(game.timestamp)
+	);
+	if (todayScheduled) return todayScheduled;
+
+	const mostRecentFinal = getMostRecentFinal(data);
+	if (mostRecentFinal && isRecentlyConcluded(mostRecentFinal)) {
+		return mostRecentFinal;
+	}
+
+	const nextUpcoming = data
+		.filter((game) => {
+			const gameDate = new Date(game.timestamp);
+			return game.status === 'STATUS_SCHEDULED' && gameDate > now;
+		})
+		.sort((a, b) => a.timestamp - b.timestamp)[0];
+	if (nextUpcoming) return nextUpcoming;
+
+	return mostRecentFinal || null;
+}
+
 export function useCurrentGameData(initialOverrideMode?: string) {
 	const [currentGameData, setCurrentGameData] = useState<Game | null>(null);
 	const [allGames, setAllGames] = useState<Game[]>([]);
@@ -41,79 +85,62 @@ export function useCurrentGameData(initialOverrideMode?: string) {
 	const [overrideMode, setOverrideMode] = useState<string | undefined>(
 		initialOverrideMode
 	);
+	const requestIdRef = useRef(0);
+	const hasLoadedRef = useRef(false);
+	const overrideModeRef = useRef(overrideMode);
+	overrideModeRef.current = overrideMode;
 
-	const loadGameData = useCallback(async () => {
+	const loadGameData = useCallback(async (modeOverride?: string) => {
+		const requestId = ++requestIdRef.current;
+		const activeMode =
+			modeOverride !== undefined ? modeOverride : overrideModeRef.current;
+		const isInitialLoad = !hasLoadedRef.current;
+
 		try {
-			setLoading(true);
-			setCurrentGameData(null); // Clear current data to prevent flashing
-			const data = await fetchGameData(overrideMode);
+			if (isInitialLoad) setLoading(true);
+			setError(null);
+			const data = await fetchGameData(activeMode);
+			// Ignore out-of-order responses from overlapping refreshes
+			if (requestId !== requestIdRef.current) return;
+
 			setAllGames(data);
 
-			if (overrideMode) {
+			if (activeMode) {
 				setCurrentGameData(data[0] || null);
 			} else {
-				const now = new Date();
+				let relevantGame = selectRelevantGame(data);
 
-				// First, look for a game in progress
-				let relevantGame = data.find((game) => isGameInProgress(game.status));
-
-				// If no game in progress, look for a scheduled game today
-				if (!relevantGame) {
-					relevantGame = data.find(
-						(game) =>
-							game.status === 'STATUS_SCHEDULED' && isGameday(game.timestamp)
-					);
-				}
-
-				// If no game today, look for a recently completed game within 48 hours
-				if (!relevantGame) {
-					relevantGame = data.find(
-						(game) =>
-							game.status === 'STATUS_FINAL' &&
-							isWithin48Hours(game.timestamp) &&
-							['win', 'loss'].includes(game.result)
-					);
-				}
-
-				// If no recent completed game, look for the next upcoming game
-				if (!relevantGame) {
-					relevantGame = data.find((game) => {
-						const gameDate = new Date(game.timestamp);
-						return game.status === 'STATUS_SCHEDULED' && gameDate > now;
-					});
-				}
-
-				// If no upcoming game, use the most recent completed game
-				if (!relevantGame && data.length > 0) {
-					relevantGame = data
-						.filter((game) => game.status === 'STATUS_FINAL')
-						.sort((a, b) => b.timestamp - a.timestamp)[0];
-				}
-
+				// Live summary is fresher than the schedule CDN for in-progress
+				// and just-finished games (avoids needing a second refresh).
 				if (
 					relevantGame &&
-					isGameInProgress(relevantGame.status) &&
-					!overrideMode
+					(isGameInProgress(relevantGame.status) ||
+						isRecentlyConcluded(relevantGame))
 				) {
 					const liveData = await fetchLiveGame(relevantGame.id, relevantGame);
+					if (requestId !== requestIdRef.current) return;
 					if (liveData) {
 						relevantGame = liveData;
 					}
 				}
 
-				setCurrentGameData(relevantGame || null);
+				setCurrentGameData(relevantGame);
 			}
+			hasLoadedRef.current = true;
 		} catch (err) {
+			if (requestId !== requestIdRef.current) return;
 			console.error('Failed to fetch game data:', err);
 			setError('Failed to fetch game data');
 		} finally {
-			setLoading(false);
+			if (requestId === requestIdRef.current) {
+				setLoading(false);
+			}
 		}
-	}, [overrideMode]);
+	}, []);
 
 	useEffect(() => {
 		loadGameData();
-	}, [loadGameData]);
+	}, [loadGameData, overrideMode]);
 
 	useEffect(() => {
 		const handleVisibility = () => {
@@ -141,8 +168,12 @@ export function useCurrentGameData(initialOverrideMode?: string) {
 
 	const refreshData = useCallback(
 		async (newOverrideMode?: string) => {
-			setOverrideMode(newOverrideMode);
-			await loadGameData();
+			if (newOverrideMode !== undefined) {
+				setOverrideMode(newOverrideMode);
+				await loadGameData(newOverrideMode);
+			} else {
+				await loadGameData();
+			}
 		},
 		[loadGameData]
 	);
