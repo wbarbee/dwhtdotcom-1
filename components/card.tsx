@@ -5,6 +5,7 @@ import { useViewport } from '../hooks/useViewport';
 import { Button, Spinner } from '@nextui-org/react';
 import FullScoreModal from './modal';
 import { detectAppendedSuffix } from '../utils/stringUtils';
+import { normalizeRank } from '../utils/rankUtils';
 import { useIsDarkMode } from '../hooks/useIsDarkMode';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -52,10 +53,11 @@ const isGameInProgress = (status: Game['status']) =>
 	].includes(status);
 
 function RankBadge({ rank }: { rank: number }) {
-	if (Number(rank) >= 50) return null;
+	const normalized = normalizeRank(rank);
+	if (normalized === null) return null;
 	return (
 		<span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-burntOrange/15 dark:bg-burntOrange/20 text-burntOrange text-[10px] font-bold mx-1 align-middle'>
-			{rank}
+			{normalized}
 		</span>
 	);
 }

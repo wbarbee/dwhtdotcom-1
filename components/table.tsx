@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Spinner, Chip } from '@nextui-org/react';
 import { fetchGameData } from '../hooks/fetchGameData';
 import { Game } from '../types';
+import { getOpponentRank } from '../utils/rankUtils';
 
 export interface StatsTableProps {
 	onLoadingChange?: (loading: boolean) => void;
@@ -63,7 +64,7 @@ export function StatsTable({ onLoadingChange }: StatsTableProps) {
 		<div className='flex flex-col gap-2'>
 			{games.map((g) => {
 				const opponent = g.isTexasHome ? g.away : g.home;
-				const opponentRank = g.isTexasHome ? g.awayTeamRank : g.homeTeamRank;
+				const opponentRank = getOpponentRank(g);
 				const ha = g.neutralSite ? 'N' : g.isTexasHome ? 'vs' : '@';
 
 				return (
@@ -79,7 +80,7 @@ export function StatsTable({ onLoadingChange }: StatsTableProps) {
 								{ha}
 							</span>
 							<span className='text-sm text-foreground/90 truncate'>
-								{Number(opponentRank) < 50 && (
+								{opponentRank !== null && (
 									<span className='text-burntOrange text-xs font-bold mr-1'>
 										#{opponentRank}
 									</span>

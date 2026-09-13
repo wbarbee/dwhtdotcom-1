@@ -13,6 +13,7 @@ import {
 import { useMediaQuery } from '@react-hook/media-query';
 import { fetchUpcomingSchedule } from '../hooks/fetchGameData';
 import { Game } from '../types';
+import { getOpponentRank } from '../utils/rankUtils';
 
 interface FullScoreModalProps {
 	result?: 'win' | 'loss' | 'upcoming';
@@ -87,7 +88,7 @@ export function ScheduleList({
 		<div className='flex flex-col gap-2'>
 			{games.map((g) => {
 				const opponent = g.isTexasHome ? g.away : g.home;
-				const opponentRank = g.isTexasHome ? g.awayTeamRank : g.homeTeamRank;
+				const opponentRank = getOpponentRank(g);
 				const ha = g.neutralSite
 					? 'N'
 					: g.isTexasHome
@@ -107,7 +108,7 @@ export function ScheduleList({
 								{ha}
 							</span>
 							<span className='text-sm text-foreground/90 truncate'>
-								{Number(opponentRank) < 50 && (
+								{opponentRank !== null && (
 									<span className='text-burntOrange text-xs font-bold mr-1'>
 										#{opponentRank}
 									</span>

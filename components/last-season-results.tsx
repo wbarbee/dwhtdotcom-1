@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Spinner } from '@nextui-org/react';
 import { fetchLastSeasonData } from '../hooks/fetchGameData';
 import { Game } from '../types';
+import { getOpponentRank } from '../utils/rankUtils';
 
 export default function LastSeasonResults() {
 	const [games, setGames] = useState<Game[]>([]);
@@ -55,7 +56,7 @@ export default function LastSeasonResults() {
 			<div className='flex flex-col'>
 				{games.map((g) => {
 					const opponent = g.isTexasHome ? g.away : g.home;
-					const opponentRank = g.isTexasHome ? g.awayTeamRank : g.homeTeamRank;
+					const opponentRank = getOpponentRank(g);
 					const ha = g.neutralSite
 						? 'N'
 						: g.isTexasHome
@@ -78,7 +79,7 @@ export default function LastSeasonResults() {
 									{ha}
 								</span>
 								<span className='text-xs sm:text-sm text-foreground/90 truncate'>
-									{Number(opponentRank) < 50 && (
+									{opponentRank !== null && (
 										<span className='text-burntOrange text-xs font-bold mr-1'>
 											#{opponentRank}
 										</span>

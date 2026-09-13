@@ -1,6 +1,50 @@
 import { Game, SeasonRecord, HookEmIndex } from '../types';
+import { getOpponentRank, getTexasRank } from './rankUtils';
 
-export function parseSeasonRecord(games: Game[]): SeasonRecord {
+const IN_PROGRESS_STATUSES: Game['status'][] = [
+	'STATUS_IN_PROGRESS',
+	'STATUS_HALFTIME',
+	'STATUS_CURRENT',
+	'STATUS_END_PERIOD',
+	'STATUS_PRE_END_PERIOD',
+	'STATUS_OVERTIME',
+];
+
+/**
+ * Texas' current rank.
+ *
+ * `currentGame` is the same object the hero score card renders, so when one is
+ * supplied both the record bar and the card badge always show the same number.
+ * Without it, fall back to the newest game that actually carries a rank —
+ * including a game in progress, whose poll position is fresher than the last
+ * completed game's.
+ */
+export function resolveTexasRank(
+	games: Game[],
+	currentGame?: Game | null
+): number | null {
+	const fromCurrent = getTexasRank(currentGame);
+	if (fromCurrent !== null) return fromCurrent;
+
+	const ranked = games
+		.filter(
+			(g) =>
+				g.status === 'STATUS_FINAL' || IN_PROGRESS_STATUSES.includes(g.status)
+		)
+		.sort((a, b) => b.timestamp - a.timestamp);
+
+	for (const game of ranked) {
+		const rank = getTexasRank(game);
+		if (rank !== null) return rank;
+	}
+
+	return null;
+}
+
+export function parseSeasonRecord(
+	games: Game[],
+	currentGame?: Game | null
+): SeasonRecord {
 	const completedGames = games.filter((g) => g.status === 'STATUS_FINAL');
 	const wins = completedGames.filter((g) => g.result === 'win').length;
 	const losses = completedGames.filter((g) => g.result === 'loss').length;
@@ -33,15 +77,7 @@ export function parseSeasonRecord(games: Game[]): SeasonRecord {
 		}
 	}
 
-	// Find Texas rank from most recent game
-	const mostRecent = sorted[0];
-	let texasRank: number | null = null;
-	if (mostRecent) {
-		const rank = mostRecent.isTexasHome
-			? mostRecent.homeTeamRank
-			: mostRecent.awayTeamRank;
-		texasRank = Number(rank) < 50 ? rank : null;
-	}
+	const texasRank = resolveTexasRank(games, currentGame);
 
 	return {
 		wins,
@@ -84,8 +120,8 @@ export function calculateHookEmIndex(games: Game[]): HookEmIndex {
 	// Factor 2: Strength of victory (0-20 points)
 	// Higher when beating ranked opponents
 	const rankedWins = wins.filter((g) => {
-		const oppRank = g.isTexasHome ? g.awayTeamRank : g.homeTeamRank;
-		return Number(oppRank) < 26;
+		const oppRank = getOpponentRank(g);
+		return oppRank !== null && oppRank <= 25;
 	});
 	// 7 points per ranked win, capped at 20 (3 ranked wins nearly maxes it)
 	const strengthOfVictory = Math.min(rankedWins.length * 7, 20);
@@ -108,17 +144,14 @@ export function calculateHookEmIndex(games: Game[]): HookEmIndex {
 	const marginFactor = Math.min((avgMargin / 17) * 15, 15); // 17+ pt avg (~2.5 score game) = max
 
 	// Factor 5: Ranking bonus (0-15 points)
-	// Based on current Texas ranking
-	const sorted = [...completed].sort((a, b) => b.timestamp - a.timestamp);
-	const latest = sorted[0];
-	const texasRank = latest
-		? latest.isTexasHome
-			? latest.homeTeamRank
-			: latest.awayTeamRank
-		: 99;
-	const rankNum = Number(texasRank);
+	// Based on the same Texas ranking the record bar and score card display
+	const texasRank = resolveTexasRank(completed);
 	const rankingBonus =
-		rankNum >= 50 ? 0 : rankNum <= 1 ? 15 : Math.max(0, 15 - rankNum * 0.25);
+		texasRank === null
+			? 0
+			: texasRank <= 1
+				? 15
+				: Math.max(0, 15 - texasRank * 0.25);
 
 	const totalScore = Math.round(
 		winPercentage +

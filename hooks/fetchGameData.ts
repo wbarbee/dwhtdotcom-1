@@ -1,5 +1,8 @@
 import { Game } from '../types';
 import { mockGames, getGameByMode } from '../utils/mockData';
+import { normalizeRank } from '../utils/rankUtils';
+
+const UNRANKED = 99;
 
 const API_SCHEDULE_BASE =
 	'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/texas/schedule';
@@ -189,6 +192,12 @@ const processEvents = async (data: any): Promise<Game[]> => {
 							score: calculateScore(homeScore, awayScore),
 							currentPeriod: liveCompetition.status.period,
 							status: liveCompetition.status.type.name,
+							// Keep the live ranks on the game too, so the record bar and
+							// the schedule list never lag the hero card's badges.
+							homeTeamRank:
+								normalizeRank(liveHomeTeam.rank) ?? game.homeTeamRank,
+							awayTeamRank:
+								normalizeRank(liveAwayTeam.rank) ?? game.awayTeamRank,
 							texasScore: liveTexasScore,
 							opponentScore: liveOppScore,
 							pointDifferential: liveTexasScore - liveOppScore,
@@ -319,8 +328,12 @@ export const fetchLiveGame = async (
 			away: awayTeam.team.displayName,
 			longhornsRecord:
 				texasTeam.records?.[0]?.summary || originalGame.longhornsRecord,
-			homeTeamRank: homeTeam.rank,
-			awayTeamRank: awayTeam.rank,
+			// The summary header reports unranked as 0 (or omits it) while the
+			// schedule uses 99, so keep the schedule value when live has no rank.
+			homeTeamRank:
+				normalizeRank(homeTeam.rank) ?? originalGame.homeTeamRank ?? UNRANKED,
+			awayTeamRank:
+				normalizeRank(awayTeam.rank) ?? originalGame.awayTeamRank ?? UNRANKED,
 			currentPeriod: competition.status.period,
 			homeTeamAbbrev: homeTeam.team.abbreviation,
 			awayTeamAbbrev: awayTeam.team.abbreviation,
