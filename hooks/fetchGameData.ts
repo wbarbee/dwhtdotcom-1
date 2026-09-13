@@ -276,11 +276,9 @@ export const fetchLiveGame = async (
 	eventId: string,
 	originalGame: Game
 ): Promise<Game | null> => {
-	if (IS_DEV_MODE && USE_MOCK_DATA) {
-		console.warn('Using mock data for live game in dev mode');
-		return getGameByMode('inProgress');
-	}
-
+	// Always fetch real live/summary data for schedule-selected games.
+	// Mock games are only used via the explicit dev override path, which
+	// never calls this (it short-circuits on overrideMode in the hook).
 	try {
 		const liveData = await fetchLiveGameData(eventId);
 
