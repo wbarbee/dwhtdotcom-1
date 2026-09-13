@@ -70,12 +70,14 @@ const DevOverride: React.FC<DevOverrideProps> = ({
 							aria-label='Mock data scenarios'
 							onAction={(key) => handleModeChange(key as string)}
 							className='max-h-[300px] overflow-y-auto dropdown-menu-override'>
-							<DropdownItem key='live'>Live</DropdownItem>
-							{Object.keys(mockGames).map((mode) => (
-								<DropdownItem key={mode}>
-									{mode.charAt(0).toUpperCase() + mode.slice(1)}
-								</DropdownItem>
-							))}
+							{[
+								<DropdownItem key='live'>Live</DropdownItem>,
+								...Object.keys(mockGames).map((mode) => (
+									<DropdownItem key={mode}>
+										{mode.charAt(0).toUpperCase() + mode.slice(1)}
+									</DropdownItem>
+								)),
+							]}
 						</DropdownMenu>
 					</Dropdown>
 					<Button
