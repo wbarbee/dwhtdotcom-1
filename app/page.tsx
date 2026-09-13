@@ -127,9 +127,9 @@ export default function Home() {
 							</Tab>
 							{!isOffseason && (
 								<Tab key='schedule' title='Schedule'>
-									<div className='glass-card p-2 sm:p-4 mt-3'>
+									<div className='pt-3'>
 										<ScheduleList />
-										<p className='text-[10px] text-foreground/30 mt-2 px-4'>
+										<p className='text-[10px] text-foreground/30 mt-3 px-1'>
 											<span className='text-accent-gold'>*</span> neutral site
 										</p>
 									</div>
