@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
 	Button,
 	Dropdown,
@@ -29,6 +29,7 @@ const DevOverride: React.FC<DevOverrideProps> = ({
 		currentOverrideMode || 'live'
 	);
 	const [isRefreshing, setIsRefreshing] = useState(false);
+	const skipLiveRefreshRef = useRef(false);
 
 	useEffect(() => {
 		setSelectedMode(currentOverrideMode || 'live');
@@ -37,12 +38,20 @@ const DevOverride: React.FC<DevOverrideProps> = ({
 	if (!overrideVisible) return null;
 
 	const handleModeChange = async (mode: string) => {
+		skipLiveRefreshRef.current = true;
 		setSelectedMode(mode);
 		setIsRefreshing(true);
-		await refreshData(mode === 'live' ? undefined : mode, setIsRefreshing);
+		try {
+			await refreshData(mode === 'live' ? undefined : mode, setIsRefreshing);
+		} finally {
+			window.setTimeout(() => {
+				skipLiveRefreshRef.current = false;
+			}, 400);
+		}
 	};
 
 	const handleRefreshLiveData = async () => {
+		if (skipLiveRefreshRef.current) return;
 		setIsRefreshing(true);
 		await refreshData(undefined, setIsRefreshing);
 	};
@@ -51,7 +60,7 @@ const DevOverride: React.FC<DevOverrideProps> = ({
 		<Card className='fixed bottom-4 left-4 z-50 bg-background/60 dark:bg-default-100/50 w-[280px]'>
 			<CardBody>
 				<div className='flex flex-col gap-2'>
-					<Dropdown>
+					<Dropdown placement='top'>
 						<DropdownTrigger>
 							<Button variant='bordered' disabled={isRefreshing} fullWidth>
 								{selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1)}
