@@ -12,9 +12,6 @@ interface RivalryTrackerProps {
 const RIVALRY_ACCENT: Record<string, string> = {
 	'Red River Rivalry': 'border-l-red-700',
 	'Lone Star Showdown': 'border-l-red-900',
-	'Southwest Classic': 'border-l-red-600',
-	'Iron Skillet': 'border-l-blue-800',
-	'Battle of the Bayou': 'border-l-purple-700',
 };
 
 export default function RivalryTracker({ games }: RivalryTrackerProps) {

@@ -313,7 +313,7 @@ export default function ScoreCard({
 									<RankBadge rank={homeTeamRank} />
 									{isMobile ? homeTeamAbbrev : home}
 								</h3>
-								<p className={`${status === 'STATUS_SCHEDULED' ? 'mt-2' : ''} text-sm text-foreground/50`}>
+								<p className={`${status === 'STATUS_SCHEDULED' ? 'mt-2' : ''} text-sm text-foreground/50 px-10`}>
 									{location} &middot; {formattedDate}
 								</p>
 							</div>
@@ -321,11 +321,11 @@ export default function ScoreCard({
 					</motion.div>
 				</motion.div>
 			</div>
-			<div className='absolute bottom-3 right-3 flex gap-2'>
+			<div className='absolute bottom-3 right-3 flex gap-2 z-10'>
 				{showRefreshButton && (
 					<Button
 						isIconOnly
-						className='bg-white/5 hover:bg-white/10 text-foreground/60 hover:text-foreground rounded-full backdrop-blur-sm border border-white/10'
+						className='bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 text-foreground/60 hover:text-foreground rounded-full backdrop-blur-sm border border-black/10 dark:border-white/15'
 						size='sm'
 						aria-label='Refresh data'
 						onClick={handleRefresh}

@@ -48,15 +48,29 @@ export type SeasonRecord = {
 	texasRank: number | null;
 };
 
+export type HookEmFactorBreakdown = {
+	label: string;
+	points: number;
+};
+
 export type HookEmIndex = {
 	score: number;
 	grade: string;
+	/** True when fewer than 4 games have been played — grade is early-season. */
+	provisional: boolean;
 	factors: {
 		winPercentage: number;
 		strengthOfVictory: number;
 		rivalryBonus: number;
 		marginFactor: number;
 		rankingBonus: number;
+	};
+	breakdowns: {
+		winPercentage: HookEmFactorBreakdown[];
+		strengthOfVictory: HookEmFactorBreakdown[];
+		rivalryBonus: HookEmFactorBreakdown[];
+		marginFactor: HookEmFactorBreakdown[];
+		rankingBonus: HookEmFactorBreakdown[];
 	};
 };
 

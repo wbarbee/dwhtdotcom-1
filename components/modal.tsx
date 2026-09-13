@@ -173,7 +173,7 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 				<Button
 					isIconOnly
 					onPress={onOpen}
-					className='bg-white/5 hover:bg-white/10 text-foreground/60 hover:text-foreground rounded-full backdrop-blur-sm border border-white/10'
+					className='bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 text-foreground/60 hover:text-foreground rounded-full backdrop-blur-sm border border-black/10 dark:border-white/15'
 					size='sm'
 					aria-label='View full schedule'
 				>

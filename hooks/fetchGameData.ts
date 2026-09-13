@@ -30,11 +30,8 @@ const SEC_TEAM_IDS = new Set([
 ]);
 
 const RIVALRY_MAP: Record<string, string> = {
-	'201': 'Red River Rivalry',
-	'245': 'Lone Star Showdown',
-	'2': 'Iron Skillet',
-	'12': 'Southwest Classic',
-	'97': 'Battle of the Bayou',
+	'201': 'Red River Rivalry', // Oklahoma
+	'245': 'Lone Star Showdown', // Texas A&M
 };
 
 const fetchLiveGameData = async (eventId: string): Promise<any> => {

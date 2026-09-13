@@ -1,4 +1,8 @@
-import { Game, SeasonRecord, HookEmIndex } from '../types';
+import { Game, SeasonRecord, HookEmIndex, HookEmFactorBreakdown } from '../types';
+
+const PROVISIONAL_GAME_THRESHOLD = 4;
+const QUALITY_WIN_CAP = 20;
+const MARGIN_PER_GAME_CAP = 21; // ~3 TDs — stops cupcake blowouts from maxing the bar
 
 export function parseSeasonRecord(games: Game[]): SeasonRecord {
 	const completedGames = games.filter((g) => g.status === 'STATUS_FINAL');
@@ -58,12 +62,51 @@ export function getRivalryGames(games: Game[]): Game[] {
 	return games.filter((g) => g.isRivalry);
 }
 
+function getOpponentRank(game: Game): number {
+	return Number(game.isTexasHome ? game.awayTeamRank : game.homeTeamRank);
+}
+
+function getTexasRank(game: Game): number {
+	return Number(game.isTexasHome ? game.homeTeamRank : game.awayTeamRank);
+}
+
+/** Points for a single ranked win. #1 ≈ 10, #25 ≈ 2. Road/neutral gets a small bump. */
+export function qualityWinPointsForGame(game: Game): number {
+	const rank = getOpponentRank(game);
+	if (rank < 1 || rank >= 26 || game.result !== 'win') return 0;
+
+	// Linear: #1 = 10, #25 = 2
+	let points = 2 + ((25 - rank) / 24) * 8;
+	if (!game.isTexasHome || game.neutralSite) {
+		points *= 1.15;
+	}
+	return points;
+}
+
+function shortOpponentLabel(game: Game): string {
+	const rank = getOpponentRank(game);
+	const name = game.opponentName.replace(/\s+(Longhorns|Sooners|Aggies|Tigers|Razorbacks|Bulldogs|Gators|Wildcats|Commodores|Rams|Miners)$/i, '')
+		|| game.opponentName;
+	const rankLabel = rank < 26 ? `#${rank} ` : '';
+	const site = game.neutralSite ? ' (N)' : game.isTexasHome ? '' : ' (A)';
+	return `${rankLabel}${name}${site}`.trim();
+}
+
 export function calculateHookEmIndex(games: Game[]): HookEmIndex {
 	const completed = games.filter((g) => g.status === 'STATUS_FINAL');
+	const emptyBreakdowns = {
+		winPercentage: [] as HookEmFactorBreakdown[],
+		strengthOfVictory: [] as HookEmFactorBreakdown[],
+		rivalryBonus: [] as HookEmFactorBreakdown[],
+		marginFactor: [] as HookEmFactorBreakdown[],
+		rankingBonus: [] as HookEmFactorBreakdown[],
+	};
+
 	if (completed.length === 0) {
 		return {
 			score: 0,
 			grade: 'N/A',
+			provisional: true,
 			factors: {
 				winPercentage: 0,
 				strengthOfVictory: 0,
@@ -71,54 +114,115 @@ export function calculateHookEmIndex(games: Game[]): HookEmIndex {
 				marginFactor: 0,
 				rankingBonus: 0,
 			},
+			breakdowns: emptyBreakdowns,
 		};
 	}
 
 	const wins = completed.filter((g) => g.result === 'win');
 	const totalGames = completed.length;
+	const provisional = totalGames < PROVISIONAL_GAME_THRESHOLD;
 
-	// Factor 1: Win percentage (0-40 points)
+	// Factor 1: Win percentage (0-40)
 	const winPct = wins.length / totalGames;
 	const winPercentage = winPct * 40;
+	const winBreakdown: HookEmFactorBreakdown[] = [
+		{
+			label: `${wins.length}–${totalGames - wins.length} record`,
+			points: Math.round(winPercentage),
+		},
+	];
 
-	// Factor 2: Strength of victory (0-20 points)
-	// Higher when beating ranked opponents
-	const rankedWins = wins.filter((g) => {
-		const oppRank = g.isTexasHome ? g.awayTeamRank : g.homeTeamRank;
-		return Number(oppRank) < 26;
-	});
-	// 7 points per ranked win, capped at 20 (3 ranked wins nearly maxes it)
-	const strengthOfVictory = Math.min(rankedWins.length * 7, 20);
+	// Factor 2: Quality wins (0-20) — weighted by opponent rank
+	const qualityContributions = wins
+		.map((g) => ({
+			game: g,
+			points: qualityWinPointsForGame(g),
+		}))
+		.filter((c) => c.points > 0)
+		.sort((a, b) => b.points - a.points);
 
-	// Factor 3: Rivalry bonus (0-10 points)
+	const rawQuality = qualityContributions.reduce((sum, c) => sum + c.points, 0);
+	const strengthOfVictory = Math.min(rawQuality, QUALITY_WIN_CAP);
+	const qualityScale =
+		rawQuality > QUALITY_WIN_CAP ? QUALITY_WIN_CAP / rawQuality : 1;
+	const qualityBreakdown: HookEmFactorBreakdown[] = qualityContributions.map(
+		(c) => ({
+			label: shortOpponentLabel(c.game),
+			points: Math.round(c.points * qualityScale * 10) / 10,
+		})
+	);
+	if (qualityBreakdown.length === 0) {
+		qualityBreakdown.push({ label: 'No Top-25 wins yet', points: 0 });
+	}
+
+	// Factor 3: Rivalry bonus (0-10) — earned only after a rivalry is played
 	const rivalryGames = completed.filter((g) => g.isRivalry);
 	const rivalryWins = rivalryGames.filter((g) => g.result === 'win');
 	const rivalryBonus =
 		rivalryGames.length > 0
 			? (rivalryWins.length / rivalryGames.length) * 10
-			: 5; // Default 5 if no rivalry games played yet
-
-	// Factor 4: Margin factor (0-15 points)
-	// Average point differential of wins, capped
-	const avgMargin =
-		wins.length > 0
-			? wins.reduce((sum, g) => sum + (g.pointDifferential ?? 0), 0) /
-				wins.length
 			: 0;
-	const marginFactor = Math.min((avgMargin / 17) * 15, 15); // 17+ pt avg (~2.5 score game) = max
+	const rivalryBreakdown: HookEmFactorBreakdown[] =
+		rivalryGames.length > 0
+			? rivalryGames.map((g) => ({
+					label: `${g.rivalryName || shortOpponentLabel(g)} — ${
+						g.result === 'win' ? 'hooked' : 'not hooked'
+					}`,
+					points: g.result === 'win' ? Math.round(10 / rivalryGames.length) : 0,
+				}))
+			: [{ label: 'No rivalry games played yet', points: 0 }];
 
-	// Factor 5: Ranking bonus (0-15 points)
-	// Based on current Texas ranking
+	// Factor 4: Margin (0-15) — all games, per-game cap, losses count
+	const cappedDiffs = completed.map((g) => {
+		const diff = g.pointDifferential ?? 0;
+		return Math.max(-MARGIN_PER_GAME_CAP, Math.min(MARGIN_PER_GAME_CAP, diff));
+	});
+	const avgDiff =
+		cappedDiffs.reduce((sum, d) => sum + d, 0) / cappedDiffs.length;
+	// Map -21..+21 → 0..15 (0 differential ≈ 7.5)
+	const marginFactor = Math.max(
+		0,
+		Math.min(15, ((avgDiff + MARGIN_PER_GAME_CAP) / (MARGIN_PER_GAME_CAP * 2)) * 15)
+	);
+	const marginBreakdown: HookEmFactorBreakdown[] = [
+		{
+			label: `Avg margin ${avgDiff >= 0 ? '+' : ''}${avgDiff.toFixed(1)} (capped ±${MARGIN_PER_GAME_CAP}/game)`,
+			points: Math.round(marginFactor),
+		},
+		...completed
+			.slice()
+			.sort((a, b) => b.timestamp - a.timestamp)
+			.map((g) => {
+				const raw = g.pointDifferential ?? 0;
+				const capped = Math.max(
+					-MARGIN_PER_GAME_CAP,
+					Math.min(MARGIN_PER_GAME_CAP, raw)
+				);
+				const sign = capped >= 0 ? '+' : '';
+				return {
+					label: `${shortOpponentLabel(g)} ${sign}${capped}${
+						Math.abs(raw) > MARGIN_PER_GAME_CAP ? '*' : ''
+					}`,
+					points: 0,
+				};
+			}),
+	];
+
+	// Factor 5: Ranking bonus (0-15) — current Texas rank
 	const sorted = [...completed].sort((a, b) => b.timestamp - a.timestamp);
 	const latest = sorted[0];
-	const texasRank = latest
-		? latest.isTexasHome
-			? latest.homeTeamRank
-			: latest.awayTeamRank
-		: 99;
-	const rankNum = Number(texasRank);
+	const rankNum = latest ? getTexasRank(latest) : 99;
 	const rankingBonus =
 		rankNum >= 50 ? 0 : rankNum <= 1 ? 15 : Math.max(0, 15 - rankNum * 0.25);
+	const rankingBreakdown: HookEmFactorBreakdown[] = [
+		{
+			label:
+				rankNum < 50
+					? `Currently ranked #${rankNum}`
+					: 'Currently unranked',
+			points: Math.round(rankingBonus),
+		},
+	];
 
 	const totalScore = Math.round(
 		winPercentage +
@@ -132,12 +236,20 @@ export function calculateHookEmIndex(games: Game[]): HookEmIndex {
 	return {
 		score,
 		grade: getHookEmGrade(score),
+		provisional,
 		factors: {
 			winPercentage: Math.round(winPercentage),
 			strengthOfVictory: Math.round(strengthOfVictory),
 			rivalryBonus: Math.round(rivalryBonus),
 			marginFactor: Math.round(marginFactor),
 			rankingBonus: Math.round(rankingBonus),
+		},
+		breakdowns: {
+			winPercentage: winBreakdown,
+			strengthOfVictory: qualityBreakdown,
+			rivalryBonus: rivalryBreakdown,
+			marginFactor: marginBreakdown,
+			rankingBonus: rankingBreakdown,
 		},
 	};
 }
