@@ -107,13 +107,13 @@ export default function RootLayout({
 				)}>
 				<Providers>
 					<div className='relative flex flex-col min-h-screen'>
-						<main className='w-full max-w-screen mx-auto flex-grow'>
+						<main className='w-full max-w-screen mx-auto flex-grow flex flex-col min-h-screen'>
 							<ThemeSwitch />
 							<ThemeProvider
 								attribute='class'
 								defaultTheme='system'
 								enableSystem>
-								{children}
+								<div className='flex-grow'>{children}</div>
 							</ThemeProvider>
 							<InfoButton />
 						</main>
