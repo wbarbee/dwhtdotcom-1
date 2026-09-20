@@ -314,6 +314,11 @@ export const fetchLiveGame = async (
 			return null;
 		}
 
+		const liveStatus = competition.status.type.name;
+		// The summary is also consulted just after kickoff, when the schedule may
+		// still say scheduled. If the game genuinely has not started, its 0-0
+		// placeholder must not overwrite the pregame card.
+		const hasStarted = liveStatus !== 'STATUS_SCHEDULED';
 		const homeScore = parseInt(homeTeam.score || '0', 10);
 		const awayScore = parseInt(awayTeam.score || '0', 10);
 		const isTexasHome = texasTeam.homeAway === 'home';
@@ -336,22 +341,24 @@ export const fetchLiveGame = async (
 			currentPeriod: competition.status.period,
 			homeTeamAbbrev: homeTeam.team.abbreviation,
 			awayTeamAbbrev: awayTeam.team.abbreviation,
-			homeTeamScore: homeScore,
-			awayTeamScore: awayScore,
+			homeTeamScore: hasStarted ? homeScore : originalGame.homeTeamScore,
+			awayTeamScore: hasStarted ? awayScore : originalGame.awayTeamScore,
 			neutralSite: competition.neutralSite || originalGame.neutralSite,
 			date: new Date(competition.date).toLocaleDateString(),
 			timestamp: new Date(competition.date).getTime(),
-			score: `${awayScore} - ${homeScore}`,
+			score: hasStarted ? `${awayScore} - ${homeScore}` : originalGame.score,
 			result: texasTeam.winner
 				? 'win'
 				: texasTeam.winner === false
 					? 'loss'
 					: 'upcoming',
-			status: competition.status.type.name,
+			status: liveStatus,
 			isTexasHome,
-			texasScore,
-			opponentScore: oppScore,
-			pointDifferential: texasScore - oppScore,
+			texasScore: hasStarted ? texasScore : originalGame.texasScore,
+			opponentScore: hasStarted ? oppScore : originalGame.opponentScore,
+			pointDifferential: hasStarted
+				? texasScore - oppScore
+				: originalGame.pointDifferential,
 		};
 
 		return updatedGame;

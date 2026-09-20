@@ -252,7 +252,7 @@ export default function ScoreCard({
 						</div>
 					</div>
 					<motion.div
-						className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-4 md:py-2'
+						className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-12'
 						variants={itemVariants}
 					>
 						{(modeData.title || currentMode === 'pregame') && (
@@ -317,16 +317,20 @@ export default function ScoreCard({
 									<RankBadge rank={homeTeamRank} />
 									{isMobile ? homeTeamAbbrev : home}
 								</h3>
-								{/* Wider right inset when refresh + calendar are both present */}
-								<p
-									className={`${status === 'STATUS_SCHEDULED' ? 'mt-2' : ''} text-sm text-foreground/50 ${
-										showRefreshButton
-											? 'pl-4 pr-24 sm:px-12'
-											: 'px-10'
-									}`}
+								{/* Stacked on phones: a long venue name plus the date on one
+								    line wraps mid-name and strands the separator. */}
+								<div
+									className={`${status === 'STATUS_SCHEDULED' ? 'mt-2' : ''} flex flex-col sm:flex-row flex-wrap items-center justify-center gap-x-2 px-4 text-sm text-foreground/50`}
 								>
-									{location} &middot; {formattedDate}
-								</p>
+									<span className='text-balance'>{location}</span>
+									<span
+										className='hidden sm:inline text-foreground/30'
+										aria-hidden='true'
+									>
+										&middot;
+									</span>
+									<span>{formattedDate}</span>
+								</div>
 							</div>
 						</motion.div>
 					</motion.div>
