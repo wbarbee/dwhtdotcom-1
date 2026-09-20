@@ -252,7 +252,7 @@ export default function ScoreCard({
 						</div>
 					</div>
 					<motion.div
-						className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-12'
+						className='flex flex-col col-span-6 md:col-span-8 text-center py-2'
 						variants={itemVariants}
 					>
 						{(modeData.title || currentMode === 'pregame') && (
