@@ -334,7 +334,7 @@ export default function ScoreCard({
 						</div>
 					</div>
 					<motion.div
-						className='flex flex-col md:col-span-7 items-center justify-center text-center gap-3 px-1 pb-10 min-w-0'
+						className='flex flex-col md:col-span-7 items-center justify-center text-center gap-5 md:gap-6 px-1 pb-10 min-w-0'
 						variants={itemVariants}
 					>
 						{(modeData.title || currentMode === 'pregame') && (
@@ -387,7 +387,7 @@ export default function ScoreCard({
 							</motion.div>
 						)}
 						<motion.div
-							className='flex flex-col items-center gap-2 w-full min-w-0'
+							className='flex flex-col items-center gap-3 md:gap-4 w-full min-w-0'
 							variants={itemVariants}
 						>
 							<div className='md:hidden w-full px-1'>
