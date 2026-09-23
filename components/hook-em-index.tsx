@@ -7,6 +7,10 @@ import { fetchLastSeasonData } from '../hooks/fetchGameData';
 
 interface HookEmIndexProps {
 	games: Game[];
+	/** Optional sizing overrides when parent controls height (e.g. desktop grid). */
+	className?: string;
+	/** When true, skip the glass-card chrome (parent already provides a frame). */
+	bare?: boolean;
 }
 
 function AnimatedNumber({
@@ -105,7 +109,7 @@ function CircularGauge({
 					: '#dc2626';
 
 	return (
-		<div className='relative w-[190px] h-[190px] md:w-[220px] md:h-[220px] flex items-center justify-center'>
+		<div className='relative w-[170px] h-[170px] flex items-center justify-center'>
 			<svg viewBox='0 0 190 190' className='-rotate-90 w-full h-full'>
 				<circle
 					cx='95'
@@ -147,7 +151,11 @@ function CircularGauge({
 	);
 }
 
-export default function HookEmIndex({ games }: HookEmIndexProps) {
+export default function HookEmIndex({
+	games,
+	className,
+	bare = false,
+}: HookEmIndexProps) {
 	const [fallbackGames, setFallbackGames] = useState<Game[] | null>(null);
 	const [fallbackLoading, setFallbackLoading] = useState(false);
 	const [seasonLabel, setSeasonLabel] = useState<string | null>(null);
@@ -202,7 +210,9 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 
 	if (fallbackLoading) {
 		return (
-			<div className='glass-card p-6 flex items-center justify-center'>
+			<div
+				className={`${bare ? '' : 'glass-card p-6 '}flex items-center justify-center ${className ?? ''}`}
+			>
 				<span className='text-foreground/40 text-sm'>Loading...</span>
 			</div>
 		);
@@ -210,7 +220,9 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 
 	if (activeCompleted === 0) {
 		return (
-			<div className='glass-card p-6 flex items-center justify-center'>
+			<div
+				className={`${bare ? '' : 'glass-card p-6 '}flex items-center justify-center ${className ?? ''}`}
+			>
 				<span className='text-foreground/40 text-sm'>
 					Play some games first
 				</span>
@@ -225,32 +237,44 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 
 	return (
 		<div
-			className='glass-card px-6 md:px-2 pt-6 pb-4 cursor-pointer select-none'
+			className={`${bare ? '' : 'glass-card '}px-5 sm:px-6 xl:px-5 pt-5 pb-4 cursor-pointer select-none flex flex-col min-w-0 ${className ?? ''}`}
 			onClick={() => setExpanded((v) => !v)}
 		>
 			<motion.div
-				className='flex flex-col items-center gap-4 md:gap-2 w-full'
+				className='flex flex-col items-center gap-4 md:gap-3 w-full h-full min-h-0'
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
 				transition={{ duration: 0.3 }}
 			>
-				<div className='flex flex-col items-center gap-1'>
-					<span className='text-lg font-display italic text-foreground tracking-wide text-center'>
-						{seasonLabel ? `${seasonLabel} Season` : ''} Hook Them Index
-					</span>
-					<span className='text-[11px] text-foreground/40 text-center max-w-sm leading-relaxed'>
-						Win rate, ranked wins (by opponent rank), margin, and current
-						ranking
-						{index.rivalryActive
-							? ', plus OU/A&M rivalries'
-							: ' — rivalries unlock after OU or A&M'}
-					</span>
-				</div>
+				{!bare && (
+					<div className='flex flex-col items-center gap-1 shrink-0'>
+						<span className='text-lg font-display italic text-foreground tracking-wide text-center'>
+							{seasonLabel ? `${seasonLabel} Season` : ''} Hook Them Index
+						</span>
+						<span className='text-[11px] text-foreground/40 text-center max-w-sm leading-relaxed'>
+							Win rate, ranked wins (by opponent rank), margin, and current
+							ranking
+							{index.rivalryActive
+								? ', plus OU/A&M rivalries'
+								: ' — rivalries unlock after OU or A&M'}
+						</span>
+					</div>
+				)}
 
-				{/* Desktop: side-by-side layout / Mobile: stacked */}
-				<div className='flex flex-col md:flex-row items-center md:items-start gap-2 md:gap-0 w-full md:px-4 md:pt-2'>
+				{/* Stacked in sidebar (bare); side-by-side when full-width framed */}
+				<div
+					className={`flex flex-col items-center gap-4 w-full min-w-0 flex-1 min-h-0 ${
+						bare
+							? 'justify-center'
+							: 'md:flex-row md:items-center md:gap-2 md:justify-start'
+					}`}
+				>
 					{/* Gauge */}
-					<div className='flex-shrink-0 md:w-[38%] flex items-center justify-center md:py-2'>
+					<div
+						className={`flex-shrink-0 flex items-center justify-center ${
+							bare ? '' : 'md:w-[42%]'
+						}`}
+					>
 						<CircularGauge
 							score={index.score}
 							grade={index.grade}
@@ -259,7 +283,13 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 					</div>
 
 					{/* Factor Breakdown — always visible on desktop, expandable on mobile */}
-					<div className='flex flex-col items-center md:items-stretch w-full md:w-[62%] md:justify-start md:pt-3'>
+					<div
+						className={`flex flex-col items-center w-full min-w-0 min-h-0 ${
+							bare
+								? 'items-stretch max-w-sm'
+								: 'md:items-stretch md:w-[58%] md:justify-center'
+						}`}
+					>
 						<span className='inline-flex md:hidden items-center gap-1.5 px-4 py-1.5 mb-3 rounded-full border border-burntOrange/30 text-burntOrange text-xs font-medium cursor-pointer hover:bg-burntOrange/10 transition-colors'>
 							{expanded ? 'tap to collapse' : 'tap for breakdown'}
 							<svg
@@ -281,7 +311,11 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 						<AnimatePresence>
 							{(expanded || typeof window !== 'undefined') && (
 								<motion.div
-									className={`w-full flex-col gap-3 md:border-l md:border-foreground/10 md:px-10 ${expanded ? 'flex' : 'hidden md:flex'}`}
+									className={`w-full min-w-0 flex-col gap-3 ${
+										bare
+											? ''
+											: 'md:border-l md:border-foreground/10 md:pl-5 md:pr-1'
+									} ${expanded ? 'flex' : 'hidden md:flex'}`}
 									initial={{ height: 0, opacity: 0 }}
 									animate={{ height: 'auto', opacity: 1 }}
 									exit={{ height: 0, opacity: 0 }}
@@ -305,27 +339,27 @@ export default function HookEmIndex({ games }: HookEmIndexProps) {
 										return (
 											<div
 												key={key}
-												className={`flex flex-col gap-1 ${rivalryPending ? 'opacity-50' : ''}`}
+												className={`flex flex-col gap-1 min-w-0 ${rivalryPending ? 'opacity-50' : ''}`}
 											>
 												<button
 													type='button'
-													className='flex items-center justify-between text-left w-full group'
+													className='flex items-center justify-between text-left w-full min-w-0 group'
 													onClick={(e) => toggleFactor(key, e)}
 													aria-expanded={isOpen}
 												>
-													<span className='text-xs text-foreground/50 group-hover:text-foreground/70 transition-colors'>
+													<span className='text-xs text-foreground/50 group-hover:text-foreground/70 transition-colors truncate'>
 														{meta.label}
 														<span className='ml-1 text-foreground/25'>
 															{isOpen ? '▾' : '▸'}
 														</span>
 													</span>
-													<span className='text-xs font-mono text-foreground/60'>
+													<span className='text-xs font-mono text-foreground/60 shrink-0'>
 														{rivalryPending ? '—' : `${value}/${meta.max}`}
 													</span>
 												</button>
-												<div className='h-1.5 bg-white/5 rounded-full overflow-hidden'>
+												<div className='h-1.5 w-full min-w-0 bg-white/5 rounded-full overflow-hidden'>
 													<motion.div
-														className='h-full bg-burntOrange rounded-full'
+														className='h-full max-w-full bg-burntOrange rounded-full'
 														initial={{ width: 0 }}
 														animate={{ width: `${pct}%` }}
 														transition={{

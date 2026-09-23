@@ -1,77 +1,36 @@
 'use client';
 import { FC } from 'react';
 import clsx from 'clsx';
-import { VisuallyHidden } from '@react-aria/visually-hidden';
-import { useIsSSR } from '@react-aria/ssr';
-import { SwitchProps, useSwitch } from '@nextui-org/switch';
 import { useTheme } from 'next-themes';
-
-import { SunIcon } from './icons/SunIcon';
-import { MoonIcon } from './icons/MoonIcon';
+import { Moon, Sun } from 'lucide-react';
 
 export interface ThemeSwitchProps {
 	className?: string;
-	classNames?: SwitchProps['classNames'];
 }
 
-export const ThemeSwitch: FC<ThemeSwitchProps> = ({
-	className,
-	classNames,
-}) => {
-	const { theme, setTheme } = useTheme();
-	const isSSR = useIsSSR();
+/** Shared scoreboard control look — calendar / theme / refresh. */
+export const scoreboardControlClass =
+	'inline-flex !items-center !justify-center !min-w-8 !w-8 !h-8 !p-0 !m-0 !rounded-full !bg-transparent !text-foreground/55 hover:!text-burntOrange hover:!bg-burntOrange/10 !border-0 !shadow-none !outline-none transition-colors';
 
-	const onChange = () => {
-		if (theme === 'dark') {
-			setTheme('light');
-		} else {
-			setTheme('dark');
-		}
-	};
-	const shouldShowLightIcon = isSSR || theme === 'light';
+export const scoreboardToolbarClass =
+	'inline-flex items-center justify-center gap-0.5 p-0.5 rounded-full bg-foreground/[0.06] dark:bg-black/45 border border-foreground/10 dark:border-white/10 backdrop-blur-md';
 
-	const { Component, slots, getBaseProps, getInputProps, getWrapperProps } =
-		useSwitch({
-			isSelected: shouldShowLightIcon,
-			'aria-label': `Switch to ${shouldShowLightIcon ? 'dark' : 'light'} mode`,
-			onChange,
-		});
+export const ThemeSwitch: FC<ThemeSwitchProps> = ({ className }) => {
+	const { resolvedTheme, setTheme } = useTheme();
+	const isDark = resolvedTheme === 'dark';
 
 	return (
-		<Component
-			{...getBaseProps({
-				className: clsx(
-					'px-px transition-all hover:opacity-80 cursor-pointer fixed top-5 right-5 z-[14]',
-					className,
-					classNames?.base
-				),
-			})}
+		<button
+			type='button'
+			className={clsx(scoreboardControlClass, className)}
+			aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+			onClick={() => setTheme(isDark ? 'light' : 'dark')}
 		>
-			<VisuallyHidden>
-				<input {...getInputProps()} />
-			</VisuallyHidden>
-			<div
-				{...getWrapperProps()}
-				className={slots.wrapper({
-					class: clsx(
-						[
-							'w-8 h-8',
-							'bg-white/10 dark:bg-white/5',
-							'backdrop-blur-sm',
-							'border border-white/10',
-							'rounded-full',
-							'flex items-center justify-center',
-							'group-data-[selected=true]:bg-white/10',
-							'!text-foreground/60',
-							'hover:!text-foreground',
-							'transition-colors',
-						],
-						classNames?.wrapper
-					),
-				})}
-			>
-				{shouldShowLightIcon ? <SunIcon size={16} /> : <MoonIcon size={16} />}
-			</div>
-		</Component>
+			{isDark ? (
+				<Moon size={15} strokeWidth={1.75} aria-hidden />
+			) : (
+				<Sun size={15} strokeWidth={1.75} aria-hidden />
+			)}
+		</button>
 	);
 };

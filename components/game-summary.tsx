@@ -120,13 +120,12 @@ export default function GameSummary({
 
 	return (
 		<motion.div
-			initial={{ opacity: 0, height: 0 }}
-			animate={{ opacity: 1, height: 'auto' }}
-			exit={{ opacity: 0, height: 0 }}
+			initial={{ opacity: 0 }}
+			animate={{ opacity: 1 }}
 			transition={{ duration: 0.2, ease: 'easeInOut' }}
-			className='overflow-hidden w-full'
+			className='w-full'
 		>
-			<div className='mt-2 px-4 py-4 rounded-lg bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/5 w-full'>
+			<div className='mt-1 px-1 sm:px-2 py-2 w-full'>
 				{/* Team stats comparison — full-width 3-col grid, winner highlighted */}
 				{teamA && teamB && labels.length > 0 && (
 					<div className='w-full'>

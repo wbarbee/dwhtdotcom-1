@@ -2,8 +2,9 @@
 import { useState, useMemo, useCallback } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useViewport } from '../hooks/useViewport';
-import { Button, Spinner } from '@nextui-org/react';
+import { Spinner } from '@nextui-org/react';
 import FullScoreModal from './modal';
+import { ThemeSwitch, scoreboardControlClass, scoreboardToolbarClass } from './theme-switch';
 import { detectAppendedSuffix } from '../utils/stringUtils';
 import { normalizeRank } from '../utils/rankUtils';
 import { useIsDarkMode } from '../hooks/useIsDarkMode';
@@ -18,6 +19,8 @@ interface ScoreCardProps {
 	refreshData: () => Promise<void>;
 	error: string | null;
 	loading: boolean;
+	/** Optional width/height overrides when parent controls sizing (e.g. desktop grid). */
+	className?: string;
 }
 
 const contentVariants = {
@@ -56,9 +59,69 @@ function RankBadge({ rank }: { rank: number }) {
 	const normalized = normalizeRank(rank);
 	if (normalized === null) return null;
 	return (
-		<span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-burntOrange/15 dark:bg-burntOrange/20 text-burntOrange text-[10px] font-bold mx-1 align-middle'>
+		<span className='inline-flex items-center justify-center w-5 h-5 shrink-0 rounded-full bg-burntOrange/15 dark:bg-burntOrange/20 text-burntOrange text-[10px] font-bold'>
 			{normalized}
 		</span>
+	);
+}
+
+function ScoreDisplay({
+	awayScore,
+	homeScore,
+	fallback,
+}: {
+	awayScore: number | null;
+	homeScore: number | null;
+	fallback: string;
+}) {
+	if (awayScore === null || homeScore === null) {
+		return (
+			<span className='text-5xl md:text-6xl font-bold font-score tracking-tight text-foreground whitespace-nowrap tabular-nums'>
+				{fallback.replace(/ - /g, '–')}
+			</span>
+		);
+	}
+	return (
+		<div
+			className='flex items-baseline justify-center gap-2 md:gap-3 whitespace-nowrap'
+			aria-label={`${awayScore} to ${homeScore}`}
+		>
+			<span className='text-5xl md:text-6xl font-bold font-score tracking-tight text-foreground tabular-nums'>
+				{awayScore}
+			</span>
+			<span className='text-3xl md:text-4xl font-score text-foreground/30'>–</span>
+			<span className='text-5xl md:text-6xl font-bold font-score tracking-tight text-foreground tabular-nums'>
+				{homeScore}
+			</span>
+		</div>
+	);
+}
+
+function MatchupLine({
+	awayRank,
+	awayLabel,
+	homeRank,
+	homeLabel,
+}: {
+	awayRank: number;
+	awayLabel: string;
+	homeRank: number;
+	homeLabel: string;
+}) {
+	return (
+		<div className='flex items-center justify-center gap-2 text-sm font-semibold text-foreground/90 whitespace-nowrap'>
+			<span className='inline-flex items-center gap-1.5 min-w-0'>
+				<RankBadge rank={awayRank} />
+				<span className='truncate'>{awayLabel}</span>
+			</span>
+			<span className='text-[10px] uppercase tracking-[0.18em] text-foreground/35 font-medium shrink-0'>
+				vs
+			</span>
+			<span className='inline-flex items-center gap-1.5 min-w-0'>
+				<RankBadge rank={homeRank} />
+				<span className='truncate'>{homeLabel}</span>
+			</span>
+		</div>
 	);
 }
 
@@ -67,7 +130,10 @@ export default function ScoreCard({
 	refreshData,
 	error,
 	loading,
+	className,
 }: ScoreCardProps) {
+	const shellClass =
+		className ?? 'max-w-[465px] md:max-w-[810px] w-[90%]';
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const { isMobile } = useViewport();
 	const isDarkMode = useIsDarkMode();
@@ -146,16 +212,18 @@ export default function ScoreCard({
 	if (!currentGameData) {
 		const offseasonMode = gameModes.offseason;
 		return (
-			<div className={`glass-card ${modeAccentClass} max-w-[465px] md:max-w-[810px] w-[90%] overflow-hidden`}>
+			<div
+				className={`glass-card ${modeAccentClass} ${shellClass} overflow-hidden relative flex flex-col`}
+			>
 				<motion.div
-					className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center p-5'
+					className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-5 items-center justify-center p-5 flex-1 min-h-0'
 					variants={contentVariants}
 					initial='hidden'
 					animate='visible'
 				>
-					<div className='relative col-span-6 md:col-span-4 flex items-center justify-center'>
+					<div className='relative col-span-6 md:col-span-5 flex items-center justify-center'>
 						<div
-							className='w-full h-full min-h-[240px] flex items-center justify-center rounded-lg bg-cover bg-center overflow-hidden'
+							className='w-full aspect-[3/4] max-h-[340px] flex items-center justify-center rounded-lg bg-cover bg-center overflow-hidden'
 							style={{
 								backgroundImage: `url(${isDarkMode ? offseasonMode.backgroundImageNight : offseasonMode.backgroundImage})`,
 								backgroundPosition: 'top',
@@ -164,7 +232,7 @@ export default function ScoreCard({
 						/>
 					</div>
 					<motion.div
-						className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-4 md:py-2'
+						className='flex flex-col col-span-6 md:col-span-7 items-center text-center gap-3 px-1'
 						variants={itemVariants}
 					>
 						<motion.p
@@ -186,6 +254,11 @@ export default function ScoreCard({
 						</motion.div>
 					</motion.div>
 				</motion.div>
+				<div className='flex justify-end px-3 pb-3 pt-1'>
+					<div className={scoreboardToolbarClass}>
+						<ThemeSwitch />
+					</div>
+				</div>
 			</div>
 		);
 	}
@@ -200,6 +273,8 @@ export default function ScoreCard({
 		awayTeamRank,
 		homeTeamAbbrev,
 		awayTeamAbbrev,
+		homeTeamScore,
+		awayTeamScore,
 		location,
 		date,
 	} = currentGameData;
@@ -223,19 +298,26 @@ export default function ScoreCard({
 				? 'text-accent-red'
 				: 'text-foreground/60';
 
+	const awayLabel = isMobile ? awayTeamAbbrev : away;
+	const homeLabel = isMobile ? homeTeamAbbrev : home;
+	// Half-width desktop column can't fit full names — prefer abbrevs when constrained.
+	const compactAway = awayTeamAbbrev || away;
+	const compactHome = homeTeamAbbrev || home;
+
 	return (
-		<div className={`glass-card ${modeAccentClass} max-w-[465px] md:max-w-[810px] w-[90%] overflow-hidden relative`}>
-			{/* Extra bottom padding reserves space for the absolute action buttons */}
-			<div className={`p-5 ${showRefreshButton ? 'pb-14' : 'pb-12'}`}>
+		<div
+			className={`glass-card ${modeAccentClass} ${shellClass} overflow-hidden relative flex flex-col`}
+		>
+			<div className='p-4 flex-1 min-h-0 flex flex-col'>
 				<motion.div
-					className='grid grid-cols-6 md:grid-cols-12 gap-4 md:gap-4 items-center justify-center'
+					className='grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5 items-stretch w-full flex-1 min-h-0'
 					variants={contentVariants}
 					initial='hidden'
 					animate='visible'
 				>
-					<div className='relative col-span-6 md:col-span-4 flex items-center justify-center'>
+					<div className='relative md:col-span-5 flex min-h-[200px] md:min-h-0 md:h-full'>
 						<div
-							className='w-full h-full min-h-[240px] flex items-center justify-center rounded-lg bg-cover bg-center overflow-hidden'
+							className='w-full h-full min-h-[200px] aspect-[3/4] max-h-[260px] md:aspect-auto md:max-h-none md:min-h-0 rounded-lg bg-cover bg-center overflow-hidden flex items-center justify-center'
 							style={{
 								backgroundImage: `url(${backgroundImageUrl})`,
 							}}
@@ -252,12 +334,12 @@ export default function ScoreCard({
 						</div>
 					</div>
 					<motion.div
-						className='flex flex-col col-span-6 md:col-span-8 text-center pt-2 pb-4 md:py-2'
+						className='flex flex-col md:col-span-7 items-center justify-center text-center gap-3 px-1 pb-10 min-w-0'
 						variants={itemVariants}
 					>
 						{(modeData.title || currentMode === 'pregame') && (
 							<motion.p
-								className={`text-2xl md:text-4xl font-display italic tracking-wide ${titleColorClass} ${status === 'STATUS_FINAL' ? 'mb-4' : 'mb-1'}`}
+								className={`text-xl md:text-2xl font-display italic tracking-wide ${titleColorClass}`}
 								variants={itemVariants}
 							>
 								{getDynamicTitle(currentMode)}
@@ -265,30 +347,29 @@ export default function ScoreCard({
 						)}
 						<AnimatePresence mode='wait'>
 							{showScore ? (
-								<motion.h1
-									className='text-7xl md:text-8xl font-bold font-score tracking-tight text-foreground'
+								<motion.div
 									key='score'
 									initial={{ opacity: 0, scale: 0.8 }}
 									animate={{ opacity: 1, scale: 1 }}
 									exit={{ opacity: 0, scale: 0.8 }}
 									transition={{ duration: 0.3 }}
 								>
-									{score}
-								</motion.h1>
+									<ScoreDisplay
+										awayScore={awayTeamScore}
+										homeScore={homeTeamScore}
+										fallback={score}
+									/>
+								</motion.div>
 							) : isRefreshing ? (
 								<Spinner
 									size='lg'
 									color='default'
 									labelColor='foreground'
-									className='mb-6'
 								/>
 							) : null}
 						</AnimatePresence>
 						{showPeriod && (
-							<motion.div
-								className='mt-2 mb-3'
-								variants={itemVariants}
-							>
+							<motion.div variants={itemVariants}>
 								<span className='inline-flex items-center gap-2 px-3 py-1 rounded-full bg-burntOrange/10 dark:bg-burntOrange/15 text-burntOrange text-sm font-score font-medium'>
 									<span className='w-2 h-2 rounded-full bg-burntOrange animate-pulse' />
 									{currentPeriod !== null && currentPeriod > 4
@@ -306,46 +387,51 @@ export default function ScoreCard({
 							</motion.div>
 						)}
 						<motion.div
-							className='mt-2 flex justify-center'
+							className='flex flex-col items-center gap-2 w-full min-w-0'
 							variants={itemVariants}
 						>
-							<div className='flex flex-col gap-1 max-w-full'>
-								<h3 className='font-semibold text-foreground/90 text-base px-4'>
-									<RankBadge rank={awayTeamRank} />
-									{isMobile ? awayTeamAbbrev : away}
-									<span className='mx-2 text-foreground/40 font-light'>vs</span>
-									<RankBadge rank={homeTeamRank} />
-									{isMobile ? homeTeamAbbrev : home}
-								</h3>
-								{/* Wider right inset when refresh + calendar are both present */}
-								<p
-									className={`${status === 'STATUS_SCHEDULED' ? 'mt-2' : ''} text-sm text-foreground/50 ${
-										showRefreshButton
-											? 'pl-4 pr-24 sm:px-12'
-											: 'px-10'
-									}`}
-								>
-									{location} &middot; {formattedDate}
-								</p>
+							<div className='md:hidden w-full px-1'>
+								<MatchupLine
+									awayRank={awayTeamRank}
+									awayLabel={awayLabel}
+									homeRank={homeTeamRank}
+									homeLabel={homeLabel}
+								/>
 							</div>
+							<div className='hidden md:block w-full px-1'>
+								<MatchupLine
+									awayRank={awayTeamRank}
+									awayLabel={compactAway}
+									homeRank={homeTeamRank}
+									homeLabel={compactHome}
+								/>
+							</div>
+							<p className='text-sm text-foreground/50'>
+								{location} &middot; {formattedDate}
+							</p>
 						</motion.div>
 					</motion.div>
 				</motion.div>
 			</div>
-			<div className='absolute bottom-3 right-3 flex gap-2 z-10'>
+
+			<div className={`absolute bottom-3 right-3 z-10 ${scoreboardToolbarClass}`}>
 				{showRefreshButton && (
-					<Button
-						isIconOnly
-						className='bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 text-foreground/60 hover:text-foreground rounded-full backdrop-blur-sm border border-black/10 dark:border-white/15'
-						size='sm'
+					<button
+						type='button'
+						className={scoreboardControlClass}
 						aria-label='Refresh data'
 						onClick={handleRefresh}
-						isLoading={isRefreshing}
+						disabled={isRefreshing}
 					>
-						{!isRefreshing && <RefreshCw size={14} />}
-					</Button>
+						<RefreshCw
+							size={15}
+							strokeWidth={1.75}
+							className={isRefreshing ? 'animate-spin' : undefined}
+						/>
+					</button>
 				)}
 				<FullScoreModal result={currentGameData.result} />
+				<ThemeSwitch />
 			</div>
 		</div>
 	);

@@ -10,12 +10,13 @@ import {
 	Spinner,
 	useDisclosure,
 } from '@nextui-org/react';
-import { AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from '@react-hook/media-query';
+import { Calendar } from 'lucide-react';
 import { fetchUpcomingSchedule } from '../hooks/fetchGameData';
 import { Game, GameSummaryStats } from '../types';
 import { getOpponentRank } from '../utils/rankUtils';
 import GameSummary from './game-summary';
+import { scoreboardControlClass } from './theme-switch';
 
 interface FullScoreModalProps {
 	result?: 'win' | 'loss' | 'upcoming';
@@ -32,10 +33,11 @@ export function ScheduleList({
 	const [games, setGames] = useState<Game[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const [expandedId, setExpandedId] = useState<string | null>(null);
+	const [detailGame, setDetailGame] = useState<Game | null>(null);
 	const [statsCache, setStatsCache] = useState<
 		Record<string, GameSummaryStats>
 	>({});
+	const isMobile = useMediaQuery('(max-width: 640px)');
 
 	useEffect(() => {
 		let mounted = true;
@@ -49,10 +51,13 @@ export function ScheduleList({
 				if (gameList.length > 0 && onSeasonChange) {
 					// Derive season year from first game's date (Aug-Dec = that year, Jan-Jul = previous year)
 					const firstDate = new Date(gameList[0].date);
-					const seasonYear = firstDate.getMonth() >= 7 ? firstDate.getFullYear() : firstDate.getFullYear() - 1;
+					const seasonYear =
+						firstDate.getMonth() >= 7
+							? firstDate.getFullYear()
+							: firstDate.getFullYear() - 1;
 					onSeasonChange(`${seasonYear}`);
 				}
-			} catch (e) {
+			} catch {
 				if (!mounted) return;
 				setError('Failed to load game data');
 			} finally {
@@ -64,11 +69,11 @@ export function ScheduleList({
 		return () => {
 			mounted = false;
 		};
-	}, [onLoadingChange]);
+	}, [onLoadingChange, onSeasonChange]);
 
 	const cacheStats = useCallback((stats: GameSummaryStats) => {
 		setStatsCache((prev) =>
-			prev[stats.eventId] ? prev : { ...prev, [stats.eventId]: stats }
+			prev[stats.eventId] ? prev : { ...prev, [stats.eventId]: stats },
 		);
 	}, []);
 
@@ -96,48 +101,49 @@ export function ScheduleList({
 		);
 	}
 
+	const detailOpponent = detailGame
+		? detailGame.isTexasHome
+			? detailGame.away
+			: detailGame.home
+		: null;
+
 	return (
-		<div className='flex flex-col gap-2'>
-			{games.map((g) => {
-				const opponent = g.isTexasHome ? g.away : g.home;
-				const opponentRank = getOpponentRank(g);
-				const ha = g.neutralSite
-					? 'N'
-					: g.isTexasHome
-						? 'vs'
-						: '@';
-				const isCompleted = g.status === 'STATUS_FINAL';
-				const isExpanded = isCompleted && expandedId === g.id;
+		<>
+			<div className='flex flex-col gap-2'>
+				{games.map((g) => {
+					const opponent = g.isTexasHome ? g.away : g.home;
+					const opponentRank = getOpponentRank(g);
+					const ha = g.neutralSite ? 'N' : g.isTexasHome ? 'vs' : '@';
+					const isCompleted = g.status === 'STATUS_FINAL';
 
-				const handleToggle = () => {
-					if (!isCompleted) return;
-					setExpandedId((prev) => (prev === g.id ? null : g.id));
-				};
+					const openDetail = () => {
+						if (!isCompleted) return;
+						setDetailGame(g);
+					};
 
-				const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-					if (!isCompleted) return;
-					if (e.key === 'Enter' || e.key === ' ') {
-						e.preventDefault();
-						handleToggle();
-					}
-				};
+					const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+						if (!isCompleted) return;
+						if (e.key === 'Enter' || e.key === ' ') {
+							e.preventDefault();
+							openDetail();
+						}
+					};
 
-				return (
-					<div key={g.id} className='flex flex-col'>
+					return (
 						<div
+							key={g.id}
 							role={isCompleted ? 'button' : undefined}
 							tabIndex={isCompleted ? 0 : undefined}
-							aria-expanded={isCompleted ? isExpanded : undefined}
 							aria-label={
 								isCompleted
-									? `${opponent}, ${g.score}. Tap to ${isExpanded ? 'collapse' : 'view'} stats`
+									? `${opponent}, ${g.score}. View game stats`
 									: undefined
 							}
-							onClick={isCompleted ? handleToggle : undefined}
+							onClick={isCompleted ? openDetail : undefined}
 							onKeyDown={isCompleted ? handleKeyDown : undefined}
 							className={`flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
 								isCompleted
-									? `cursor-pointer bg-black/[0.02] dark:bg-white/[0.03] border hover:bg-black/[0.05] dark:hover:bg-white/[0.07] hover:border-black/10 dark:hover:border-white/10 focus:outline-none focus-visible:ring-1 focus-visible:ring-burntOrange/40 ${isExpanded ? 'border-burntOrange/30' : 'border-black/[0.06] dark:border-white/5'}`
+									? 'cursor-pointer bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/5 hover:bg-black/[0.05] dark:hover:bg-white/[0.07] hover:border-black/10 dark:hover:border-white/10 focus:outline-none focus-visible:ring-1 focus-visible:ring-burntOrange/40'
 									: 'cursor-default bg-transparent border border-transparent'
 							}`}
 						>
@@ -167,9 +173,21 @@ export function ScheduleList({
 									</span>
 								)}
 								{g.result === 'win' ? (
-									<span className='text-lg min-w-[28px] text-center' role='img' aria-label='Win'>🤘</span>
+									<span
+										className='text-lg min-w-[28px] text-center'
+										role='img'
+										aria-label='Win'
+									>
+										🤘
+									</span>
 								) : g.result === 'loss' ? (
-									<span className='text-lg min-w-[28px] text-center rotate-180 inline-block' role='img' aria-label='Loss'>🤘</span>
+									<span
+										className='text-lg min-w-[28px] text-center rotate-180 inline-block'
+										role='img'
+										aria-label='Loss'
+									>
+										🤘
+									</span>
 								) : (
 									<span className='text-xs text-foreground/30 min-w-[28px] text-center'>
 										--
@@ -186,32 +204,83 @@ export function ScheduleList({
 										strokeLinecap='round'
 										strokeLinejoin='round'
 										aria-hidden='true'
-										className={`text-foreground/30 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+										className='text-foreground/30 shrink-0'
 									>
-										<path d='M2 4l3 3 3-3' />
+										<path d='M3 2l4 3-4 3' />
 									</svg>
 								)}
 							</div>
 						</div>
-						<AnimatePresence initial={false}>
-							{isExpanded && (
-								<GameSummary
-									key={g.id}
-									eventId={g.id}
-									cached={statsCache[g.id] ?? null}
-									onLoaded={cacheStats}
-								/>
-							)}
-						</AnimatePresence>
-					</div>
-				);
-			})}
-		</div>
+					);
+				})}
+			</div>
+
+			<Modal
+				isOpen={detailGame !== null}
+				onOpenChange={(open) => {
+					if (!open) setDetailGame(null);
+				}}
+				scrollBehavior='inside'
+				size={isMobile ? 'full' : '2xl'}
+				shouldBlockScroll={!isMobile}
+				disableAnimation={isMobile}
+				classNames={{
+					wrapper: isMobile ? '!h-[100dvh] items-stretch' : 'items-center',
+					base: isMobile
+						? 'max-h-[100dvh] m-0 rounded-none bg-surface-50 dark:bg-surface-950'
+						: 'max-h-[85dvh] m-2 rounded-xl glass-card flex flex-col',
+					backdrop: isMobile ? 'bg-surface-50 dark:bg-surface-950' : undefined,
+					closeButton: 'top-3 right-3 hover:bg-white/5 active:bg-white/10',
+					header: 'flex-shrink-0',
+					body: 'px-4 py-2 overflow-y-auto overscroll-contain flex-1 min-h-0',
+					footer: 'flex-shrink-0',
+				}}
+			>
+				<ModalContent>
+					{(onClose) => (
+						<>
+							<ModalHeader className='flex flex-col gap-0.5 pb-1'>
+								<span className='text-lg font-display italic text-gradient-orange'>
+									{detailGame?.neutralSite || detailGame?.isTexasHome
+										? 'vs.'
+										: '@'}{' '}
+									{detailOpponent}
+								</span>
+								{detailGame && (
+									<span className='text-xs text-foreground/40 font-normal'>
+										{detailGame.date}
+										{detailGame.score ? ` · ${detailGame.score}` : ''}
+									</span>
+								)}
+							</ModalHeader>
+							<ModalBody>
+								{detailGame && (
+									<GameSummary
+										eventId={detailGame.id}
+										cached={statsCache[detailGame.id] ?? null}
+										onLoaded={cacheStats}
+									/>
+								)}
+							</ModalBody>
+							<ModalFooter className='pt-2'>
+								<Button
+									onPress={onClose}
+									size='sm'
+									className='bg-burntOrange hover:bg-burntOrange-600 text-white font-medium rounded-lg transition-colors'
+								>
+									Close
+								</Button>
+							</ModalFooter>
+						</>
+					)}
+				</ModalContent>
+			</Modal>
+		</>
 	);
 }
 
-const CalendarIcon = ({ size = 14 }: { size?: number }) => (
-	<svg xmlns='http://www.w3.org/2000/svg' width={size} height={size} viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><rect width='18' height='18' x='3' y='4' rx='2' ry='2'/><line x1='16' x2='16' y1='2' y2='6'/><line x1='8' x2='8' y1='2' y2='6'/><line x1='3' x2='21' y1='10' y2='10'/></svg>
+const CalendarIcon = ({ size = 15 }: { size?: number }) => (
+	<Calendar size={size} strokeWidth={1.75} />
 );
 
 function getDefaultSeasonLabel(): string {
@@ -270,15 +339,14 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 					{seasonLabel} Schedule
 				</Button>
 			) : (
-				<Button
-					isIconOnly
-					onPress={onOpen}
-					className='bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 text-foreground/60 hover:text-foreground rounded-full backdrop-blur-sm border border-black/10 dark:border-white/15'
-					size='sm'
+				<button
+					type='button'
+					onClick={onOpen}
+					className={scoreboardControlClass}
 					aria-label='View full schedule'
 				>
 					<CalendarIcon />
-				</Button>
+				</button>
 			)}
 			<Modal
 				isOpen={isOpen}
@@ -290,13 +358,15 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 				shouldBlockScroll={!isMobile}
 				disableAnimation={isMobile}
 				classNames={{
-					wrapper: isMobile ? '!h-[100dvh] items-stretch' : undefined,
+					wrapper: isMobile ? '!h-[100dvh] items-stretch' : 'items-center',
 					base: isMobile
 						? 'max-h-[100dvh] m-0 rounded-none bg-surface-50 dark:bg-surface-950'
-						: 'max-h-[85vh] m-2 rounded-xl glass-card',
+						: 'max-h-[85dvh] m-2 rounded-xl glass-card flex flex-col',
 					backdrop: isMobile ? 'bg-surface-50 dark:bg-surface-950' : undefined,
 					closeButton: 'top-3 right-3 hover:bg-white/5 active:bg-white/10',
-					body: 'px-4 py-2',
+					header: 'flex-shrink-0',
+					body: 'px-4 py-2 overflow-y-auto overscroll-contain flex-1 min-h-0',
+					footer: 'flex-shrink-0',
 				}}
 			>
 				<ModalContent>
@@ -308,7 +378,10 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 								</span>
 							</ModalHeader>
 							<ModalBody>
-								<ScheduleList onLoadingChange={setIsTableLoading} onSeasonChange={setSeasonLabel} />
+								<ScheduleList
+									onLoadingChange={setIsTableLoading}
+									onSeasonChange={setSeasonLabel}
+								/>
 							</ModalBody>
 							<ModalFooter className='pt-2'>
 								{!isTableLoading && (

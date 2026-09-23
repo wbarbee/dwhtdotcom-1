@@ -3,7 +3,6 @@ import { Metadata, Viewport } from 'next';
 import clsx from 'clsx';
 import Providers from './providers';
 import { ThemeProvider } from 'next-themes';
-import { ThemeSwitch } from '@/components/theme-switch';
 import { fontSans } from '@/config/fonts';
 import InfoButton from '@/components/info-button';
 
@@ -108,7 +107,6 @@ export default function RootLayout({
 				<Providers>
 					<div className='relative flex flex-col min-h-screen'>
 						<main className='w-full max-w-screen mx-auto flex-grow flex flex-col min-h-screen'>
-							<ThemeSwitch />
 							<ThemeProvider
 								attribute='class'
 								defaultTheme='system'
