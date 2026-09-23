@@ -220,27 +220,21 @@ export function ScheduleList({
 			<Modal
 				isOpen={detailGame !== null}
 				onOpenChange={(open) => {
-					if (!open) setDetailGame(null);
+					if (!open) {
+						setDetailGame(null);
+						unlockPageInteraction();
+					}
 				}}
 				scrollBehavior='inside'
 				size={isMobile ? 'full' : '2xl'}
-				shouldBlockScroll={!isMobile}
+				// Scroll lock leaves Safari unable to tap after close.
+				shouldBlockScroll={false}
 				disableAnimation={isMobile}
-				// Keep detail overlay out of the column layout so opening a row can't stretch modules.
+				isDismissable
 				portalContainer={
 					typeof document !== 'undefined' ? document.body : undefined
 				}
-				classNames={{
-					wrapper: isMobile ? '!h-[100dvh] items-stretch' : 'items-center',
-					base: isMobile
-						? 'max-h-[100dvh] m-0 rounded-none bg-surface-50 dark:bg-surface-950'
-						: 'max-h-[85dvh] m-2 rounded-xl glass-card flex flex-col',
-					backdrop: isMobile ? 'bg-surface-50 dark:bg-surface-950' : undefined,
-					closeButton: 'top-3 right-3 hover:bg-white/5 active:bg-white/10',
-					header: 'flex-shrink-0',
-					body: 'px-4 py-2 overflow-y-auto overscroll-contain flex-1 min-h-0',
-					footer: 'flex-shrink-0',
-				}}
+				classNames={sharedModalClassNames(isMobile)}
 			>
 				<ModalContent>
 					{(onClose) => (
@@ -268,14 +262,18 @@ export function ScheduleList({
 									/>
 								)}
 							</ModalBody>
-							<ModalFooter className='pt-2'>
-								<Button
-									onPress={onClose}
-									size='sm'
-									className='bg-burntOrange hover:bg-burntOrange-600 text-white font-medium rounded-lg transition-colors'
+							<ModalFooter>
+								<button
+									type='button'
+									className={modalCloseButtonClass}
+									onClick={() => {
+										onClose();
+										setDetailGame(null);
+										unlockPageInteraction();
+									}}
 								>
 									Close
-								</Button>
+								</button>
 							</ModalFooter>
 						</>
 					)}
@@ -296,22 +294,61 @@ function getDefaultSeasonLabel(): string {
 	return `${now.getFullYear()}`;
 }
 
-/** NextUI/React Aria can leave body scroll-lock / pointer-events after a full-screen mobile close. */
+/** NextUI/React Aria can leave body scroll-lock / pointer-events after close — especially Safari. */
 function unlockPageInteraction() {
 	const unlock = () => {
-		document.body.style.removeProperty('overflow');
-		document.body.style.removeProperty('padding-right');
-		document.body.style.removeProperty('pointer-events');
-		document.documentElement.style.removeProperty('overflow');
-		document.documentElement.style.removeProperty('padding-right');
-		document.body.removeAttribute('data-scroll-locked');
+		const { body, documentElement: html } = document;
+		body.style.removeProperty('overflow');
+		body.style.removeProperty('padding-right');
+		body.style.removeProperty('pointer-events');
+		html.style.removeProperty('overflow');
+		html.style.removeProperty('padding-right');
+		html.style.removeProperty('pointer-events');
+		body.removeAttribute('data-scroll-locked');
+
+		document.querySelectorAll('[inert]').forEach((el) => {
+			el.removeAttribute('inert');
+		});
+
+		// Clear stuck inline pointer-events from React Aria hideOthers (Safari often keeps these).
+		body.querySelectorAll('*').forEach((el) => {
+			if (!(el instanceof HTMLElement)) return;
+			if (el.style.pointerEvents === 'none') {
+				el.style.removeProperty('pointer-events');
+			}
+		});
 	};
+
 	unlock();
-	// Run again after exit animation / React Aria cleanup settles
 	requestAnimationFrame(unlock);
+	window.setTimeout(unlock, 0);
 	window.setTimeout(unlock, 50);
-	window.setTimeout(unlock, 320);
+	window.setTimeout(unlock, 150);
+	window.setTimeout(unlock, 400);
+	window.setTimeout(unlock, 700);
 }
+
+const modalCloseButtonClass =
+	'bg-burntOrange hover:bg-burntOrange-600 text-white font-medium rounded-lg transition-colors text-sm px-3 h-8 inline-flex items-center justify-center relative z-[70]';
+
+const sharedModalClassNames = (isMobile: boolean) => ({
+	wrapper: isMobile
+		? '!h-[100dvh] items-stretch z-[100]'
+		: 'items-center z-[100]',
+	base: isMobile
+		? 'max-h-[100dvh] m-0 rounded-none bg-surface-50 dark:bg-surface-950'
+		: 'max-h-[85dvh] m-2 rounded-xl glass-card flex flex-col',
+	backdrop: isMobile
+		? 'bg-surface-50 dark:bg-surface-950 z-[99]'
+		: 'z-[99]',
+	closeButton:
+		'z-[70] top-3 right-3 min-w-10 min-h-10 flex items-center justify-center hover:bg-white/5 active:bg-white/10',
+	header: 'flex-shrink-0 relative z-[1]',
+	body: 'px-4 py-2 overflow-y-auto overscroll-contain flex-1 min-h-0',
+	footer:
+		'flex-shrink-0 relative z-[70] pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]',
+});
+
 
 export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps) {
 	const { isOpen, onOpen, onClose } = useDisclosure();
@@ -324,12 +361,16 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 		unlockPageInteraction();
 	}, [isOpen]);
 
+	const closeModal = () => {
+		onClose();
+		unlockPageInteraction();
+	};
+
 	const handleOpenChange = (open: boolean) => {
 		if (open) {
 			onOpen();
 		} else {
-			onClose();
-			unlockPageInteraction();
+			closeModal();
 		}
 	};
 
@@ -359,24 +400,16 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 				onOpenChange={handleOpenChange}
 				scrollBehavior='inside'
 				size={isMobile ? 'full' : '2xl'}
-				// Full-screen mobile already covers the page; blocking scroll is what
-				// leaves iOS/Android unable to tap after close.
-				shouldBlockScroll={!isMobile}
+				shouldBlockScroll={false}
 				disableAnimation={isMobile}
-				classNames={{
-					wrapper: isMobile ? '!h-[100dvh] items-stretch' : 'items-center',
-					base: isMobile
-						? 'max-h-[100dvh] m-0 rounded-none bg-surface-50 dark:bg-surface-950'
-						: 'max-h-[85dvh] m-2 rounded-xl glass-card flex flex-col',
-					backdrop: isMobile ? 'bg-surface-50 dark:bg-surface-950' : undefined,
-					closeButton: 'top-3 right-3 hover:bg-white/5 active:bg-white/10',
-					header: 'flex-shrink-0',
-					body: 'px-4 py-2 overflow-y-auto overscroll-contain flex-1 min-h-0',
-					footer: 'flex-shrink-0',
-				}}
+				isDismissable
+				portalContainer={
+					typeof document !== 'undefined' ? document.body : undefined
+				}
+				classNames={sharedModalClassNames(isMobile)}
 			>
 				<ModalContent>
-					{(onClose) => (
+					{() => (
 						<>
 							<ModalHeader className='flex flex-col gap-1 pb-2'>
 								<span className='text-lg font-display italic text-gradient-orange'>
@@ -389,24 +422,19 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 									onSeasonChange={setSeasonLabel}
 								/>
 							</ModalBody>
-							<ModalFooter className='pt-2'>
+							<ModalFooter className='gap-2'>
 								{!isTableLoading && (
-									<>
-										<span className='text-[10px] text-foreground/30 mr-auto'>
-											<span className='text-accent-gold'>*</span> neutral site
-										</span>
-										<Button
-											onPress={() => {
-												onClose();
-												unlockPageInteraction();
-											}}
-											size='sm'
-											className='bg-burntOrange hover:bg-burntOrange-600 text-white font-medium rounded-lg transition-colors'
-										>
-											Close
-										</Button>
-									</>
+									<span className='text-[10px] text-foreground/30 mr-auto self-center'>
+										<span className='text-accent-gold'>*</span> neutral site
+									</span>
 								)}
+								<button
+									type='button'
+									className={`${modalCloseButtonClass}${isTableLoading ? ' ml-auto' : ''}`}
+									onClick={closeModal}
+								>
+									Close
+								</button>
 							</ModalFooter>
 						</>
 					)}

@@ -69,8 +69,9 @@ export default function Home() {
 	const resolvedTab: TabKey =
 		activeTab ?? (isOffseason ? 'last-season-results' : 'index');
 
-	/** Schedule list must not contribute to grid row height (that was stretching both columns). */
-	const scheduleOutOfFlow = resolvedTab === 'schedule';
+	/** Desktop only: keep schedule out of grid flow so it can't stretch both columns.
+	 *  On mobile the right card has no stretched height — absolute would collapse to 0. */
+	const scheduleLockedToColumn = resolvedTab === 'schedule';
 
 	const tabs: { key: TabKey; label: string }[] = [
 		...(isOffseason
@@ -128,11 +129,11 @@ export default function Home() {
 			role='tabpanel'
 			id={`panel-${resolvedTab}`}
 			aria-labelledby={`tab-${resolvedTab}`}
-			className={
-				scheduleOutOfFlow
-					? 'absolute inset-0 overflow-y-auto overscroll-contain animate-fade-in'
-					: 'flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain animate-fade-in'
-			}
+			className={`min-h-0 min-w-0 overflow-y-auto overscroll-contain animate-fade-in ${
+				scheduleLockedToColumn
+					? 'lg:absolute lg:inset-0'
+					: 'flex-1'
+			}`}
 		>
 			{resolvedTab === 'last-season-results' && (
 				<div className='pt-4'>
@@ -196,12 +197,12 @@ export default function Home() {
 						</div>
 					</div>
 
-					{/* Right: stretches with left; schedule scrolls in absolute layer so it can't inflate the row */}
+					{/* Right: stretches with left on lg; schedule absolute only on lg (mobile stays in-flow) */}
 					{!loading && (
 						<div className='glass-card flex flex-col min-h-0 min-w-0 w-full overflow-hidden lg:h-full px-5 pt-2 pb-4'>
 							{tabList}
-							{scheduleOutOfFlow ? (
-								<div className='relative flex-1 min-h-0 min-w-0'>
+							{scheduleLockedToColumn ? (
+								<div className='relative min-h-0 min-w-0 lg:flex-1'>
 									{tabPanel}
 								</div>
 							) : (
