@@ -6,6 +6,16 @@ const MS_PER_HOUR = 1000 * 60 * 60;
 const RECENT_FINAL_WINDOW_MS = 48 * MS_PER_HOUR;
 /** Kickoff → final is roughly 3.5h; used so the 48h window starts at conclusion. */
 const APPROX_GAME_DURATION_MS = 3.5 * MS_PER_HOUR;
+/**
+ * How long after kickoff the live summary outranks the schedule. ESPN's
+ * schedule feed can still read STATUS_SCHEDULED for a few minutes after a game
+ * is underway; the summary flips immediately.
+ */
+const KICKOFF_GRACE_MS = 6 * MS_PER_HOUR;
+const LIVE_POLL_MS = 30 * 1000;
+const PREGAME_POLL_MS = 60 * 1000;
+/** Foreground wakes arrive in bursts (visibilitychange + focus + pageshow). */
+const WAKE_THROTTLE_MS = 5 * 1000;
 
 const isGameInProgress = (status: string) => {
 	return [
@@ -23,6 +33,16 @@ const isGameInProgress = (status: string) => {
 };
 
 const getApproxEndTime = (game: Game) => game.timestamp + APPROX_GAME_DURATION_MS;
+
+/**
+ * A game the schedule still calls scheduled, but whose kickoff has passed.
+ * Treated as possibly-live so the summary endpoint gets the deciding vote.
+ */
+export const hasKickedOff = (game: Game) => {
+	if (game.status !== 'STATUS_SCHEDULED') return false;
+	const sinceKickoff = Date.now() - game.timestamp;
+	return sinceKickoff >= 0 && sinceKickoff <= KICKOFF_GRACE_MS;
+};
 
 /** True for the 48 hours after a final is estimated to have ended. */
 const isRecentlyConcluded = (game: Game) => {
@@ -86,6 +106,7 @@ export function useCurrentGameData(initialOverrideMode?: string) {
 		initialOverrideMode
 	);
 	const requestIdRef = useRef(0);
+	const lastWakeRef = useRef(Date.now());
 	const hasLoadedRef = useRef(false);
 	const overrideModeRef = useRef(overrideMode);
 	overrideModeRef.current = overrideMode;
@@ -116,9 +137,12 @@ export function useCurrentGameData(initialOverrideMode?: string) {
 
 				// Live summary is fresher than the schedule CDN for in-progress
 				// and just-finished games (avoids needing a second refresh).
+				// `hasKickedOff` covers the window right after kickoff, when the
+				// schedule still says scheduled but the game is already underway.
 				if (
 					relevantGame &&
 					(isGameInProgress(relevantGame.status) ||
+						hasKickedOff(relevantGame) ||
 						isRecentlyConcluded(relevantGame))
 				) {
 					const liveData = await fetchLiveGame(relevantGame.id, relevantGame);
@@ -146,27 +170,48 @@ export function useCurrentGameData(initialOverrideMode?: string) {
 		loadGameData();
 	}, [loadGameData, overrideMode]);
 
+	// Mobile browsers suspend timers while a tab is backgrounded, and iOS can
+	// restore a page from the bfcache without firing visibilitychange — which
+	// left the card showing pre-kickoff state until a manual reload. Refetch on
+	// every way the page can come back to the foreground.
 	useEffect(() => {
-		const handleVisibility = () => {
-			if (document.visibilityState === 'visible') {
-				loadGameData();
-			}
+		const wake = () => {
+			if (document.visibilityState !== 'visible') return;
+			const now = Date.now();
+			if (now - lastWakeRef.current < WAKE_THROTTLE_MS) return;
+			lastWakeRef.current = now;
+			loadGameData();
 		};
-		document.addEventListener('visibilitychange', handleVisibility);
-		return () =>
-			document.removeEventListener('visibilitychange', handleVisibility);
+		const handlePageShow = (event: PageTransitionEvent) => {
+			if (event.persisted) wake();
+		};
+
+		document.addEventListener('visibilitychange', wake);
+		window.addEventListener('pageshow', handlePageShow);
+		window.addEventListener('focus', wake);
+		window.addEventListener('online', wake);
+
+		return () => {
+			document.removeEventListener('visibilitychange', wake);
+			window.removeEventListener('pageshow', handlePageShow);
+			window.removeEventListener('focus', wake);
+			window.removeEventListener('online', wake);
+		};
 	}, [loadGameData]);
 
 	useEffect(() => {
 		if (!currentGameData) return;
-		const shouldPoll =
-			isGameInProgress(currentGameData.status) ||
-			(currentGameData.status === 'STATUS_SCHEDULED' &&
-				isGameday(currentGameData.timestamp));
-		if (!shouldPoll) return;
+		const isLive = isGameInProgress(currentGameData.status);
+		const isGamedayScheduled =
+			currentGameData.status === 'STATUS_SCHEDULED' &&
+			isGameday(currentGameData.timestamp);
+		if (!isLive && !isGamedayScheduled) return;
+		// Tighten the cadence once the ball is in the air.
+		const intervalMs =
+			isLive || hasKickedOff(currentGameData) ? LIVE_POLL_MS : PREGAME_POLL_MS;
 		const id = setInterval(() => {
 			loadGameData();
-		}, 60000);
+		}, intervalMs);
 		return () => clearInterval(id);
 	}, [currentGameData, loadGameData]);
 

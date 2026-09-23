@@ -406,9 +406,20 @@ export default function ScoreCard({
 									homeLabel={compactHome}
 								/>
 							</div>
-							<p className='text-sm text-foreground/50'>
-								{location} &middot; {formattedDate}
-							</p>
+							{/* Stacked on phones: a long venue name plus the date on one
+							    line wraps mid-name and strands the separator. */}
+							<div
+								className={`${status === 'STATUS_SCHEDULED' ? 'mt-1' : ''} flex flex-col sm:flex-row flex-wrap items-center justify-center gap-x-2 px-2 text-sm text-foreground/50`}
+							>
+								<span className='text-balance'>{location}</span>
+								<span
+									className='hidden sm:inline text-foreground/30'
+									aria-hidden='true'
+								>
+									&middot;
+								</span>
+								<span>{formattedDate}</span>
+							</div>
 						</motion.div>
 					</motion.div>
 				</motion.div>
