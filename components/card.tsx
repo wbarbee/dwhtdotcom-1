@@ -4,7 +4,12 @@ import { RefreshCw } from 'lucide-react';
 import { useViewport } from '../hooks/useViewport';
 import { Spinner } from '@nextui-org/react';
 import FullScoreModal from './modal';
-import { ThemeSwitch, scoreboardControlClass, scoreboardToolbarClass } from './theme-switch';
+import {
+	ThemeSwitch,
+	ScoreboardToolbarDivider,
+	scoreboardControlClass,
+	scoreboardToolbarClass,
+} from './theme-switch';
 import { detectAppendedSuffix } from '../utils/stringUtils';
 import { normalizeRank } from '../utils/rankUtils';
 import { useIsDarkMode } from '../hooks/useIsDarkMode';
@@ -427,21 +432,25 @@ export default function ScoreCard({
 
 			<div className={`absolute bottom-3 right-3 z-10 ${scoreboardToolbarClass}`}>
 				{showRefreshButton && (
-					<button
-						type='button'
-						className={scoreboardControlClass}
-						aria-label='Refresh data'
-						onClick={handleRefresh}
-						disabled={isRefreshing}
-					>
-						<RefreshCw
-							size={15}
-							strokeWidth={1.75}
-							className={isRefreshing ? 'animate-spin' : undefined}
-						/>
-					</button>
+					<>
+						<button
+							type='button'
+							className={scoreboardControlClass}
+							aria-label='Refresh data'
+							onClick={handleRefresh}
+							disabled={isRefreshing}
+						>
+							<RefreshCw
+								size={15}
+								strokeWidth={1.75}
+								className={isRefreshing ? 'animate-spin' : undefined}
+							/>
+						</button>
+						<ScoreboardToolbarDivider />
+					</>
 				)}
 				<FullScoreModal result={currentGameData.result} />
+				<ScoreboardToolbarDivider />
 				<ThemeSwitch />
 			</div>
 		</div>
