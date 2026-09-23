@@ -116,8 +116,9 @@ export function ScheduleList({
 					const ha = g.neutralSite ? 'N' : g.isTexasHome ? 'vs' : '@';
 					const isCompleted = g.status === 'STATUS_FINAL';
 
-					const openDetail = () => {
+					const openDetail = (e?: React.SyntheticEvent) => {
 						if (!isCompleted) return;
+						e?.stopPropagation();
 						setDetailGame(g);
 					};
 
@@ -125,6 +126,7 @@ export function ScheduleList({
 						if (!isCompleted) return;
 						if (e.key === 'Enter' || e.key === ' ') {
 							e.preventDefault();
+							e.stopPropagation();
 							openDetail();
 						}
 					};
@@ -141,7 +143,7 @@ export function ScheduleList({
 							}
 							onClick={isCompleted ? openDetail : undefined}
 							onKeyDown={isCompleted ? handleKeyDown : undefined}
-							className={`flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+							className={`flex items-center justify-between px-4 py-2.5 rounded-lg transition-colors ${
 								isCompleted
 									? 'cursor-pointer bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/5 hover:bg-black/[0.05] dark:hover:bg-white/[0.07] hover:border-black/10 dark:hover:border-white/10 focus:outline-none focus-visible:ring-1 focus-visible:ring-burntOrange/40'
 									: 'cursor-default bg-transparent border border-transparent'
@@ -224,6 +226,10 @@ export function ScheduleList({
 				size={isMobile ? 'full' : '2xl'}
 				shouldBlockScroll={!isMobile}
 				disableAnimation={isMobile}
+				// Keep detail overlay out of the column layout so opening a row can't stretch modules.
+				portalContainer={
+					typeof document !== 'undefined' ? document.body : undefined
+				}
 				classNames={{
 					wrapper: isMobile ? '!h-[100dvh] items-stretch' : 'items-center',
 					base: isMobile

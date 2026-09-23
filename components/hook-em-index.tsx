@@ -235,10 +235,17 @@ export default function HookEmIndex({
 		setOpenFactor((prev) => (prev === key ? null : key));
 	};
 
+	const toggleExpanded = () => {
+		setExpanded((v) => {
+			if (v) setOpenFactor(null);
+			return !v;
+		});
+	};
+
 	return (
 		<div
 			className={`${bare ? '' : 'glass-card '}px-5 sm:px-6 xl:px-5 pt-5 pb-4 cursor-pointer select-none flex flex-col min-w-0 ${className ?? ''}`}
-			onClick={() => setExpanded((v) => !v)}
+			onClick={toggleExpanded}
 		>
 			<motion.div
 				className='flex flex-col items-center gap-4 md:gap-3 w-full h-full min-h-0'
@@ -263,7 +270,7 @@ export default function HookEmIndex({
 
 				{/* Stacked in sidebar (bare); side-by-side when full-width framed */}
 				<div
-					className={`flex flex-col items-center gap-4 w-full min-w-0 flex-1 min-h-0 ${
+					className={`flex flex-col items-center gap-3 w-full min-w-0 flex-1 min-h-0 ${
 						bare
 							? 'justify-center'
 							: 'md:flex-row md:items-center md:gap-2 md:justify-start'
@@ -311,16 +318,15 @@ export default function HookEmIndex({
 						<AnimatePresence>
 							{(expanded || typeof window !== 'undefined') && (
 								<motion.div
-									className={`w-full min-w-0 flex-col gap-3 ${
+									className={`w-full min-w-0 flex-col gap-1.5 ${
 										bare
 											? ''
 											: 'md:border-l md:border-foreground/10 md:pl-5 md:pr-1'
 									} ${expanded ? 'flex' : 'hidden md:flex'}`}
-									initial={{ height: 0, opacity: 0 }}
-									animate={{ height: 'auto', opacity: 1 }}
-									exit={{ height: 0, opacity: 0 }}
-									transition={{ duration: 0.25, ease: 'easeInOut' }}
-									style={{ overflow: 'hidden' }}
+									initial={false}
+									animate={{ opacity: 1 }}
+									exit={{ opacity: 0 }}
+									transition={{ duration: 0.15 }}
 								>
 									{Object.entries(index.factors).map(([key, value]) => {
 										const meta = FACTOR_LABELS[key];
@@ -339,25 +345,25 @@ export default function HookEmIndex({
 										return (
 											<div
 												key={key}
-												className={`flex flex-col gap-1 min-w-0 ${rivalryPending ? 'opacity-50' : ''}`}
+												className={`flex flex-col gap-0.5 min-w-0 ${rivalryPending ? 'opacity-50' : ''}`}
 											>
 												<button
 													type='button'
-													className='flex items-center justify-between text-left w-full min-w-0 group'
+													className='flex items-center justify-between text-left w-full min-w-0 gap-2 py-0 leading-none group'
 													onClick={(e) => toggleFactor(key, e)}
 													aria-expanded={isOpen}
 												>
-													<span className='text-xs text-foreground/50 group-hover:text-foreground/70 transition-colors truncate'>
+													<span className='text-[11px] text-foreground/50 group-hover:text-foreground/70 transition-colors truncate'>
 														{meta.label}
 														<span className='ml-1 text-foreground/25'>
 															{isOpen ? '▾' : '▸'}
 														</span>
 													</span>
-													<span className='text-xs font-mono text-foreground/60 shrink-0'>
+													<span className='text-[11px] font-mono text-foreground/60 shrink-0'>
 														{rivalryPending ? '—' : `${value}/${meta.max}`}
 													</span>
 												</button>
-												<div className='h-1.5 w-full min-w-0 bg-white/5 rounded-full overflow-hidden'>
+												<div className='h-1 w-full min-w-0 bg-white/5 rounded-full overflow-hidden'>
 													<motion.div
 														className='h-full max-w-full bg-burntOrange rounded-full'
 														initial={{ width: 0 }}
@@ -369,17 +375,18 @@ export default function HookEmIndex({
 														}}
 													/>
 												</div>
-												<AnimatePresence>
+												<AnimatePresence initial={false}>
 													{isOpen && (
 														<motion.div
-															className='pl-1 pt-1 pb-0.5 flex flex-col gap-0.5'
+															className='pl-1 pt-0.5 pb-0.5 flex flex-col gap-0.5'
 															initial={{ height: 0, opacity: 0 }}
 															animate={{ height: 'auto', opacity: 1 }}
 															exit={{ height: 0, opacity: 0 }}
-															transition={{ duration: 0.2 }}
+															transition={{ duration: 0.15 }}
 															onClick={(e) => e.stopPropagation()}
+															style={{ overflow: 'hidden' }}
 														>
-															<p className='text-[10px] text-foreground/35 mb-0.5'>
+															<p className='text-[10px] text-foreground/35 mb-0.5 leading-snug'>
 																{meta.hint}
 															</p>
 															{details.map((d, i) => (

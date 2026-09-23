@@ -21,6 +21,8 @@ export default function Home() {
 	} = useCurrentGameData();
 	const [overrideVisible, setOverrideVisible] = useState(false);
 	const [activeTab, setActiveTab] = useState<TabKey | null>(null);
+	/** Remount Hook Them Index on each visit so expand state always starts collapsed. */
+	const [indexResetKey, setIndexResetKey] = useState(0);
 
 	useEffect(() => {
 		if (process.env.NODE_ENV === 'development') {
@@ -67,6 +69,9 @@ export default function Home() {
 	const resolvedTab: TabKey =
 		activeTab ?? (isOffseason ? 'last-season-results' : 'index');
 
+	/** Schedule list must not contribute to grid row height (that was stretching both columns). */
+	const scheduleOutOfFlow = resolvedTab === 'schedule';
+
 	const tabs: { key: TabKey; label: string }[] = [
 		...(isOffseason
 			? [{ key: 'last-season-results' as const, label: `${seasonLabel} Record` }]
@@ -101,7 +106,12 @@ export default function Home() {
 								? 'text-burntOrange'
 								: 'text-foreground/40 hover:text-foreground/60'
 						}`}
-						onClick={() => setActiveTab(tab.key)}
+						onClick={() => {
+							setActiveTab(tab.key);
+							if (tab.key === 'index') {
+								setIndexResetKey((k) => k + 1);
+							}
+						}}
 					>
 						{tab.label}
 						{selected && (
@@ -118,7 +128,11 @@ export default function Home() {
 			role='tabpanel'
 			id={`panel-${resolvedTab}`}
 			aria-labelledby={`tab-${resolvedTab}`}
-			className='flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain animate-fade-in'
+			className={
+				scheduleOutOfFlow
+					? 'absolute inset-0 overflow-y-auto overscroll-contain animate-fade-in'
+					: 'flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain animate-fade-in'
+			}
 		>
 			{resolvedTab === 'last-season-results' && (
 				<div className='pt-4'>
@@ -127,6 +141,7 @@ export default function Home() {
 			)}
 			{resolvedTab === 'index' && (
 				<HookEmIndex
+					key={indexResetKey}
 					games={allGames}
 					bare
 					className='min-h-full px-0 pt-4 pb-1'
@@ -160,7 +175,7 @@ export default function Home() {
 							: ''
 					}`}
 				>
-					{/* Left: modules 1 + 2 — h-full + flex-1 so Safari fills stretched grid row */}
+					{/* Left: modules 1 + 2 — stretch to match right on desktop */}
 					<div className='flex flex-col gap-3 min-h-0 min-w-0 w-full lg:h-full'>
 						{hasCompletedGames && !loading && (
 							<div className='shrink-0 w-full'>
@@ -181,11 +196,17 @@ export default function Home() {
 						</div>
 					</div>
 
-					{/* Right: module 3 — overflow clip + inner scroll (Safari spills without this) */}
+					{/* Right: stretches with left; schedule scrolls in absolute layer so it can't inflate the row */}
 					{!loading && (
 						<div className='glass-card flex flex-col min-h-0 min-w-0 w-full overflow-hidden lg:h-full px-5 pt-2 pb-4'>
 							{tabList}
-							{tabPanel}
+							{scheduleOutOfFlow ? (
+								<div className='relative flex-1 min-h-0 min-w-0'>
+									{tabPanel}
+								</div>
+							) : (
+								tabPanel
+							)}
 						</div>
 					)}
 				</div>
