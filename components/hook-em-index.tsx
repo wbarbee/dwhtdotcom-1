@@ -1,6 +1,6 @@
 'use client';
 import { useMemo, useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Game } from '../types';
 import { calculateHookEmIndex } from '../utils/seasonUtils';
 import { fetchLastSeasonData } from '../hooks/fetchGameData';
@@ -235,17 +235,18 @@ export default function HookEmIndex({
 		setOpenFactor((prev) => (prev === key ? null : key));
 	};
 
-	const toggleExpanded = () => {
+	const toggleExpanded = (e: React.MouseEvent) => {
+		e.stopPropagation();
 		setExpanded((v) => {
-			if (v) setOpenFactor(null);
-			return !v;
+			const next = !v;
+			if (!next) setOpenFactor(null);
+			return next;
 		});
 	};
 
 	return (
 		<div
-			className={`${bare ? '' : 'glass-card '}px-5 sm:px-6 xl:px-5 pt-5 pb-4 cursor-pointer select-none flex flex-col min-w-0 ${className ?? ''}`}
-			onClick={toggleExpanded}
+			className={`${bare ? '' : 'glass-card '}px-5 sm:px-6 xl:px-5 pt-5 pb-4 select-none flex flex-col min-w-0 ${className ?? ''}`}
 		>
 			<motion.div
 				className='flex flex-col items-center gap-4 md:gap-3 w-full h-full min-h-0'
@@ -281,6 +282,7 @@ export default function HookEmIndex({
 						className={`flex-shrink-0 flex items-center justify-center ${
 							bare ? '' : 'md:w-[42%]'
 						}`}
+						onClick={() => setOpenFactor(null)}
 					>
 						<CircularGauge
 							score={index.score}
@@ -297,7 +299,11 @@ export default function HookEmIndex({
 								: 'md:items-stretch md:w-[58%] md:justify-center'
 						}`}
 					>
-						<span className='inline-flex md:hidden items-center gap-1.5 px-4 py-1.5 mb-3 rounded-full border border-burntOrange/30 text-burntOrange text-xs font-medium cursor-pointer hover:bg-burntOrange/10 transition-colors'>
+						<button
+							type='button'
+							onClick={toggleExpanded}
+							className='inline-flex md:hidden items-center gap-1.5 px-4 py-1.5 mb-3 rounded-full border border-burntOrange/30 text-burntOrange text-xs font-medium hover:bg-burntOrange/10 transition-colors'
+						>
 							{expanded ? 'tap to collapse' : 'tap for breakdown'}
 							<svg
 								width='10'
@@ -309,112 +315,104 @@ export default function HookEmIndex({
 								strokeLinecap='round'
 								strokeLinejoin='round'
 								className={`transition-transform ${expanded ? 'rotate-180' : ''}`}
+								aria-hidden
 							>
 								<path d='M2 4l3 3 3-3' />
 							</svg>
-						</span>
+						</button>
 
 						{/* Desktop: always show / Mobile: expandable */}
-						<AnimatePresence>
-							{(expanded || typeof window !== 'undefined') && (
-								<motion.div
-									className={`w-full min-w-0 flex-col gap-1.5 ${
-										bare
-											? ''
-											: 'md:border-l md:border-foreground/10 md:pl-5 md:pr-1'
-									} ${expanded ? 'flex' : 'hidden md:flex'}`}
-									initial={false}
-									animate={{ opacity: 1 }}
-									exit={{ opacity: 0 }}
-									transition={{ duration: 0.15 }}
-								>
-									{Object.entries(index.factors).map(([key, value]) => {
-										const meta = FACTOR_LABELS[key];
-										if (!meta) return null;
-										const rivalryPending =
-											key === 'rivalryBonus' && !index.rivalryActive;
-										const pct = rivalryPending
-											? 0
-											: (value / meta.max) * 100;
-										const isOpen = openFactor === key;
-										const details =
-											index.breakdowns[
-												key as keyof typeof index.breakdowns
-											] ?? [];
+						<div
+							className={`w-full min-w-0 flex-col gap-1.5 ${
+								bare
+									? ''
+									: 'md:border-l md:border-foreground/10 md:pl-5 md:pr-1'
+							} ${expanded ? 'flex' : 'hidden md:flex'}`}
+							onClick={() => setOpenFactor(null)}
+						>
+							{Object.entries(index.factors).map(([key, value]) => {
+								const meta = FACTOR_LABELS[key];
+								if (!meta) return null;
+								const rivalryPending =
+									key === 'rivalryBonus' && !index.rivalryActive;
+								const pct = rivalryPending
+									? 0
+									: (value / meta.max) * 100;
+								const isOpen = openFactor === key;
+								const details =
+									index.breakdowns[
+										key as keyof typeof index.breakdowns
+									] ?? [];
 
-										return (
-											<div
-												key={key}
-												className={`flex flex-col gap-0.5 min-w-0 ${rivalryPending ? 'opacity-50' : ''}`}
-											>
-												<button
-													type='button'
-													className='flex items-center justify-between text-left w-full min-w-0 gap-2 py-0 leading-none group'
-													onClick={(e) => toggleFactor(key, e)}
-													aria-expanded={isOpen}
-												>
-													<span className='text-[11px] text-foreground/50 group-hover:text-foreground/70 transition-colors truncate'>
-														{meta.label}
-														<span className='ml-1 text-foreground/25'>
-															{isOpen ? '▾' : '▸'}
-														</span>
-													</span>
-													<span className='text-[11px] font-mono text-foreground/60 shrink-0'>
-														{rivalryPending ? '—' : `${value}/${meta.max}`}
-													</span>
-												</button>
-												<div className='h-1 w-full min-w-0 bg-white/5 rounded-full overflow-hidden'>
-													<motion.div
-														className='h-full max-w-full bg-burntOrange rounded-full'
-														initial={{ width: 0 }}
-														animate={{ width: `${pct}%` }}
-														transition={{
-															duration: 1,
-															delay: 0.3,
-															ease: 'easeOut',
-														}}
-													/>
-												</div>
-												<AnimatePresence initial={false}>
-													{isOpen && (
-														<motion.div
-															className='pl-1 pt-0.5 pb-0.5 flex flex-col gap-0.5'
-															initial={{ height: 0, opacity: 0 }}
-															animate={{ height: 'auto', opacity: 1 }}
-															exit={{ height: 0, opacity: 0 }}
-															transition={{ duration: 0.15 }}
-															onClick={(e) => e.stopPropagation()}
-															style={{ overflow: 'hidden' }}
+								return (
+									<div
+										key={key}
+										className={`flex flex-col gap-0.5 min-w-0 ${rivalryPending ? 'opacity-50' : ''}`}
+									>
+										<button
+											type='button'
+											className='flex items-center justify-between text-left w-full min-w-0 gap-2 py-0 leading-none group'
+											onClick={(e) => toggleFactor(key, e)}
+											aria-expanded={isOpen}
+										>
+											<span className='text-[11px] text-foreground/50 group-hover:text-foreground/70 transition-colors truncate'>
+												{meta.label}
+												<span className='ml-1 text-foreground/25'>
+													{isOpen ? '▾' : '▸'}
+												</span>
+											</span>
+											<span className='text-[11px] font-mono text-foreground/60 shrink-0'>
+												{rivalryPending ? '—' : `${value}/${meta.max}`}
+											</span>
+										</button>
+										<div className='h-1 w-full min-w-0 bg-white/5 rounded-full overflow-hidden'>
+											<motion.div
+												className='h-full max-w-full bg-burntOrange rounded-full'
+												initial={{ width: 0 }}
+												animate={{ width: `${pct}%` }}
+												transition={{
+													duration: 1,
+													delay: 0.3,
+													ease: 'easeOut',
+												}}
+											/>
+										</div>
+										{/* Grid rows collapse reliably (framer height:auto often leaves space) */}
+										<div
+											className={`grid transition-[grid-template-rows] duration-150 ease-out ${
+												isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+											}`}
+											onClick={(e) => e.stopPropagation()}
+										>
+											<div className='overflow-hidden min-h-0'>
+												<div className='pl-1 pt-0.5 pb-0.5 flex flex-col gap-0.5'>
+													<p className='text-[10px] text-foreground/35 mb-0.5 leading-snug'>
+														{meta.hint}
+													</p>
+													{details.map((d, i) => (
+														<div
+															key={`${key}-${i}`}
+															className='flex items-center justify-between gap-2'
 														>
-															<p className='text-[10px] text-foreground/35 mb-0.5 leading-snug'>
-																{meta.hint}
-															</p>
-															{details.map((d, i) => (
-																<div
-																	key={`${key}-${i}`}
-																	className='flex items-center justify-between gap-2'
-																>
-																	<span className='text-[11px] text-foreground/45 truncate'>
-																		{d.label}
-																	</span>
-																	{d.points > 0 && (
-																		<span className='text-[11px] font-mono text-foreground/40 shrink-0'>
-																			{d.points % 1 === 0
-																				? d.points
-																				: d.points.toFixed(1)}
-																		</span>
-																	)}
-																</div>
-															))}
-														</motion.div>
-													)}
-												</AnimatePresence>
+															<span className='text-[11px] text-foreground/45 truncate'>
+																{d.label}
+															</span>
+															{d.points > 0 && (
+																<span className='text-[11px] font-mono text-foreground/40 shrink-0'>
+																	{d.points % 1 === 0
+																		? d.points
+																		: d.points.toFixed(1)}
+																</span>
+															)}
+														</div>
+													))}
+												</div>
 											</div>
-										);
-									})}
-								</motion.div>
-							)}
-						</AnimatePresence>
+										</div>
+									</div>
+								);
+							})}
+						</div>
 					</div>
 				</div>
 			</motion.div>
