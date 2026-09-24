@@ -249,7 +249,7 @@ export default function HookEmIndex({
 			className={`${bare ? '' : 'glass-card '}px-5 sm:px-6 xl:px-5 pt-5 pb-4 select-none flex flex-col min-w-0 ${className ?? ''}`}
 		>
 			<motion.div
-				className='flex flex-col items-center gap-4 md:gap-3 w-full h-full min-h-0'
+				className='flex flex-col items-center gap-4 md:gap-3 w-full min-h-0'
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
 				transition={{ duration: 0.3 }}
@@ -271,9 +271,9 @@ export default function HookEmIndex({
 
 				{/* Stacked in sidebar (bare); side-by-side when full-width framed */}
 				<div
-					className={`flex flex-col items-center gap-3 w-full min-w-0 flex-1 min-h-0 ${
+					className={`flex flex-col items-center gap-3 w-full min-w-0 ${
 						bare
-							? 'justify-center'
+							? 'justify-start'
 							: 'md:flex-row md:items-center md:gap-2 md:justify-start'
 					}`}
 				>
@@ -377,38 +377,34 @@ export default function HookEmIndex({
 												}}
 											/>
 										</div>
-										{/* Grid rows collapse reliably (framer height:auto often leaves space) */}
-										<div
-											className={`grid transition-[grid-template-rows] duration-150 ease-out ${
-												isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-											}`}
-											onClick={(e) => e.stopPropagation()}
-										>
-											<div className='overflow-hidden min-h-0'>
-												<div className='pl-1 pt-0.5 pb-0.5 flex flex-col gap-0.5'>
-													<p className='text-[10px] text-foreground/35 mb-0.5 leading-snug'>
-														{meta.hint}
-													</p>
-													{details.map((d, i) => (
-														<div
-															key={`${key}-${i}`}
-															className='flex items-center justify-between gap-2'
-														>
-															<span className='text-[11px] text-foreground/45 truncate'>
-																{d.label}
+										{/* Only mount when open — no leftover grid-row / motion height */}
+										{isOpen && (
+											<div
+												className='pl-1 pt-0.5 pb-0.5 flex flex-col gap-0.5'
+												onClick={(e) => e.stopPropagation()}
+											>
+												<p className='text-[10px] text-foreground/35 mb-0.5 leading-snug'>
+													{meta.hint}
+												</p>
+												{details.map((d, i) => (
+													<div
+														key={`${key}-${i}`}
+														className='flex items-center justify-between gap-2'
+													>
+														<span className='text-[11px] text-foreground/45 truncate'>
+															{d.label}
+														</span>
+														{d.points > 0 && (
+															<span className='text-[11px] font-mono text-foreground/40 shrink-0'>
+																{d.points % 1 === 0
+																	? d.points
+																	: d.points.toFixed(1)}
 															</span>
-															{d.points > 0 && (
-																<span className='text-[11px] font-mono text-foreground/40 shrink-0'>
-																	{d.points % 1 === 0
-																		? d.points
-																		: d.points.toFixed(1)}
-																</span>
-															)}
-														</div>
-													))}
-												</div>
+														)}
+													</div>
+												))}
 											</div>
-										</div>
+										)}
 									</div>
 								);
 							})}

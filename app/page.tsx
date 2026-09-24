@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import ScoreCard from '../components/card';
 import SeasonRecord from '../components/season-record';
 import { ScheduleList } from '../components/modal';
@@ -23,6 +23,12 @@ export default function Home() {
 	const [activeTab, setActiveTab] = useState<TabKey | null>(null);
 	/** Remount Hook Them Index on each visit so expand state always starts collapsed. */
 	const [indexResetKey, setIndexResetKey] = useState(0);
+	const leftColRef = useRef<HTMLDivElement>(null);
+	/** Desktop: right column mirrors left height so accordion/schedule can't grow or leave gaps. */
+	const [rightHeightPx, setRightHeightPx] = useState<number | null>(null);
+
+	const hasCompletedGames = allGames.some((g) => g.status === 'STATUS_FINAL');
+	const isOffseason = !hasCompletedGames;
 
 	useEffect(() => {
 		if (process.env.NODE_ENV === 'development') {
@@ -31,6 +37,34 @@ export default function Home() {
 			setOverrideVisible(false);
 		}
 	}, [overrideMode]);
+
+	useLayoutEffect(() => {
+		if (loading) {
+			setRightHeightPx(null);
+			return;
+		}
+		const left = leftColRef.current;
+		if (!left || typeof ResizeObserver === 'undefined') return;
+
+		const mq = window.matchMedia('(min-width: 1024px)');
+		const sync = () => {
+			if (!mq.matches) {
+				setRightHeightPx(null);
+				return;
+			}
+			const h = left.getBoundingClientRect().height;
+			setRightHeightPx(h > 0 ? Math.round(h) : null);
+		};
+
+		sync();
+		const ro = new ResizeObserver(sync);
+		ro.observe(left);
+		mq.addEventListener('change', sync);
+		return () => {
+			ro.disconnect();
+			mq.removeEventListener('change', sync);
+		};
+	}, [loading, hasCompletedGames, currentGameData]);
 
 	const handleRefreshData = async (
 		newOverrideMode?: string,
@@ -43,9 +77,6 @@ export default function Home() {
 			if (setIsRefreshing) setIsRefreshing(false);
 		}
 	};
-
-	const hasCompletedGames = allGames.some((g) => g.status === 'STATUS_FINAL');
-	const isOffseason = !hasCompletedGames;
 
 	// Derive season label (e.g., "'25-'26")
 	// During off-season, derive from current date (last season); during season, from game data
@@ -68,10 +99,6 @@ export default function Home() {
 
 	const resolvedTab: TabKey =
 		activeTab ?? (isOffseason ? 'last-season-results' : 'index');
-
-	/** Desktop only: keep schedule out of grid flow so it can't stretch both columns.
-	 *  On mobile the right card has no stretched height — absolute would collapse to 0. */
-	const scheduleLockedToColumn = resolvedTab === 'schedule';
 
 	const tabs: { key: TabKey; label: string }[] = [
 		...(isOffseason
@@ -129,11 +156,7 @@ export default function Home() {
 			role='tabpanel'
 			id={`panel-${resolvedTab}`}
 			aria-labelledby={`tab-${resolvedTab}`}
-			className={`min-h-0 min-w-0 overflow-y-auto overscroll-contain animate-fade-in ${
-				scheduleLockedToColumn
-					? 'lg:absolute lg:inset-0'
-					: 'flex-1'
-			}`}
+			className='flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain animate-fade-in'
 		>
 			{resolvedTab === 'last-season-results' && (
 				<div className='pt-4'>
@@ -145,7 +168,7 @@ export default function Home() {
 					key={indexResetKey}
 					games={allGames}
 					bare
-					className='min-h-full px-0 pt-4 pb-1'
+					className='px-0 pt-4 pb-1'
 				/>
 			)}
 			{resolvedTab === 'schedule' && (
@@ -172,12 +195,15 @@ export default function Home() {
 				<div
 					className={`w-full max-w-[810px] lg:max-w-[1120px] flex flex-col gap-3 ${
 						!loading
-							? 'lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-5 lg:items-stretch'
+							? 'lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-5 lg:items-start'
 							: ''
 					}`}
 				>
-					{/* Left: modules 1 + 2 — stretch to match right on desktop */}
-					<div className='flex flex-col gap-3 min-h-0 min-w-0 w-full lg:h-full'>
+					{/* Left: natural height — sole height authority on desktop */}
+					<div
+						ref={leftColRef}
+						className='flex flex-col gap-3 min-w-0 w-full'
+					>
 						{hasCompletedGames && !loading && (
 							<div className='shrink-0 w-full'>
 								<SeasonRecord
@@ -186,28 +212,29 @@ export default function Home() {
 								/>
 							</div>
 						)}
-						<div className='flex flex-col min-h-0 min-w-0 w-full lg:flex-1'>
+						<div className='flex flex-col min-w-0 w-full'>
 							<ScoreCard
 								currentGameData={currentGameData}
 								refreshData={() => handleRefreshData(overrideMode)}
 								error={error}
 								loading={loading}
-								className='w-full max-w-none min-h-0 lg:flex-1 lg:h-auto'
+								className='w-full max-w-none'
 							/>
 						</div>
 					</div>
 
-					{/* Right: stretches with left on lg; schedule absolute only on lg (mobile stays in-flow) */}
+					{/* Right: locked to left height on lg; accordion/schedule scroll inside */}
 					{!loading && (
-						<div className='glass-card flex flex-col min-h-0 min-w-0 w-full overflow-hidden lg:h-full px-5 pt-2 pb-4'>
+						<div
+							className='glass-card flex flex-col min-h-0 min-w-0 w-full overflow-hidden px-5 pt-2 pb-4'
+							style={
+								rightHeightPx != null
+									? { height: rightHeightPx }
+									: undefined
+							}
+						>
 							{tabList}
-							{scheduleLockedToColumn ? (
-								<div className='relative min-h-0 min-w-0 lg:flex-1'>
-									{tabPanel}
-								</div>
-							) : (
-								tabPanel
-							)}
+							{tabPanel}
 						</div>
 					)}
 				</div>
