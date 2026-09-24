@@ -23,12 +23,14 @@ export default function Home() {
 	const [activeTab, setActiveTab] = useState<TabKey | null>(null);
 	/** Remount Hook Them Index on each visit so expand state always starts collapsed. */
 	const [indexResetKey, setIndexResetKey] = useState(0);
-	const leftColRef = useRef<HTMLDivElement>(null);
-	/** Desktop: right column mirrors left height so accordion/schedule can't grow or leave gaps. */
-	const [rightHeightPx, setRightHeightPx] = useState<number | null>(null);
+	const rightColRef = useRef<HTMLDivElement>(null);
+	/** Desktop: left column tracks right height as Index factors open/close. */
+	const [leftMinHeightPx, setLeftMinHeightPx] = useState<number | null>(null);
 
 	const hasCompletedGames = allGames.some((g) => g.status === 'STATUS_FINAL');
 	const isOffseason = !hasCompletedGames;
+	const resolvedTab: TabKey =
+		activeTab ?? (isOffseason ? 'last-season-results' : 'index');
 
 	useEffect(() => {
 		if (process.env.NODE_ENV === 'development') {
@@ -40,31 +42,31 @@ export default function Home() {
 
 	useLayoutEffect(() => {
 		if (loading) {
-			setRightHeightPx(null);
+			setLeftMinHeightPx(null);
 			return;
 		}
-		const left = leftColRef.current;
-		if (!left || typeof ResizeObserver === 'undefined') return;
+		const right = rightColRef.current;
+		if (!right || typeof ResizeObserver === 'undefined') return;
 
 		const mq = window.matchMedia('(min-width: 1024px)');
 		const sync = () => {
 			if (!mq.matches) {
-				setRightHeightPx(null);
+				setLeftMinHeightPx(null);
 				return;
 			}
-			const h = left.getBoundingClientRect().height;
-			setRightHeightPx(h > 0 ? Math.round(h) : null);
+			const h = right.getBoundingClientRect().height;
+			setLeftMinHeightPx(h > 0 ? Math.round(h) : null);
 		};
 
 		sync();
 		const ro = new ResizeObserver(sync);
-		ro.observe(left);
+		ro.observe(right);
 		mq.addEventListener('change', sync);
 		return () => {
 			ro.disconnect();
 			mq.removeEventListener('change', sync);
 		};
-	}, [loading, hasCompletedGames, currentGameData]);
+	}, [loading, resolvedTab, indexResetKey, hasCompletedGames, currentGameData]);
 
 	const handleRefreshData = async (
 		newOverrideMode?: string,
@@ -96,9 +98,6 @@ export default function Home() {
 		const endYear = startYear + 1;
 		return `'${String(startYear).slice(-2)}-'${String(endYear).slice(-2)}`;
 	})();
-
-	const resolvedTab: TabKey =
-		activeTab ?? (isOffseason ? 'last-season-results' : 'index');
 
 	const tabs: { key: TabKey; label: string }[] = [
 		...(isOffseason
@@ -156,7 +155,7 @@ export default function Home() {
 			role='tabpanel'
 			id={`panel-${resolvedTab}`}
 			aria-labelledby={`tab-${resolvedTab}`}
-			className='flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain animate-fade-in'
+			className='min-w-0 animate-fade-in'
 		>
 			{resolvedTab === 'last-season-results' && (
 				<div className='pt-4'>
@@ -172,7 +171,7 @@ export default function Home() {
 				/>
 			)}
 			{resolvedTab === 'schedule' && (
-				<div className='pt-4 pb-1'>
+				<div className='pt-4 pb-1 max-h-[min(70vh,520px)] overflow-y-auto overscroll-contain'>
 					<ScheduleList />
 					<p className='text-[10px] text-foreground/30 mt-3 px-1'>
 						<span className='text-accent-gold'>*</span> neutral site
@@ -199,10 +198,14 @@ export default function Home() {
 							: ''
 					}`}
 				>
-					{/* Left: natural height — sole height authority on desktop */}
+					{/* Left: min-height tracks right so bottoms stay aligned as factors open/close */}
 					<div
-						ref={leftColRef}
-						className='flex flex-col gap-3 min-w-0 w-full'
+						className='flex flex-col gap-3 min-h-0 min-w-0 w-full'
+						style={
+							leftMinHeightPx != null
+								? { height: leftMinHeightPx }
+								: undefined
+						}
 					>
 						{hasCompletedGames && !loading && (
 							<div className='shrink-0 w-full'>
@@ -212,26 +215,22 @@ export default function Home() {
 								/>
 							</div>
 						)}
-						<div className='flex flex-col min-w-0 w-full'>
+						<div className='flex flex-col flex-1 min-h-0 min-w-0 w-full'>
 							<ScoreCard
 								currentGameData={currentGameData}
 								refreshData={() => handleRefreshData(overrideMode)}
 								error={error}
 								loading={loading}
-								className='w-full max-w-none'
+								className='w-full max-w-none min-h-0 h-full'
 							/>
 						</div>
 					</div>
 
-					{/* Right: locked to left height on lg; accordion/schedule scroll inside */}
+					{/* Right: content height is the source of truth */}
 					{!loading && (
 						<div
-							className='glass-card flex flex-col min-h-0 min-w-0 w-full overflow-hidden px-5 pt-2 pb-4'
-							style={
-								rightHeightPx != null
-									? { height: rightHeightPx }
-									: undefined
-							}
+							ref={rightColRef}
+							className='glass-card flex flex-col min-w-0 w-full px-5 pt-2 pb-4'
 						>
 							{tabList}
 							{tabPanel}

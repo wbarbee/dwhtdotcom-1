@@ -320,7 +320,7 @@ export default function ScoreCard({
 					initial='hidden'
 					animate='visible'
 				>
-					<div className='relative md:col-span-5 flex min-h-[200px] md:min-h-0 md:h-full'>
+					<div className='relative md:col-span-5 flex min-h-[200px] md:min-h-0 md:self-stretch md:h-auto'>
 						<div
 							className='w-full h-full min-h-[200px] aspect-[3/4] max-h-[260px] md:aspect-auto md:max-h-none md:min-h-0 rounded-lg bg-cover bg-center overflow-hidden flex items-center justify-center'
 							style={{

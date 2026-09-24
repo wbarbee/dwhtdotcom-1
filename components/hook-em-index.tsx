@@ -159,7 +159,6 @@ export default function HookEmIndex({
 	const [fallbackGames, setFallbackGames] = useState<Game[] | null>(null);
 	const [fallbackLoading, setFallbackLoading] = useState(false);
 	const [seasonLabel, setSeasonLabel] = useState<string | null>(null);
-	const [expanded, setExpanded] = useState(false);
 	const [openFactor, setOpenFactor] = useState<string | null>(null);
 
 	const completedCount = useMemo(
@@ -235,21 +234,12 @@ export default function HookEmIndex({
 		setOpenFactor((prev) => (prev === key ? null : key));
 	};
 
-	const toggleExpanded = (e: React.MouseEvent) => {
-		e.stopPropagation();
-		setExpanded((v) => {
-			const next = !v;
-			if (!next) setOpenFactor(null);
-			return next;
-		});
-	};
-
 	return (
 		<div
-			className={`${bare ? '' : 'glass-card '}px-5 sm:px-6 xl:px-5 pt-5 pb-4 select-none flex flex-col min-w-0 ${className ?? ''}`}
+			className={`${bare ? '' : 'glass-card '}px-5 sm:px-6 xl:px-5 pt-5 pb-4 flex flex-col min-w-0 ${className ?? ''}`}
 		>
 			<motion.div
-				className='flex flex-col items-center gap-4 md:gap-3 w-full min-h-0'
+				className='flex flex-col items-center gap-4 md:gap-3 w-full'
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
 				transition={{ duration: 0.3 }}
@@ -269,20 +259,17 @@ export default function HookEmIndex({
 					</div>
 				)}
 
-				{/* Stacked in sidebar (bare); side-by-side when full-width framed */}
 				<div
 					className={`flex flex-col items-center gap-3 w-full min-w-0 ${
 						bare
-							? 'justify-start'
+							? ''
 							: 'md:flex-row md:items-center md:gap-2 md:justify-start'
 					}`}
 				>
-					{/* Gauge */}
 					<div
 						className={`flex-shrink-0 flex items-center justify-center ${
 							bare ? '' : 'md:w-[42%]'
 						}`}
-						onClick={() => setOpenFactor(null)}
 					>
 						<CircularGauge
 							score={index.score}
@@ -291,44 +278,19 @@ export default function HookEmIndex({
 						/>
 					</div>
 
-					{/* Factor Breakdown — always visible on desktop, expandable on mobile */}
 					<div
-						className={`flex flex-col items-center w-full min-w-0 min-h-0 ${
+						className={`flex flex-col items-center w-full min-w-0 ${
 							bare
 								? 'items-stretch max-w-sm'
 								: 'md:items-stretch md:w-[58%] md:justify-center'
 						}`}
 					>
-						<button
-							type='button'
-							onClick={toggleExpanded}
-							className='inline-flex md:hidden items-center gap-1.5 px-4 py-1.5 mb-3 rounded-full border border-burntOrange/30 text-burntOrange text-xs font-medium hover:bg-burntOrange/10 transition-colors'
-						>
-							{expanded ? 'tap to collapse' : 'tap for breakdown'}
-							<svg
-								width='10'
-								height='10'
-								viewBox='0 0 10 10'
-								fill='none'
-								stroke='currentColor'
-								strokeWidth='1.5'
-								strokeLinecap='round'
-								strokeLinejoin='round'
-								className={`transition-transform ${expanded ? 'rotate-180' : ''}`}
-								aria-hidden
-							>
-								<path d='M2 4l3 3 3-3' />
-							</svg>
-						</button>
-
-						{/* Desktop: always show / Mobile: expandable */}
 						<div
-							className={`w-full min-w-0 flex-col gap-1.5 ${
+							className={`w-full min-w-0 flex flex-col gap-2.5 ${
 								bare
 									? ''
 									: 'md:border-l md:border-foreground/10 md:pl-5 md:pr-1'
-							} ${expanded ? 'flex' : 'hidden md:flex'}`}
-							onClick={() => setOpenFactor(null)}
+							}`}
 						>
 							{Object.entries(index.factors).map(([key, value]) => {
 								const meta = FACTOR_LABELS[key];
@@ -347,21 +309,35 @@ export default function HookEmIndex({
 								return (
 									<div
 										key={key}
-										className={`flex flex-col gap-0.5 min-w-0 ${rivalryPending ? 'opacity-50' : ''}`}
+										className={`flex flex-col gap-1 min-w-0 ${
+											rivalryPending ? 'opacity-50' : ''
+										}`}
 									>
 										<button
 											type='button'
-											className='flex items-center justify-between text-left w-full min-w-0 gap-2 py-0 leading-none group'
+											className='flex items-center justify-between text-left w-full min-w-0 gap-2 py-0.5 leading-none group'
 											onClick={(e) => toggleFactor(key, e)}
 											aria-expanded={isOpen}
 										>
-											<span className='text-[11px] text-foreground/50 group-hover:text-foreground/70 transition-colors truncate'>
+											<span
+												className={`text-[11px] font-medium transition-colors truncate ${
+													isOpen
+														? 'text-foreground/85'
+														: 'text-foreground/65 group-hover:text-foreground/80'
+												}`}
+											>
 												{meta.label}
-												<span className='ml-1 text-foreground/25'>
+												<span
+													className={`ml-1.5 ${
+														isOpen
+															? 'text-burntOrange/80'
+															: 'text-foreground/35'
+													}`}
+												>
 													{isOpen ? '▾' : '▸'}
 												</span>
 											</span>
-											<span className='text-[11px] font-mono text-foreground/60 shrink-0'>
+											<span className='text-[11px] font-mono text-foreground/70 shrink-0'>
 												{rivalryPending ? '—' : `${value}/${meta.max}`}
 											</span>
 										</button>
@@ -377,13 +353,9 @@ export default function HookEmIndex({
 												}}
 											/>
 										</div>
-										{/* Only mount when open — no leftover grid-row / motion height */}
 										{isOpen && (
-											<div
-												className='pl-1 pt-0.5 pb-0.5 flex flex-col gap-0.5'
-												onClick={(e) => e.stopPropagation()}
-											>
-												<p className='text-[10px] text-foreground/35 mb-0.5 leading-snug'>
+											<div className='mt-1 mb-0.5 pl-2 border-l border-burntOrange/25 flex flex-col gap-1'>
+												<p className='text-[10px] text-foreground/55 leading-relaxed'>
 													{meta.hint}
 												</p>
 												{details.map((d, i) => (
@@ -391,11 +363,11 @@ export default function HookEmIndex({
 														key={`${key}-${i}`}
 														className='flex items-center justify-between gap-2'
 													>
-														<span className='text-[11px] text-foreground/45 truncate'>
+														<span className='text-[11px] text-foreground/75 truncate'>
 															{d.label}
 														</span>
 														{d.points > 0 && (
-															<span className='text-[11px] font-mono text-foreground/40 shrink-0'>
+															<span className='text-[11px] font-mono text-foreground/60 shrink-0'>
 																{d.points % 1 === 0
 																	? d.points
 																	: d.points.toFixed(1)}
