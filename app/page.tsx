@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import ScoreCard from '../components/card';
 import SeasonRecord from '../components/season-record';
 import { ScheduleList } from '../components/modal';
@@ -9,6 +10,8 @@ import DevOverride from '../components/dev-override';
 import { useCurrentGameData } from '../hooks/useCurrentGameData';
 
 type TabKey = 'last-season-results' | 'index' | 'schedule';
+
+const INTRO_MIN_MS = 2500;
 
 export default function Home() {
 	const {
@@ -24,13 +27,59 @@ export default function Home() {
 	/** Remount Hook Them Index on each visit so expand state always starts collapsed. */
 	const [indexResetKey, setIndexResetKey] = useState(0);
 	const rightColRef = useRef<HTMLDivElement>(null);
-	/** Desktop: left column tracks right height as Index factors open/close. */
-	const [leftMinHeightPx, setLeftMinHeightPx] = useState<number | null>(null);
+	/** Desktop floor so Hook Thems (to Date) cannot shrink the row below the Index tab. */
+	const [indexTabHeightPx, setIndexTabHeightPx] = useState<number | null>(null);
 
+	const reduceMotion = useReducedMotion();
+	const [introMinMet, setIntroMinMet] = useState(false);
+	const showingIntro = loading || !introMinMet;
 	const hasCompletedGames = allGames.some((g) => g.status === 'STATUS_FINAL');
 	const isOffseason = !hasCompletedGames;
 	const resolvedTab: TabKey =
 		activeTab ?? (isOffseason ? 'last-season-results' : 'index');
+
+	useEffect(() => {
+		const id = window.setTimeout(() => setIntroMinMet(true), INTRO_MIN_MS);
+		return () => window.clearTimeout(id);
+	}, []);
+
+	useEffect(() => {
+		if (!showingIntro) return;
+		const html = document.documentElement;
+		const prevHtml = html.style.overflow;
+		const prevBody = document.body.style.overflow;
+		html.style.overflow = 'hidden';
+		document.body.style.overflow = 'hidden';
+		return () => {
+			html.style.overflow = prevHtml;
+			document.body.style.overflow = prevBody;
+		};
+	}, [showingIntro]);
+
+	useLayoutEffect(() => {
+		if (showingIntro) return;
+		const right = rightColRef.current;
+		const mq = window.matchMedia('(min-width: 1024px)');
+		const clearOnMobile = () => {
+			if (!mq.matches) setIndexTabHeightPx(null);
+		};
+		mq.addEventListener('change', clearOnMobile);
+		if (!right || !mq.matches || resolvedTab !== 'index') {
+			clearOnMobile();
+			return () => mq.removeEventListener('change', clearOnMobile);
+		}
+		const sync = () => {
+			const h = Math.round(right.getBoundingClientRect().height);
+			if (h > 0) setIndexTabHeightPx((prev) => (prev === h ? prev : h));
+		};
+		sync();
+		const ro = new ResizeObserver(sync);
+		ro.observe(right);
+		return () => {
+			ro.disconnect();
+			mq.removeEventListener('change', clearOnMobile);
+		};
+	}, [showingIntro, resolvedTab, indexResetKey, hasCompletedGames, currentGameData]);
 
 	useEffect(() => {
 		if (process.env.NODE_ENV === 'development') {
@@ -39,34 +88,6 @@ export default function Home() {
 			setOverrideVisible(false);
 		}
 	}, [overrideMode]);
-
-	useLayoutEffect(() => {
-		if (loading) {
-			setLeftMinHeightPx(null);
-			return;
-		}
-		const right = rightColRef.current;
-		if (!right || typeof ResizeObserver === 'undefined') return;
-
-		const mq = window.matchMedia('(min-width: 1024px)');
-		const sync = () => {
-			if (!mq.matches) {
-				setLeftMinHeightPx(null);
-				return;
-			}
-			const h = right.getBoundingClientRect().height;
-			setLeftMinHeightPx(h > 0 ? Math.round(h) : null);
-		};
-
-		sync();
-		const ro = new ResizeObserver(sync);
-		ro.observe(right);
-		mq.addEventListener('change', sync);
-		return () => {
-			ro.disconnect();
-			mq.removeEventListener('change', sync);
-		};
-	}, [loading, resolvedTab, indexResetKey, hasCompletedGames, currentGameData]);
 
 	const handleRefreshData = async (
 		newOverrideMode?: string,
@@ -109,7 +130,9 @@ export default function Home() {
 				? `${seasonLabel} Hook Them Index`
 				: 'Hook Them Index',
 		},
-		...(!isOffseason ? [{ key: 'schedule' as const, label: 'Schedule' }] : []),
+		...(!isOffseason
+			? [{ key: 'schedule' as const, label: 'Hook Thems (to Date)' }]
+			: []),
 	];
 
 	const tabList = (
@@ -172,7 +195,7 @@ export default function Home() {
 			)}
 			{resolvedTab === 'schedule' && (
 				<div className='pt-4 pb-1 max-h-[min(70vh,520px)] overflow-y-auto overscroll-contain'>
-					<ScheduleList />
+					<ScheduleList playedOnly />
 					<p className='text-[10px] text-foreground/30 mt-3 px-1'>
 						<span className='text-accent-gold'>*</span> neutral site
 					</p>
@@ -182,7 +205,11 @@ export default function Home() {
 	);
 
 	return (
-		<div className='relative w-full min-h-screen dot-grid overflow-x-hidden'>
+		<div
+			className={`relative w-full dot-grid ${
+				showingIntro ? 'h-dvh overflow-hidden' : 'min-h-screen overflow-x-hidden'
+			}`}
+		>
 			<div className='ambient-orb ambient-orb-1' aria-hidden='true' />
 			<div className='ambient-orb ambient-orb-2' aria-hidden='true' />
 			<DevOverride
@@ -191,50 +218,110 @@ export default function Home() {
 				refreshData={handleRefreshData}
 			/>
 			<div className='flex flex-col items-center justify-center w-full min-h-[100dvh] px-4 py-10'>
-				<div
-					className={`w-full max-w-[810px] lg:max-w-[1120px] flex flex-col gap-3 ${
-						!loading
-							? 'lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-5 lg:items-start'
-							: ''
-					}`}
-				>
-					{/* Left: min-height tracks right so bottoms stay aligned as factors open/close */}
-					<div
-						className='flex flex-col gap-3 min-h-0 min-w-0 w-full'
-						style={
-							leftMinHeightPx != null
-								? { height: leftMinHeightPx }
-								: undefined
-						}
-					>
-						{hasCompletedGames && !loading && (
-							<div className='shrink-0 w-full'>
-								<SeasonRecord
-									games={allGames}
-									currentGame={currentGameData}
-								/>
-							</div>
+				<div className='w-full max-w-[810px] lg:max-w-[1120px] flex flex-col items-center gap-10 md:gap-14'>
+					<AnimatePresence mode='popLayout'>
+						{showingIntro ? (
+							<motion.div
+								key='intro'
+								className='fixed inset-0 z-30 flex items-center justify-center overflow-hidden px-4'
+							>
+								<div className='flex w-full max-w-[810px] lg:max-w-[1120px] flex-col items-center'>
+									<motion.h1
+										layoutId='hook-title'
+										className='my-0 w-full text-[6cqw] md:text-[4cqw] lg:text-[3cqw] text-burntOrange text-center font-espn font-normal italic'
+										transition={{
+											layout: {
+												duration: reduceMotion ? 0 : 1.9,
+												ease: [0.22, 1, 0.36, 1],
+											},
+										}}
+									>
+										Did we hook them?
+									</motion.h1>
+									<motion.div
+										aria-hidden='true'
+										className='mt-8'
+										exit={{ opacity: 0 }}
+										transition={{ duration: reduceMotion ? 0 : 0.35 }}
+									>
+										<span className='block animate-spin text-[4rem] md:text-[6rem] leading-none'>
+											🤘
+										</span>
+									</motion.div>
+								</div>
+							</motion.div>
+						) : (
+							<motion.h1
+								key='title'
+								layoutId='hook-title'
+								initial={{ opacity: 1 }}
+								animate={{
+									opacity: reduceMotion ? 1 : [1, 0.55, 1, 1],
+								}}
+								className='relative z-10 my-0 w-full text-[6cqw] md:text-[4cqw] lg:text-[3cqw] text-burntOrange text-center font-espn font-normal italic'
+								transition={{
+									layout: {
+										duration: reduceMotion ? 0 : 1.9,
+										ease: [0.22, 1, 0.36, 1],
+									},
+									opacity: reduceMotion
+										? { duration: 0 }
+										: {
+												duration: 1.9,
+												times: [0, 0.05, 0.62, 1],
+												ease: ['easeOut', 'easeInOut', 'linear'],
+											},
+								}}
+							>
+								Did we hook them?
+							</motion.h1>
 						)}
-						<div className='flex flex-col flex-1 min-h-0 min-w-0 w-full'>
-							<ScoreCard
-								currentGameData={currentGameData}
-								refreshData={() => handleRefreshData(overrideMode)}
-								error={error}
-								loading={loading}
-								className='w-full max-w-none min-h-0 h-full'
-							/>
-						</div>
-					</div>
+					</AnimatePresence>
 
-					{/* Right: content height is the source of truth */}
-					{!loading && (
-						<div
-							ref={rightColRef}
-							className='glass-card flex flex-col min-w-0 w-full px-5 pt-2 pb-4'
+					{!showingIntro && (
+						<motion.div
+							className='w-full flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-5 lg:items-stretch'
+							initial={reduceMotion ? false : { opacity: 0 }}
+							animate={{ opacity: 1 }}
+							transition={{
+								duration: reduceMotion ? 0 : 0.75,
+								delay: reduceMotion ? 0 : 1.1,
+								ease: [0.22, 1, 0.36, 1],
+							}}
 						>
-							{tabList}
-							{tabPanel}
-						</div>
+							<div className='flex flex-col gap-3 min-w-0 w-full lg:h-full'>
+								{hasCompletedGames && (
+									<div className='shrink-0 w-full'>
+										<SeasonRecord
+											games={allGames}
+											currentGame={currentGameData}
+										/>
+									</div>
+								)}
+								<div className='flex flex-col flex-1 min-h-min min-w-0 w-full'>
+									<ScoreCard
+										currentGameData={currentGameData}
+										refreshData={() => handleRefreshData(overrideMode)}
+										error={error}
+										loading={false}
+										className='w-full max-w-none min-h-min h-full'
+									/>
+								</div>
+							</div>
+
+							<div
+								ref={rightColRef}
+								className='glass-card flex flex-col min-w-0 w-full lg:h-full px-5 pt-2 pb-4'
+								style={
+									indexTabHeightPx != null
+										? { minHeight: indexTabHeightPx }
+										: undefined
+								}
+							>
+								{tabList}
+								{tabPanel}
+							</div>
+						</motion.div>
 					)}
 				</div>
 			</div>

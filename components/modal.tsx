@@ -23,12 +23,21 @@ interface FullScoreModalProps {
 	variant?: 'icon' | 'wide';
 }
 
+function hasStarted(game: Game) {
+	return (
+		game.status !== 'STATUS_SCHEDULED' && game.status !== 'STATUS_PRE_GAME'
+	);
+}
+
 export function ScheduleList({
 	onLoadingChange,
 	onSeasonChange,
+	playedOnly = false,
 }: {
 	onLoadingChange?: (loading: boolean) => void;
 	onSeasonChange?: (season: string) => void;
+	/** Tab view: drop games that have not kicked off. The schedule modal keeps the full list. */
+	playedOnly?: boolean;
 }) {
 	const [games, setGames] = useState<Game[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
@@ -93,10 +102,14 @@ export function ScheduleList({
 		);
 	}
 
-	if (!games || games.length === 0) {
+	const visibleGames = playedOnly ? games.filter(hasStarted) : games;
+
+	if (!visibleGames || visibleGames.length === 0) {
 		return (
 			<div className='w-full flex items-center justify-center py-12'>
-				<p className='text-foreground/60'>No games scheduled.</p>
+				<p className='text-foreground/60'>
+					{playedOnly ? 'No completed games yet.' : 'No games scheduled.'}
+				</p>
 			</div>
 		);
 	}
@@ -110,7 +123,7 @@ export function ScheduleList({
 	return (
 		<>
 			<div className='flex flex-col gap-2'>
-				{games.map((g) => {
+				{visibleGames.map((g) => {
 					const opponent = g.isTexasHome ? g.away : g.home;
 					const opponentRank = getOpponentRank(g);
 					const ha = g.neutralSite ? 'N' : g.isTexasHome ? 'vs' : '@';

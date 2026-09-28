@@ -17,7 +17,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { Game } from '../types';
 import gameModes from '../constants/gameModes';
-import Loading from './loading';
 
 interface ScoreCardProps {
 	currentGameData: Game | null;
@@ -206,13 +205,7 @@ export default function ScoreCard({
 		);
 	}
 
-	if (loading) {
-		return (
-			<div className='w-full h-full flex items-center justify-center'>
-				<Loading />
-			</div>
-		);
-	}
+	if (loading) return null;
 
 	if (!currentGameData) {
 		const offseasonMode = gameModes.offseason;
@@ -313,9 +306,9 @@ export default function ScoreCard({
 		<div
 			className={`glass-card ${modeAccentClass} ${shellClass} overflow-hidden relative flex flex-col`}
 		>
-			<div className='p-4 flex-1 min-h-0 flex flex-col'>
+			<div className='p-4 flex-1 min-h-min flex flex-col'>
 				<motion.div
-					className='grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5 items-stretch w-full flex-1 min-h-0'
+					className='grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5 items-stretch w-full flex-1 min-h-min'
 					variants={contentVariants}
 					initial='hidden'
 					animate='visible'
