@@ -178,7 +178,7 @@ export default function Home() {
 			role='tabpanel'
 			id={`panel-${resolvedTab}`}
 			aria-labelledby={`tab-${resolvedTab}`}
-			className='min-w-0 animate-fade-in'
+			className='min-w-0 flex-1 flex flex-col min-h-0 animate-fade-in'
 		>
 			{resolvedTab === 'last-season-results' && (
 				<div className='pt-4'>
@@ -194,9 +194,11 @@ export default function Home() {
 				/>
 			)}
 			{resolvedTab === 'schedule' && (
-				<div className='pt-4 pb-1 max-h-[min(70vh,520px)] overflow-y-auto overscroll-contain'>
-					<ScheduleList playedOnly />
-					<p className='text-[10px] text-foreground/30 mt-3 px-1'>
+				<div className='pt-4 flex flex-col flex-1 min-h-0'>
+					<div className='min-h-0 flex-1 overflow-y-auto overscroll-contain'>
+						<ScheduleList playedOnly />
+					</div>
+					<p className='shrink-0 text-[10px] text-foreground/30 pt-3 px-1'>
 						<span className='text-accent-gold'>*</span> neutral site
 					</p>
 				</div>
@@ -218,7 +220,7 @@ export default function Home() {
 				refreshData={handleRefreshData}
 			/>
 			<div className='flex flex-col items-center justify-center w-full min-h-[100dvh] px-4 py-10'>
-				<div className='w-full max-w-[810px] lg:max-w-[1120px] flex flex-col items-center gap-10 md:gap-14'>
+				<div className='w-full max-w-[810px] lg:max-w-[1120px] flex flex-col items-center gap-8 md:gap-10'>
 					<AnimatePresence mode='popLayout'>
 						{showingIntro ? (
 							<motion.div

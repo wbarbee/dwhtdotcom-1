@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
 	Modal,
 	ModalContent,
@@ -85,6 +85,11 @@ export function ScheduleList({
 			prev[stats.eventId] ? prev : { ...prev, [stats.eventId]: stats },
 		);
 	}, []);
+
+	const closeDetail = useCallback(() => {
+		setDetailGame(null);
+	}, []);
+	const detailPress = useTouchClose(closeDetail);
 
 	if (error) {
 		return (
@@ -235,7 +240,7 @@ export function ScheduleList({
 				onOpenChange={(open) => {
 					if (!open) {
 						setDetailGame(null);
-						unlockPageInteraction();
+						deferUnlock();
 					}
 				}}
 				scrollBehavior='inside'
@@ -279,11 +284,7 @@ export function ScheduleList({
 								<button
 									type='button'
 									className={modalCloseButtonClass}
-									onClick={() => {
-										onClose();
-										setDetailGame(null);
-										unlockPageInteraction();
-									}}
+									{...detailPress}
 								>
 									Close
 								</button>
@@ -309,45 +310,67 @@ function getDefaultSeasonLabel(): string {
 
 /** NextUI/React Aria can leave body scroll-lock / pointer-events after close — especially Safari. */
 function unlockPageInteraction() {
-	const unlock = () => {
-		const { body, documentElement: html } = document;
-		body.style.removeProperty('overflow');
-		body.style.removeProperty('padding-right');
-		body.style.removeProperty('pointer-events');
-		html.style.removeProperty('overflow');
-		html.style.removeProperty('padding-right');
-		html.style.removeProperty('pointer-events');
-		body.removeAttribute('data-scroll-locked');
+	const { body, documentElement: html } = document;
+	body.style.removeProperty('overflow');
+	body.style.removeProperty('padding-right');
+	body.style.removeProperty('pointer-events');
+	html.style.removeProperty('overflow');
+	html.style.removeProperty('padding-right');
+	html.style.removeProperty('pointer-events');
+	body.removeAttribute('data-scroll-locked');
 
-		document.querySelectorAll('[inert]').forEach((el) => {
-			el.removeAttribute('inert');
-		});
+	document.querySelectorAll('[inert]').forEach((el) => {
+		el.removeAttribute('inert');
+	});
 
-		// Clear stuck inline pointer-events from React Aria hideOthers (Safari often keeps these).
-		body.querySelectorAll('*').forEach((el) => {
-			if (!(el instanceof HTMLElement)) return;
-			if (el.style.pointerEvents === 'none') {
-				el.style.removeProperty('pointer-events');
+	document.querySelectorAll<HTMLElement>('[style*="pointer-events"]').forEach((el) => {
+		if (el.style.pointerEvents === 'none') {
+			el.style.removeProperty('pointer-events');
+		}
+	});
+}
+
+function deferUnlock() {
+	requestAnimationFrame(unlockPageInteraction);
+	window.setTimeout(unlockPageInteraction, 300);
+}
+
+/**
+ * iOS treats a click inside a scroll container as a possible scroll and can
+ * wait seconds before firing it. Touch closes on pointerup instead.
+ */
+function useTouchClose(close: () => void) {
+	const closeRef = useRef(close);
+	const closedByTouch = useRef(false);
+	closeRef.current = close;
+
+	return {
+		onPointerUp: (e: React.PointerEvent<HTMLButtonElement>) => {
+			if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
+			e.preventDefault();
+			e.stopPropagation();
+			closedByTouch.current = true;
+			closeRef.current();
+		},
+		onClick: (e: React.MouseEvent<HTMLButtonElement>) => {
+			if (closedByTouch.current) {
+				closedByTouch.current = false;
+				e.preventDefault();
+				e.stopPropagation();
+				return;
 			}
-		});
+			closeRef.current();
+		},
 	};
-
-	unlock();
-	requestAnimationFrame(unlock);
-	window.setTimeout(unlock, 0);
-	window.setTimeout(unlock, 50);
-	window.setTimeout(unlock, 150);
-	window.setTimeout(unlock, 400);
-	window.setTimeout(unlock, 700);
 }
 
 const modalCloseButtonClass =
-	'bg-burntOrange hover:bg-burntOrange-600 text-white font-medium rounded-lg transition-colors text-sm px-3 h-8 inline-flex items-center justify-center relative z-[70]';
+	'touch-manipulation bg-burntOrange hover:bg-burntOrange-600 text-white font-medium rounded-lg transition-colors text-sm px-3 h-8 inline-flex items-center justify-center relative z-[70]';
 
 const sharedModalClassNames = (isMobile: boolean) => ({
 	wrapper: isMobile
-		? '!h-[100dvh] items-stretch z-[100]'
-		: 'items-center z-[100]',
+		? '!h-[100dvh] items-stretch z-[100] !overflow-hidden'
+		: 'items-center z-[100] !overflow-hidden',
 	base: isMobile
 		? 'max-h-[100dvh] m-0 rounded-none bg-surface-50 dark:bg-surface-950'
 		: 'max-h-[85dvh] m-2 rounded-xl glass-card flex flex-col',
@@ -359,7 +382,7 @@ const sharedModalClassNames = (isMobile: boolean) => ({
 	header: 'flex-shrink-0 relative z-[1]',
 	body: 'px-4 py-2 overflow-y-auto overscroll-contain flex-1 min-h-0',
 	footer:
-		'flex-shrink-0 relative z-[70] pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]',
+		'touch-manipulation flex-shrink-0 relative z-[70] pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]',
 });
 
 
@@ -371,13 +394,13 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 
 	useEffect(() => {
 		if (isOpen) return;
-		unlockPageInteraction();
+		deferUnlock();
 	}, [isOpen]);
 
 	const closeModal = () => {
 		onClose();
-		unlockPageInteraction();
 	};
+	const closePress = useTouchClose(closeModal);
 
 	const handleOpenChange = (open: boolean) => {
 		if (open) {
@@ -444,7 +467,7 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 								<button
 									type='button'
 									className={`${modalCloseButtonClass}${isTableLoading ? ' ml-auto' : ''}`}
-									onClick={closeModal}
+									{...closePress}
 								>
 									Close
 								</button>
