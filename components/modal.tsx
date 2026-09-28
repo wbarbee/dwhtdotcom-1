@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
 	Modal,
 	ModalContent,
@@ -47,6 +47,7 @@ export function ScheduleList({
 		Record<string, GameSummaryStats>
 	>({});
 	const isMobile = useMediaQuery('(max-width: 640px)');
+	useSuspendPageFilters(detailGame !== null);
 
 	useEffect(() => {
 		let mounted = true;
@@ -411,6 +412,27 @@ function deferUnlock() {
 	window.setTimeout(unlockPageInteraction, 300);
 }
 
+/**
+ * iOS Safari delays taps by several seconds on fixed overlays while any
+ * backdrop-filter or large blur is on the page. Drop those while a modal is open.
+ */
+let openModalCount = 0;
+
+function useSuspendPageFilters(active: boolean) {
+	useLayoutEffect(() => {
+		if (!active) return;
+		openModalCount += 1;
+		document.documentElement.classList.add('dwht-modal-open');
+		return () => {
+			openModalCount -= 1;
+			if (openModalCount <= 0) {
+				openModalCount = 0;
+				document.documentElement.classList.remove('dwht-modal-open');
+			}
+		};
+	}, [active]);
+}
+
 const modalCloseButtonClass =
 	'touch-manipulation bg-burntOrange hover:bg-burntOrange-600 text-white font-medium rounded-lg transition-colors text-sm px-3 h-8 inline-flex items-center justify-center relative z-[80]';
 
@@ -423,7 +445,7 @@ const sharedModalClassNames = (isMobile: boolean) => ({
 		: 'items-center z-[100] !overflow-hidden',
 	base: isMobile
 		? 'max-h-[100dvh] m-0 rounded-none bg-surface-50 dark:bg-surface-950'
-		: 'max-h-[85dvh] m-2 rounded-xl glass-card flex flex-col',
+		: 'max-h-[85dvh] m-2 rounded-xl bg-surface-50 dark:bg-surface-950 border border-black/10 dark:border-white/10 shadow-xl flex flex-col',
 	backdrop: isMobile
 		? 'bg-surface-50 dark:bg-surface-950 z-[99]'
 		: 'z-[99]',
@@ -441,6 +463,7 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 	const isMobile = useMediaQuery('(max-width: 640px)');
 	const [isTableLoading, setIsTableLoading] = useState(true);
 	const [seasonLabel, setSeasonLabel] = useState(getDefaultSeasonLabel);
+	useSuspendPageFilters(isOpen);
 
 	useEffect(() => {
 		if (isOpen) return;

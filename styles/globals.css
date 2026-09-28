@@ -50,6 +50,17 @@
 		border-radius: 1rem;
 	}
 
+	/* Safari on iPhone delays taps on a fixed modal for seconds while these run. */
+	html.dwht-modal-open .glass-card {
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
+
+	html.dwht-modal-open .ambient-orb {
+		filter: none;
+		animation: none;
+	}
+
 	.dot-grid {
 		background-image: radial-gradient(
 			circle,
