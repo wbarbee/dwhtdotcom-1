@@ -7,6 +7,13 @@ import {
 } from "../types";
 import { mockFullSeason, getGameByMode } from "../utils/mockData";
 import { normalizeRank } from "../utils/rankUtils";
+import {
+  awaitingChampionship,
+  championshipKickoffFromGames,
+  completedSeasonYear,
+  isSeasonOfficiallyOver,
+  liveFootballSeasonYear,
+} from "../utils/seasonWindow";
 
 const UNRANKED = 99;
 
@@ -132,10 +139,13 @@ const processEvents = (data: any): Game[] => {
     const pointDifferential =
       texasScore !== null && oppScore !== null ? texasScore - oppScore : null;
 
-    // Rivalry and conference detection
+    // Rivalry and conference detection. Bowls and CFP games are not SEC games.
+    const seasonPhase =
+      event.seasonPhase === "postseason" ? "postseason" : "regular";
     const isRivalry = opponentId in RIVALRY_MAP;
     const rivalryName = RIVALRY_MAP[opponentId];
-    const isConferenceGame = SEC_TEAM_IDS.has(opponentId);
+    const isConferenceGame =
+      seasonPhase === "regular" && SEC_TEAM_IDS.has(opponentId);
 
     let game: Game = {
       id: event.id,
@@ -166,10 +176,53 @@ const processEvents = (data: any): Game[] => {
       isRivalry,
       rivalryName,
       isConferenceGame,
+      seasonPhase,
+      eventName: event.eventName || undefined,
     };
 
     return game;
-  });
+  }).sort((a: Game, b: Game) => a.timestamp - b.timestamp);
+};
+
+const fetchChampionshipKickoff = async (
+  season: number,
+): Promise<number | null> => {
+  try {
+    const data = await fetchJson(`/api/championship?season=${season}`);
+    return typeof data?.kickoff === "number" ? data.kickoff : null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Regular season plus bowls/CFP for the football year still in progress.
+ * Once Texas is eliminated, or the national championship is a couple of days
+ * behind us, hand back next year's schedule so the page can go to the archive.
+ */
+const fetchDisplayedSeason = async (): Promise<Game[]> => {
+  const now = new Date();
+  const year = liveFootballSeasonYear(now);
+  if (year === null) {
+    return processEvents(await fetchSchedule(now.getFullYear()));
+  }
+
+  const games = processEvents(await fetchSchedule(year));
+  const nowMs = now.getTime();
+  const ownTitle = championshipKickoffFromGames(games);
+  let titleKickoff = ownTitle;
+  if (ownTitle === null && awaitingChampionship(games, nowMs)) {
+    titleKickoff = await fetchChampionshipKickoff(year);
+  }
+  if (!isSeasonOfficiallyOver(games, nowMs, titleKickoff)) {
+    return games;
+  }
+
+  try {
+    return processEvents(await fetchSchedule(year + 1));
+  } catch {
+    return games;
+  }
 };
 
 export const fetchGameData = async (
@@ -184,8 +237,7 @@ export const fetchGameData = async (
       // Keep the fake season so the rest of the page doesn't flip to off-season.
       return [mockGame, ...mockFullSeason];
     }
-    const scheduleData = await fetchSchedule();
-    return processEvents(scheduleData);
+    return fetchDisplayedSeason();
   } finally {
     if (setIsRefreshing) setIsRefreshing(false);
   }
@@ -199,34 +251,19 @@ export const refetchGameData = async (
 };
 
 /**
- * Fetch the upcoming season schedule (uses seasontype=2 to get future scheduled games).
- * Used by the schedule modal.
+ * Same slate the hero uses: regular season and postseason together, until
+ * that season is officially over.
  */
 export const fetchUpcomingSchedule = async (): Promise<Game[]> => {
-  // Try default first (works during active season)
-  let data = await fetchSchedule();
-  if (data.events && data.events.length > 0) {
-    return processEvents(data);
-  }
-  // During preseason, ESPN needs seasontype=2 to return the upcoming regular season
-  const currentYear = new Date().getFullYear();
-  const seasonYear = new Date().getMonth() < 8 ? currentYear : currentYear + 1;
-  data = await fetchSchedule(seasonYear, 2);
-  if (data.events && data.events.length > 0) {
-    return processEvents(data);
-  }
-  return [];
+  return fetchDisplayedSeason();
 };
 
 /**
- * Fetch the most recent completed season's games.
+ * Fetch the most recent completed season's games, including bowls and the CFP.
  * Used by the Hook Them Index during off-season.
  */
 export const fetchLastSeasonData = async (): Promise<Game[]> => {
-  const currentYear = new Date().getFullYear();
-  const recentSeason =
-    new Date().getMonth() < 8 ? currentYear - 1 : currentYear;
-  const data = await fetchSchedule(recentSeason);
+  const data = await fetchSchedule(completedSeasonYear(new Date()));
   if (data.events && data.events.length > 0) {
     return processEvents(data);
   }

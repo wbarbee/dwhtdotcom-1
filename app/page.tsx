@@ -8,6 +8,7 @@ import HookEmIndex from '../components/hook-em-index';
 import LastSeasonResults from '../components/last-season-results';
 import DevOverride from '../components/dev-override';
 import { useCurrentGameData } from '../hooks/useCurrentGameData';
+import { completedSeasonYear } from '../utils/seasonWindow';
 
 type TabKey = 'last-season-results' | 'index' | 'schedule';
 
@@ -107,8 +108,7 @@ export default function Home() {
 		const now = new Date();
 		let startYear: number;
 		if (isOffseason) {
-			// Match the season requested by fetchLastSeasonData.
-			startYear = now.getMonth() < 8 ? now.getFullYear() - 1 : now.getFullYear();
+			startYear = completedSeasonYear(now);
 		} else if (allGames.length > 0) {
 			const firstGame = [...allGames].sort((a, b) => a.timestamp - b.timestamp)[0];
 			const firstDate = new Date(firstGame.timestamp);

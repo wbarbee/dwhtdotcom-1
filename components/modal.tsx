@@ -11,7 +11,7 @@ import {
 	useDisclosure,
 } from '@nextui-org/react';
 import { useMediaQuery } from '@react-hook/media-query';
-import { Calendar } from 'lucide-react';
+import { Calendar, X } from 'lucide-react';
 import { fetchUpcomingSchedule } from '../hooks/fetchGameData';
 import { Game, GameSummaryStats } from '../types';
 import { getOpponentRank } from '../utils/rankUtils';
@@ -88,8 +88,8 @@ export function ScheduleList({
 
 	const closeDetail = useCallback(() => {
 		setDetailGame(null);
+		deferUnlock();
 	}, []);
-	const detailPress = useTouchClose(closeDetail);
 
 	if (error) {
 		return (
@@ -174,13 +174,20 @@ export function ScheduleList({
 								<span className='text-xs text-foreground/30 w-5 text-center shrink-0'>
 									{ha}
 								</span>
-								<span className='text-sm text-foreground/90 truncate'>
-									{opponentRank !== null && (
-										<span className='text-burntOrange text-xs font-bold mr-1'>
-											#{opponentRank}
+								<span className='flex flex-col min-w-0'>
+									<span className='text-sm text-foreground/90 truncate'>
+										{opponentRank !== null && (
+											<span className='text-burntOrange text-xs font-bold mr-1'>
+												#{opponentRank}
+											</span>
+										)}
+										{opponent}
+									</span>
+									{g.seasonPhase === 'postseason' && g.eventName && (
+										<span className='text-[10px] text-foreground/40 truncate'>
+											{g.eventName}
 										</span>
 									)}
-									{opponent}
 								</span>
 								{g.neutralSite && (
 									<span className='text-[10px] text-accent-gold'>*</span>
@@ -248,6 +255,7 @@ export function ScheduleList({
 				// Scroll lock leaves Safari unable to tap after close.
 				shouldBlockScroll={false}
 				disableAnimation={isMobile}
+				hideCloseButton
 				isDismissable
 				portalContainer={
 					typeof document !== 'undefined' ? document.body : undefined
@@ -257,7 +265,17 @@ export function ScheduleList({
 				<ModalContent>
 					{(onClose) => (
 						<>
-							<ModalHeader className='flex flex-col gap-0.5 pb-1'>
+							<InstantCloseButton
+								ariaLabel='Close'
+								className={modalDismissButtonClass}
+								onClose={() => {
+									onClose();
+									closeDetail();
+								}}
+							>
+								<X size={18} strokeWidth={1.75} />
+							</InstantCloseButton>
+							<ModalHeader className='flex flex-col gap-0.5 pb-1 pr-12'>
 								<span className='text-lg font-display italic text-gradient-orange'>
 									{detailGame?.neutralSite || detailGame?.isTexasHome
 										? 'vs.'
@@ -281,13 +299,15 @@ export function ScheduleList({
 								)}
 							</ModalBody>
 							<ModalFooter>
-								<button
-									type='button'
+								<InstantCloseButton
 									className={modalCloseButtonClass}
-									{...detailPress}
+									onClose={() => {
+										onClose();
+										closeDetail();
+									}}
 								>
 									Close
-								</button>
+								</InstantCloseButton>
 							</ModalFooter>
 						</>
 					)}
@@ -330,42 +350,72 @@ function unlockPageInteraction() {
 	});
 }
 
+/**
+ * iOS can wait several seconds before turning a tap inside a modal into a
+ * click. A non-passive touchstart closes immediately and cancels that click.
+ */
+function InstantCloseButton({
+	onClose,
+	className,
+	children,
+	ariaLabel,
+}: {
+	onClose: () => void;
+	className?: string;
+	children: React.ReactNode;
+	ariaLabel?: string;
+}) {
+	const onCloseRef = useRef(onClose);
+	const buttonRef = useRef<HTMLButtonElement>(null);
+	onCloseRef.current = onClose;
+
+	useEffect(() => {
+		const el = buttonRef.current;
+		if (!el) return;
+		const closeFromTouch = (e: TouchEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			onCloseRef.current();
+		};
+		el.addEventListener('touchstart', closeFromTouch, {
+			passive: false,
+			capture: true,
+		});
+		return () => el.removeEventListener('touchstart', closeFromTouch, true);
+	}, []);
+
+	return (
+		<button
+			ref={buttonRef}
+			type='button'
+			className={className}
+			aria-label={ariaLabel}
+			style={{ touchAction: 'manipulation' }}
+			onClick={(e) => {
+				const pointerType =
+					e.nativeEvent instanceof PointerEvent ? e.nativeEvent.pointerType : '';
+				if (pointerType === 'touch' || pointerType === 'pen') {
+					e.preventDefault();
+					return;
+				}
+				onCloseRef.current();
+			}}
+		>
+			{children}
+		</button>
+	);
+}
+
 function deferUnlock() {
 	requestAnimationFrame(unlockPageInteraction);
 	window.setTimeout(unlockPageInteraction, 300);
 }
 
-/**
- * iOS treats a click inside a scroll container as a possible scroll and can
- * wait seconds before firing it. Touch closes on pointerup instead.
- */
-function useTouchClose(close: () => void) {
-	const closeRef = useRef(close);
-	const closedByTouch = useRef(false);
-	closeRef.current = close;
-
-	return {
-		onPointerUp: (e: React.PointerEvent<HTMLButtonElement>) => {
-			if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
-			e.preventDefault();
-			e.stopPropagation();
-			closedByTouch.current = true;
-			closeRef.current();
-		},
-		onClick: (e: React.MouseEvent<HTMLButtonElement>) => {
-			if (closedByTouch.current) {
-				closedByTouch.current = false;
-				e.preventDefault();
-				e.stopPropagation();
-				return;
-			}
-			closeRef.current();
-		},
-	};
-}
-
 const modalCloseButtonClass =
-	'touch-manipulation bg-burntOrange hover:bg-burntOrange-600 text-white font-medium rounded-lg transition-colors text-sm px-3 h-8 inline-flex items-center justify-center relative z-[70]';
+	'touch-manipulation bg-burntOrange hover:bg-burntOrange-600 text-white font-medium rounded-lg transition-colors text-sm px-3 h-8 inline-flex items-center justify-center relative z-[80]';
+
+const modalDismissButtonClass =
+	'touch-manipulation absolute top-3 right-3 z-[80] min-w-11 min-h-11 inline-flex items-center justify-center rounded-full text-foreground/60 hover:bg-black/5 active:bg-black/10 dark:hover:bg-white/10 dark:active:bg-white/15';
 
 const sharedModalClassNames = (isMobile: boolean) => ({
 	wrapper: isMobile
@@ -400,7 +450,6 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 	const closeModal = () => {
 		onClose();
 	};
-	const closePress = useTouchClose(closeModal);
 
 	const handleOpenChange = (open: boolean) => {
 		if (open) {
@@ -438,6 +487,7 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 				size={isMobile ? 'full' : '2xl'}
 				shouldBlockScroll={false}
 				disableAnimation={isMobile}
+				hideCloseButton
 				isDismissable
 				portalContainer={
 					typeof document !== 'undefined' ? document.body : undefined
@@ -447,7 +497,14 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 				<ModalContent>
 					{() => (
 						<>
-							<ModalHeader className='flex flex-col gap-1 pb-2'>
+							<InstantCloseButton
+								ariaLabel='Close'
+								className={modalDismissButtonClass}
+								onClose={closeModal}
+							>
+								<X size={18} strokeWidth={1.75} />
+							</InstantCloseButton>
+							<ModalHeader className='flex flex-col gap-1 pb-2 pr-12'>
 								<span className='text-lg font-display italic text-gradient-orange'>
 									{seasonLabel} Schedule
 								</span>
@@ -464,13 +521,12 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 										<span className='text-accent-gold'>*</span> neutral site
 									</span>
 								)}
-								<button
-									type='button'
+								<InstantCloseButton
 									className={`${modalCloseButtonClass}${isTableLoading ? ' ml-auto' : ''}`}
-									{...closePress}
+									onClose={closeModal}
 								>
 									Close
-								</button>
+								</InstantCloseButton>
 							</ModalFooter>
 						</>
 					)}

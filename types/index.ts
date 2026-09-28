@@ -36,6 +36,10 @@ export type Game = {
 	isRivalry: boolean;
 	rivalryName?: string;
 	isConferenceGame?: boolean;
+	/** Regular-season games stay on the schedule through bowls and the CFP. */
+	seasonPhase?: 'regular' | 'postseason';
+	/** Bowl or playoff name. Regular-season notes are not copied here. */
+	eventName?: string;
 };
 
 export type SeasonRecord = {

@@ -78,13 +78,20 @@ export default function LastSeasonResults() {
 								<span className='text-xs text-foreground/30 w-4 sm:w-5 text-center shrink-0'>
 									{ha}
 								</span>
-								<span className='text-xs sm:text-sm text-foreground/90 truncate'>
-									{opponentRank !== null && (
-										<span className='text-burntOrange text-xs font-bold mr-1'>
-											#{opponentRank}
+								<span className='flex flex-col min-w-0'>
+									<span className='text-xs sm:text-sm text-foreground/90 truncate'>
+										{opponentRank !== null && (
+											<span className='text-burntOrange text-xs font-bold mr-1'>
+												#{opponentRank}
+											</span>
+										)}
+										{opponent}
+									</span>
+									{g.seasonPhase === 'postseason' && g.eventName && (
+										<span className='text-[10px] text-foreground/40 truncate'>
+											{g.eventName}
 										</span>
 									)}
-									{opponent}
 								</span>
 								{g.neutralSite && (
 									<span className='text-[10px] text-accent-gold'>*</span>

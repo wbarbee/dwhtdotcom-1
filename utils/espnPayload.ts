@@ -15,9 +15,16 @@ export function slimSchedule(data: any) {
       const competitors = Array.isArray(competition.competitors)
         ? competition.competitors
         : [];
+      const seasonPhase =
+        Number(event?.seasonType?.type) === 3 ? "postseason" : "regular";
+      const headline = (competition.notes || []).find(
+        (note: any) => note?.headline,
+      )?.headline;
       return {
         id: event?.id,
         date: event?.date,
+        seasonPhase,
+        eventName: seasonPhase === "postseason" ? headline || "" : "",
         competitions: [
           {
             neutralSite: Boolean(competition.neutralSite),
