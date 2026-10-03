@@ -306,14 +306,14 @@ export default function ScoreCard({
 		<div
 			className={`glass-card ${modeAccentClass} ${shellClass} overflow-hidden relative flex flex-col`}
 		>
-			<div className='p-4 flex-1 min-h-min flex flex-col'>
+			<div className='p-4 flex-1 min-h-0 flex flex-col'>
 				<motion.div
-					className='grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5 items-stretch w-full flex-1 min-h-min'
+					className='grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5 items-stretch w-full flex-1 min-h-0'
 					variants={contentVariants}
 					initial='hidden'
 					animate='visible'
 				>
-					<div className='relative md:col-span-5 flex min-h-[200px] md:min-h-0 md:self-stretch md:h-auto'>
+					<div className='relative md:col-span-6 flex min-h-[200px] md:min-h-0 md:self-stretch md:h-auto'>
 						<div
 							className='w-full h-full min-h-[200px] aspect-[3/4] max-h-[260px] md:aspect-auto md:max-h-none md:min-h-0 rounded-lg bg-cover bg-center overflow-hidden flex items-center justify-center'
 							style={{
@@ -332,7 +332,7 @@ export default function ScoreCard({
 						</div>
 					</div>
 					<motion.div
-						className='flex flex-col md:col-span-7 items-center justify-center text-center gap-5 md:gap-6 px-1 pb-10 min-w-0'
+						className='flex flex-col md:col-span-6 items-center justify-center text-center gap-5 md:gap-6 px-1 pb-10 min-w-0'
 						variants={itemVariants}
 					>
 						{(modeData.title || currentMode === 'pregame') && (

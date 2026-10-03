@@ -11,6 +11,8 @@ interface HookEmIndexProps {
 	className?: string;
 	/** When true, skip the glass-card chrome (parent already provides a frame). */
 	bare?: boolean;
+	/** Fired when a factor row opens or closes, before the card resizes. */
+	onExpandedChange?: (expanded: boolean) => void;
 }
 
 function AnimatedNumber({
@@ -155,6 +157,7 @@ export default function HookEmIndex({
 	games,
 	className,
 	bare = false,
+	onExpandedChange,
 }: HookEmIndexProps) {
 	const [fallbackGames, setFallbackGames] = useState<Game[] | null>(null);
 	const [fallbackLoading, setFallbackLoading] = useState(false);
@@ -231,7 +234,9 @@ export default function HookEmIndex({
 
 	const toggleFactor = (key: string, e: React.MouseEvent) => {
 		e.stopPropagation();
-		setOpenFactor((prev) => (prev === key ? null : key));
+		const next = openFactor === key ? null : key;
+		onExpandedChange?.(next != null);
+		setOpenFactor(next);
 	};
 
 	return (

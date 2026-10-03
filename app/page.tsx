@@ -28,7 +28,9 @@ export default function Home() {
 	/** Remount Hook Them Index on each visit so expand state always starts collapsed. */
 	const [indexResetKey, setIndexResetKey] = useState(0);
 	const rightColRef = useRef<HTMLDivElement>(null);
-	/** Desktop floor so Hook Thems (to Date) cannot shrink the row below the Index tab. */
+	/** True while a factor row is open, so that growth is not stored as the default height. */
+	const indexExpandedRef = useRef(false);
+	/** Collapsed Index height. Other tabs, and any tab click, lock both columns to this. */
 	const [indexTabHeightPx, setIndexTabHeightPx] = useState<number | null>(null);
 
 	const reduceMotion = useReducedMotion();
@@ -70,6 +72,7 @@ export default function Home() {
 			return () => mq.removeEventListener('change', clearOnMobile);
 		}
 		const sync = () => {
+			if (indexExpandedRef.current) return;
 			const h = Math.round(right.getBoundingClientRect().height);
 			if (h > 0) setIndexTabHeightPx((prev) => (prev === h ? prev : h));
 		};
@@ -157,6 +160,7 @@ export default function Home() {
 								: 'text-foreground/40 hover:text-foreground/60'
 						}`}
 						onClick={() => {
+							indexExpandedRef.current = false;
 							setActiveTab(tab.key);
 							if (tab.key === 'index') {
 								setIndexResetKey((k) => k + 1);
@@ -191,6 +195,9 @@ export default function Home() {
 					games={allGames}
 					bare
 					className='px-0 pt-4 pb-1'
+					onExpandedChange={(expanded) => {
+						indexExpandedRef.current = expanded;
+					}}
 				/>
 			)}
 			{resolvedTab === 'schedule' && (
@@ -291,32 +298,34 @@ export default function Home() {
 								ease: [0.22, 1, 0.36, 1],
 							}}
 						>
-							<div className='flex flex-col gap-3 min-w-0 w-full lg:h-full'>
-								{hasCompletedGames && (
-									<div className='shrink-0 w-full'>
-										<SeasonRecord
-											games={allGames}
-											currentGame={currentGameData}
+							<div className='relative min-w-0 w-full'>
+								<div className='flex flex-col gap-3 min-w-0 w-full lg:absolute lg:inset-0'>
+									{hasCompletedGames && (
+										<div className='shrink-0 w-full'>
+											<SeasonRecord
+												games={allGames}
+												currentGame={currentGameData}
+											/>
+										</div>
+									)}
+									<div className='flex flex-col flex-1 min-h-0 min-w-0 w-full'>
+										<ScoreCard
+											currentGameData={currentGameData}
+											refreshData={() => handleRefreshData(overrideMode)}
+											error={error}
+											loading={false}
+											className='w-full max-w-none min-h-0 h-full'
 										/>
 									</div>
-								)}
-								<div className='flex flex-col flex-1 min-h-min min-w-0 w-full'>
-									<ScoreCard
-										currentGameData={currentGameData}
-										refreshData={() => handleRefreshData(overrideMode)}
-										error={error}
-										loading={false}
-										className='w-full max-w-none min-h-min h-full'
-									/>
 								</div>
 							</div>
 
 							<div
 								ref={rightColRef}
-								className='glass-card flex flex-col min-w-0 w-full lg:h-full px-5 pt-2 pb-4'
+								className='glass-card flex flex-col min-w-0 w-full px-5 pt-2 pb-4'
 								style={
-									indexTabHeightPx != null
-										? { minHeight: indexTabHeightPx }
+									indexTabHeightPx != null && resolvedTab !== 'index'
+										? { height: indexTabHeightPx }
 										: undefined
 								}
 							>
