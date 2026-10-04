@@ -12,6 +12,8 @@ import { completedSeasonYear } from '../utils/seasonWindow';
 
 type TabKey = 'last-season-results' | 'index' | 'schedule';
 
+const INTRO_MIN_MS = 2000;
+
 export default function Home() {
 	const {
 		currentGameData,
@@ -32,11 +34,17 @@ export default function Home() {
 	const [indexTabHeightPx, setIndexTabHeightPx] = useState<number | null>(null);
 
 	const reduceMotion = useReducedMotion();
-	const showingIntro = loading;
+	const [introMinMet, setIntroMinMet] = useState(false);
+	const showingIntro = loading || !introMinMet;
 	const hasCompletedGames = allGames.some((g) => g.status === 'STATUS_FINAL');
 	const isOffseason = !hasCompletedGames;
 	const resolvedTab: TabKey =
 		activeTab ?? (isOffseason ? 'last-season-results' : 'index');
+
+	useEffect(() => {
+		const id = window.setTimeout(() => setIntroMinMet(true), INTRO_MIN_MS);
+		return () => window.clearTimeout(id);
+	}, []);
 
 	useEffect(() => {
 		if (!showingIntro) return;
