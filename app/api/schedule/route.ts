@@ -20,6 +20,7 @@ async function fetchSlim(params: URLSearchParams) {
   const response = await fetch(qs ? `${ESPN_SCHEDULE}?${qs}` : ESPN_SCHEDULE, {
     next: { revalidate: REVALIDATE_SECONDS },
     headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(5_000),
   });
   if (!response.ok) {
     throw new Error(String(response.status));
@@ -57,17 +58,12 @@ export async function GET(request: NextRequest) {
     // feed swaps to postseason-only once those games exist and drops the
     // regular-season schedule.
     if (season && !seasontype) {
-      const regular = await fetchSlim(
-        new URLSearchParams({ season, seasontype: "2" }),
-      );
-      let postseason = { team: { recordSummary: "" }, events: [] as any[] };
-      try {
-        postseason = await fetchSlim(
+      const [regular, postseason] = await Promise.all([
+        fetchSlim(new URLSearchParams({ season, seasontype: "2" })),
+        fetchSlim(
           new URLSearchParams({ season, seasontype: "3" }),
-        );
-      } catch {
-        // Regular season is the record we cannot lose. Bowls can lag.
-      }
+        ).catch(() => ({ team: { recordSummary: "" }, events: [] })),
+      ]);
       return NextResponse.json(mergeSeasonTypes(regular, postseason), {
         headers: cacheHeaders,
       });

@@ -50,17 +50,6 @@
 		border-radius: 1rem;
 	}
 
-	/* Safari on iPhone delays taps on a fixed modal for seconds while these run. */
-	html.dwht-modal-open .glass-card {
-		-webkit-backdrop-filter: none;
-		backdrop-filter: none;
-	}
-
-	html.dwht-modal-open .ambient-orb {
-		filter: none;
-		animation: none;
-	}
-
 	.dot-grid {
 		background-image: radial-gradient(
 			circle,
@@ -111,6 +100,20 @@
 
 	.dark .ambient-orb-2 {
 		background: radial-gradient(circle, rgba(192, 87, 0, 0.15) 0%, transparent 70%);
+	}
+}
+
+/* Keep touch devices off the large, continuously blurred compositor layers.
+   Do not toggle those layers during modal dismissal. */
+@media (max-width: 640px), (hover: none) and (pointer: coarse) {
+	.glass-card {
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
+
+	.ambient-orb {
+		display: none;
+		animation: none;
 	}
 }
 

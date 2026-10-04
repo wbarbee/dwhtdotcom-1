@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
 	Modal,
 	ModalContent,
@@ -47,7 +47,6 @@ export function ScheduleList({
 		Record<string, GameSummaryStats>
 	>({});
 	const isMobile = useMediaQuery('(max-width: 640px)');
-	useSuspendPageFilters(detailGame !== null);
 
 	useEffect(() => {
 		let mounted = true;
@@ -89,7 +88,6 @@ export function ScheduleList({
 
 	const closeDetail = useCallback(() => {
 		setDetailGame(null);
-		deferUnlock();
 	}, []);
 
 	if (error) {
@@ -246,16 +244,11 @@ export function ScheduleList({
 			<Modal
 				isOpen={detailGame !== null}
 				onOpenChange={(open) => {
-					if (!open) {
-						setDetailGame(null);
-						deferUnlock();
-					}
+					if (!open) closeDetail();
 				}}
 				scrollBehavior='inside'
 				size={isMobile ? 'full' : '2xl'}
-				// Scroll lock leaves Safari unable to tap after close.
-				shouldBlockScroll={false}
-				disableAnimation={isMobile}
+				disableAnimation
 				hideCloseButton
 				isDismissable
 				portalContainer={
@@ -266,16 +259,13 @@ export function ScheduleList({
 				<ModalContent>
 					{(onClose) => (
 						<>
-							<InstantCloseButton
+							<CloseButton
 								ariaLabel='Close'
 								className={modalDismissButtonClass}
-								onClose={() => {
-									onClose();
-									closeDetail();
-								}}
+								onClose={onClose}
 							>
 								<X size={18} strokeWidth={1.75} />
-							</InstantCloseButton>
+							</CloseButton>
 							<ModalHeader className='flex flex-col gap-0.5 pb-1 pr-12'>
 								<span className='text-lg font-display italic text-gradient-orange'>
 									{detailGame?.neutralSite || detailGame?.isTexasHome
@@ -300,15 +290,12 @@ export function ScheduleList({
 								)}
 							</ModalBody>
 							<ModalFooter>
-								<InstantCloseButton
+								<CloseButton
 									className={modalCloseButtonClass}
-									onClose={() => {
-										onClose();
-										closeDetail();
-									}}
+									onClose={onClose}
 								>
 									Close
-								</InstantCloseButton>
+								</CloseButton>
 							</ModalFooter>
 						</>
 					)}
@@ -329,33 +316,8 @@ function getDefaultSeasonLabel(): string {
 	return `${now.getFullYear()}`;
 }
 
-/** NextUI/React Aria can leave body scroll-lock / pointer-events after close — especially Safari. */
-function unlockPageInteraction() {
-	const { body, documentElement: html } = document;
-	body.style.removeProperty('overflow');
-	body.style.removeProperty('padding-right');
-	body.style.removeProperty('pointer-events');
-	html.style.removeProperty('overflow');
-	html.style.removeProperty('padding-right');
-	html.style.removeProperty('pointer-events');
-	body.removeAttribute('data-scroll-locked');
-
-	document.querySelectorAll('[inert]').forEach((el) => {
-		el.removeAttribute('inert');
-	});
-
-	document.querySelectorAll<HTMLElement>('[style*="pointer-events"]').forEach((el) => {
-		if (el.style.pointerEvents === 'none') {
-			el.style.removeProperty('pointer-events');
-		}
-	});
-}
-
-/**
- * iOS can wait several seconds before turning a tap inside a modal into a
- * click. A non-passive touchstart closes immediately and cancels that click.
- */
-function InstantCloseButton({
+/** Native activation handles touch, pen, mouse, and keyboard on one path. */
+function CloseButton({
 	onClose,
 	className,
 	children,
@@ -366,75 +328,20 @@ function InstantCloseButton({
 	children: React.ReactNode;
 	ariaLabel?: string;
 }) {
-	const onCloseRef = useRef(onClose);
-	const buttonRef = useRef<HTMLButtonElement>(null);
-	onCloseRef.current = onClose;
-
-	useEffect(() => {
-		const el = buttonRef.current;
-		if (!el) return;
-		const closeFromTouch = (e: TouchEvent) => {
-			e.preventDefault();
-			e.stopPropagation();
-			onCloseRef.current();
-		};
-		el.addEventListener('touchstart', closeFromTouch, {
-			passive: false,
-			capture: true,
-		});
-		return () => el.removeEventListener('touchstart', closeFromTouch, true);
-	}, []);
-
 	return (
 		<button
-			ref={buttonRef}
 			type='button'
 			className={className}
 			aria-label={ariaLabel}
-			style={{ touchAction: 'manipulation' }}
-			onClick={(e) => {
-				const pointerType =
-					e.nativeEvent instanceof PointerEvent ? e.nativeEvent.pointerType : '';
-				if (pointerType === 'touch' || pointerType === 'pen') {
-					e.preventDefault();
-					return;
-				}
-				onCloseRef.current();
-			}}
+			onClick={onClose}
 		>
 			{children}
 		</button>
 	);
 }
 
-function deferUnlock() {
-	requestAnimationFrame(unlockPageInteraction);
-	window.setTimeout(unlockPageInteraction, 300);
-}
-
-/**
- * iOS Safari delays taps by several seconds on fixed overlays while any
- * backdrop-filter or large blur is on the page. Drop those while a modal is open.
- */
-let openModalCount = 0;
-
-function useSuspendPageFilters(active: boolean) {
-	useLayoutEffect(() => {
-		if (!active) return;
-		openModalCount += 1;
-		document.documentElement.classList.add('dwht-modal-open');
-		return () => {
-			openModalCount -= 1;
-			if (openModalCount <= 0) {
-				openModalCount = 0;
-				document.documentElement.classList.remove('dwht-modal-open');
-			}
-		};
-	}, [active]);
-}
-
 const modalCloseButtonClass =
-	'touch-manipulation bg-burntOrange hover:bg-burntOrange-600 text-white font-medium rounded-lg transition-colors text-sm px-3 h-8 inline-flex items-center justify-center relative z-[80]';
+	'touch-manipulation bg-burntOrange hover:bg-burntOrange-600 text-white font-medium rounded-lg transition-colors text-sm px-4 min-w-11 min-h-11 inline-flex items-center justify-center relative z-[80]';
 
 const modalDismissButtonClass =
 	'touch-manipulation absolute top-3 right-3 z-[80] min-w-11 min-h-11 inline-flex items-center justify-center rounded-full text-foreground/60 hover:bg-black/5 active:bg-black/10 dark:hover:bg-white/10 dark:active:bg-white/15';
@@ -463,12 +370,6 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 	const isMobile = useMediaQuery('(max-width: 640px)');
 	const [isTableLoading, setIsTableLoading] = useState(true);
 	const [seasonLabel, setSeasonLabel] = useState(getDefaultSeasonLabel);
-	useSuspendPageFilters(isOpen);
-
-	useEffect(() => {
-		if (isOpen) return;
-		deferUnlock();
-	}, [isOpen]);
 
 	const closeModal = () => {
 		onClose();
@@ -487,7 +388,7 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 			{variant === 'wide' ? (
 				<Button
 					onPress={onOpen}
-					className='w-full h-11 rounded-xl bg-burntOrange/10 hover:bg-burntOrange/20 text-burntOrange border border-burntOrange/20 hover:border-burntOrange/30 backdrop-blur-sm font-medium text-sm transition-all gap-2'
+					className='w-full h-11 rounded-xl bg-burntOrange/10 hover:bg-burntOrange/20 text-burntOrange border border-burntOrange/20 hover:border-burntOrange/30 font-medium text-sm transition-all gap-2'
 					aria-label={`View ${seasonLabel} schedule`}
 				>
 					<CalendarIcon size={16} />
@@ -508,8 +409,7 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 				onOpenChange={handleOpenChange}
 				scrollBehavior='inside'
 				size={isMobile ? 'full' : '2xl'}
-				shouldBlockScroll={false}
-				disableAnimation={isMobile}
+				disableAnimation
 				hideCloseButton
 				isDismissable
 				portalContainer={
@@ -520,13 +420,13 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 				<ModalContent>
 					{() => (
 						<>
-							<InstantCloseButton
+							<CloseButton
 								ariaLabel='Close'
 								className={modalDismissButtonClass}
 								onClose={closeModal}
 							>
 								<X size={18} strokeWidth={1.75} />
-							</InstantCloseButton>
+							</CloseButton>
 							<ModalHeader className='flex flex-col gap-1 pb-2 pr-12'>
 								<span className='text-lg font-display italic text-gradient-orange'>
 									{seasonLabel} Schedule
@@ -544,12 +444,12 @@ export default function FullScoreModal({ variant = 'icon' }: FullScoreModalProps
 										<span className='text-accent-gold'>*</span> neutral site
 									</span>
 								)}
-								<InstantCloseButton
+								<CloseButton
 									className={`${modalCloseButtonClass}${isTableLoading ? ' ml-auto' : ''}`}
 									onClose={closeModal}
 								>
 									Close
-								</InstantCloseButton>
+								</CloseButton>
 							</ModalFooter>
 						</>
 					)}

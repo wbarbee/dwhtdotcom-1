@@ -12,8 +12,6 @@ import { completedSeasonYear } from '../utils/seasonWindow';
 
 type TabKey = 'last-season-results' | 'index' | 'schedule';
 
-const INTRO_MIN_MS = 2500;
-
 export default function Home() {
 	const {
 		currentGameData,
@@ -34,17 +32,11 @@ export default function Home() {
 	const [indexTabHeightPx, setIndexTabHeightPx] = useState<number | null>(null);
 
 	const reduceMotion = useReducedMotion();
-	const [introMinMet, setIntroMinMet] = useState(false);
-	const showingIntro = loading || !introMinMet;
+	const showingIntro = loading;
 	const hasCompletedGames = allGames.some((g) => g.status === 'STATUS_FINAL');
 	const isOffseason = !hasCompletedGames;
 	const resolvedTab: TabKey =
 		activeTab ?? (isOffseason ? 'last-season-results' : 'index');
-
-	useEffect(() => {
-		const id = window.setTimeout(() => setIntroMinMet(true), INTRO_MIN_MS);
-		return () => window.clearTimeout(id);
-	}, []);
 
 	useEffect(() => {
 		if (!showingIntro) return;
@@ -240,7 +232,7 @@ export default function Home() {
 										className='my-0 w-full text-[6cqw] md:text-[4cqw] lg:text-[3cqw] text-burntOrange text-center font-espn font-normal italic'
 										transition={{
 											layout: {
-												duration: reduceMotion ? 0 : 1.9,
+												duration: reduceMotion ? 0 : 0.2,
 												ease: [0.22, 1, 0.36, 1],
 											},
 										}}
@@ -251,7 +243,7 @@ export default function Home() {
 										aria-hidden='true'
 										className='mt-8'
 										exit={{ opacity: 0 }}
-										transition={{ duration: reduceMotion ? 0 : 0.35 }}
+										transition={{ duration: 0 }}
 									>
 										<span className='block animate-spin text-[4rem] md:text-[6rem] leading-none'>
 											🤘
@@ -264,22 +256,13 @@ export default function Home() {
 								key='title'
 								layoutId='hook-title'
 								initial={{ opacity: 1 }}
-								animate={{
-									opacity: reduceMotion ? 1 : [1, 0.55, 1, 1],
-								}}
+								animate={{ opacity: 1 }}
 								className='relative z-10 my-0 w-full text-[6cqw] md:text-[4cqw] lg:text-[3cqw] text-burntOrange text-center font-espn font-normal italic'
 								transition={{
 									layout: {
-										duration: reduceMotion ? 0 : 1.9,
+										duration: reduceMotion ? 0 : 0.2,
 										ease: [0.22, 1, 0.36, 1],
 									},
-									opacity: reduceMotion
-										? { duration: 0 }
-										: {
-												duration: 1.9,
-												times: [0, 0.05, 0.62, 1],
-												ease: ['easeOut', 'easeInOut', 'linear'],
-											},
 								}}
 							>
 								Did we hook them?
@@ -290,13 +273,8 @@ export default function Home() {
 					{!showingIntro && (
 						<motion.div
 							className='w-full flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-5 lg:items-stretch'
-							initial={reduceMotion ? false : { opacity: 0 }}
+							initial={false}
 							animate={{ opacity: 1 }}
-							transition={{
-								duration: reduceMotion ? 0 : 0.75,
-								delay: reduceMotion ? 0 : 1.1,
-								ease: [0.22, 1, 0.36, 1],
-							}}
 						>
 							<div className='relative min-w-0 w-full'>
 								<div className='flex flex-col gap-3 min-w-0 w-full lg:absolute lg:inset-0'>

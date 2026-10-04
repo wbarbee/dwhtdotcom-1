@@ -199,8 +199,16 @@ export default function ScoreCard({
 
 	if (error) {
 		return (
-			<div className='glass-card p-8 flex items-center justify-center'>
-				<p className='text-accent-red'>{error}</p>
+			<div className='glass-card p-8 flex flex-col gap-4 items-center justify-center'>
+				<p role='alert' className='text-accent-red'>{error}</p>
+				<button
+					type='button'
+					onClick={handleRefresh}
+					disabled={isRefreshing}
+					className='touch-manipulation min-h-11 px-4 rounded-lg bg-burntOrange text-white disabled:opacity-50'
+				>
+					{isRefreshing ? 'Retrying…' : 'Try again'}
+				</button>
 			</div>
 		);
 	}

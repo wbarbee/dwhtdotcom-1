@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
       {
         next: { revalidate: REVALIDATE_SECONDS },
         headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(5_000),
       },
     );
     if (!response.ok) {

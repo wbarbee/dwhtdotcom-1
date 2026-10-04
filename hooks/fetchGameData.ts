@@ -51,14 +51,20 @@ const inflight = new Map<string, Promise<any>>();
 const fetchJson = (url: string): Promise<any> => {
   const existing = inflight.get(url);
   if (existing) return existing;
-  const request = fetch(url).then(async (response) => {
-    if (!response.ok) throw new Error("Failed to fetch game data");
-    return response.json();
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  // Keep cleanup on the returned promise so failures do not also create an
+  // unhandled rejection, and a timed-out request can be retried.
+  const request = fetch(url, { signal: controller.signal })
+    .then(async (response) => {
+      if (!response.ok) throw new Error("Failed to fetch game data");
+      return response.json();
+    })
+    .finally(() => {
+      clearTimeout(timeout);
+      if (inflight.get(url) === request) inflight.delete(url);
+    });
   inflight.set(url, request);
-  request.finally(() => {
-    if (inflight.get(url) === request) inflight.delete(url);
-  });
   return request;
 };
 
