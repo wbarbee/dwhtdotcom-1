@@ -10,9 +10,11 @@ const REVALIDATE_SECONDS = 60;
 
 const CACHE_CONTROL = `public, max-age=30, s-maxage=${REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 
-/** During a game the overlaid score must stay as fresh as the live route. */
-const LIVE_CACHE_CONTROL =
-  "public, max-age=5, s-maxage=10, stale-while-revalidate=10";
+/**
+ * During a game the overlaid score is the whole point. No stale-while-
+ * revalidate: serving the previous copy is exactly the lag being fixed.
+ */
+const LIVE_CACHE_CONTROL = "public, max-age=0, s-maxage=5";
 
 const headersFor = (value: string) => ({
   "Cache-Control": value,
