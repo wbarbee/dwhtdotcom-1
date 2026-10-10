@@ -187,6 +187,8 @@ const processEvents = (data: any): Game[] => {
       isConferenceGame,
       seasonPhase,
       eventName: event.eventName || undefined,
+      scoreVerified:
+        typeof event.liveVerified === "boolean" ? event.liveVerified : undefined,
     };
 
     return game;
@@ -360,6 +362,7 @@ export const fetchLiveGame = async (
       pointDifferential: hasStarted
         ? texasScore - oppScore
         : originalGame.pointDifferential,
+      scoreVerified: true,
     };
 
     return updatedGame;

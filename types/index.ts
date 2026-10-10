@@ -42,6 +42,12 @@ export type Game = {
 	isConferenceGame?: boolean;
 	/** Regular-season games stay on the schedule through bowls and the CFP. */
 	seasonPhase?: 'regular' | 'postseason';
+	/**
+	 * Whether the score came from a live source. False means the game is in its
+	 * live window but only the lagging schedule score is known, so the card must
+	 * not show it. Undefined outside the live window.
+	 */
+	scoreVerified?: boolean;
 	/** Bowl or playoff name. Regular-season notes are not copied here. */
 	eventName?: string;
 };

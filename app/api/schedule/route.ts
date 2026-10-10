@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { slimSchedule } from "@/utils/espnPayload";
+import { overlayLiveScores } from "@/utils/espnLive";
 
 const ESPN_SCHEDULE =
   "https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/texas/schedule";
@@ -9,11 +10,25 @@ const REVALIDATE_SECONDS = 60;
 
 const CACHE_CONTROL = `public, max-age=30, s-maxage=${REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 
-const cacheHeaders = {
-  "Cache-Control": CACHE_CONTROL,
-  "CDN-Cache-Control": CACHE_CONTROL,
-  "Vercel-CDN-Cache-Control": CACHE_CONTROL,
-};
+/** During a game the overlaid score must stay as fresh as the live route. */
+const LIVE_CACHE_CONTROL =
+  "public, max-age=5, s-maxage=10, stale-while-revalidate=10";
+
+const headersFor = (value: string) => ({
+  "Cache-Control": value,
+  "CDN-Cache-Control": value,
+  "Vercel-CDN-Cache-Control": value,
+});
+
+/** Overlay live scores, and never let the CDN hold an unverified one. */
+async function respond(slim: { events: any[] }) {
+  const { data, hasLive } = await overlayLiveScores(slim);
+  const unverified = data.events.some((e: any) => e.liveVerified === false);
+  const headers = unverified
+    ? { "Cache-Control": "no-store" }
+    : headersFor(hasLive ? LIVE_CACHE_CONTROL : CACHE_CONTROL);
+  return NextResponse.json(data, { headers });
+}
 
 async function fetchSlim(params: URLSearchParams) {
   const qs = params.toString();
@@ -64,16 +79,13 @@ export async function GET(request: NextRequest) {
           new URLSearchParams({ season, seasontype: "3" }),
         ).catch(() => ({ team: { recordSummary: "" }, events: [] })),
       ]);
-      return NextResponse.json(mergeSeasonTypes(regular, postseason), {
-        headers: cacheHeaders,
-      });
+      return respond(mergeSeasonTypes(regular, postseason));
     }
 
     const params = new URLSearchParams();
     if (season) params.set("season", season);
     if (seasontype) params.set("seasontype", seasontype);
-    const data = await fetchSlim(params);
-    return NextResponse.json(data, { headers: cacheHeaders });
+    return respond(await fetchSlim(params));
   } catch {
     return NextResponse.json(
       { error: "Failed to fetch schedule" },

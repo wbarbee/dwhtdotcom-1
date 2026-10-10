@@ -152,7 +152,10 @@ export function useCurrentGameData(initialOverrideMode?: string) {
           ? lastLiveRef.current.get(scheduled.id)
           : undefined;
         const relevantGame =
-          scheduled && cachedLive && scheduled.status !== "STATUS_FINAL"
+          scheduled &&
+          cachedLive &&
+          scheduled.status !== "STATUS_FINAL" &&
+          scheduled.scoreVerified !== true
             ? cachedLive
             : scheduled;
         setCurrentGameData(relevantGame);
@@ -163,13 +166,14 @@ export function useCurrentGameData(initialOverrideMode?: string) {
             ),
           );
         }
-        // Paint from the schedule. A live summary is a second round trip
-        // and only matters while that feed can still be behind.
+        // Paint from the schedule. The schedule route overlays live scores, so
+        // the summary is only a fallback when that overlay could not verify.
         hasLoadedRef.current = true;
         if (requestId === requestIdRef.current) setLoading(false);
 
         const scheduleMayLag =
           relevantGame &&
+          relevantGame.scoreVerified !== true &&
           (isGameInProgress(relevantGame.status) ||
             hasKickedOff(relevantGame) ||
             (relevantGame.status === "STATUS_FINAL" &&
