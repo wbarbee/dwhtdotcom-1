@@ -75,7 +75,12 @@ function parseEvent(event: any, record?: string) {
 
 	let result: 'win' | 'loss' | 'upcoming' = 'upcoming';
 	if (status === 'STATUS_FINAL') {
-		result = texasTeam?.winner ? 'win' : 'loss';
+		// ESPN's winner flag can trail the final score; fall back to the score.
+		if (typeof texasTeam?.winner === 'boolean') {
+			result = texasTeam.winner ? 'win' : 'loss';
+		} else if (texasScore !== null && oppScore !== null) {
+			result = Number(texasScore) > Number(oppScore) ? 'win' : 'loss';
+		}
 	}
 
 	return {
