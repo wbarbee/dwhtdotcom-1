@@ -132,10 +132,11 @@ function combine(snapshots: Snapshot[]): Snapshot {
   };
 }
 
-/** Not final, and kickoff is in the past but recent. */
+/**
+ * Kickoff is in the past but recent. Finals inside the window are overlaid
+ * too: the schedule can call a game final before its score catches up.
+ */
 export function isInLiveWindow(event: any, now = Date.now()): boolean {
-  const status = event?.competitions?.[0]?.status?.type?.name;
-  if (status === "STATUS_FINAL") return false;
   const kickoff = new Date(event?.date).getTime();
   if (!Number.isFinite(kickoff)) return false;
   const since = now - kickoff;
@@ -192,10 +193,18 @@ export async function overlayLiveScores<T extends { events: any[] }>(
               period: best.period ?? competition.status.period,
               type: { name: best.statusName },
             },
-            competitors: competition.competitors.map((team: any) => ({
-              ...team,
-              score: String(best.scores[String(team.id)]),
-            })),
+            competitors: competition.competitors.map((team: any) => {
+              const score = best.scores[String(team.id)];
+              const others = Object.entries(best.scores)
+                .filter(([id]) => id !== String(team.id))
+                .map(([, v]) => v);
+              // The schedule's winner flag trails the final; derive it.
+              const winner =
+                best.statusName === "STATUS_FINAL" && others.length > 0
+                  ? score > Math.max(...others)
+                  : team.winner;
+              return { ...team, score: String(score), winner };
+            }),
           },
         ],
       });

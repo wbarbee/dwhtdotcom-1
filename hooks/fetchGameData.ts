@@ -46,6 +46,25 @@ const RIVALRY_MAP: Record<string, string> = {
   "245": "Lone Star Showdown", // Texas A&M
 };
 
+/**
+ * Win or loss for a final. ESPN's `winner` flag can trail the final score
+ * (and the live overlay only carries scores), so fall back to the scoreboard.
+ */
+const resultFor = (
+  status: string,
+  winner: unknown,
+  texasScore: number | null,
+  oppScore: number | null,
+): Game["result"] => {
+  if (status !== "STATUS_FINAL") return "upcoming";
+  if (winner === true) return "win";
+  if (winner === false) return "loss";
+  if (texasScore !== null && oppScore !== null && texasScore !== oppScore) {
+    return texasScore > oppScore ? "win" : "loss";
+  }
+  return "upcoming";
+};
+
 const inflight = new Map<string, Promise<any>>();
 
 const fetchJson = (url: string): Promise<any> => {
@@ -127,13 +146,6 @@ const processEvents = (data: any): Game[] => {
       return `${awayScore ?? 0} - ${homeScore ?? 0}`;
     };
 
-    const determineResult = () => {
-      if (gameStatus !== "STATUS_FINAL") return "upcoming";
-      if (texasTeam.winner) return "win";
-      if (texasTeam.winner === false) return "loss";
-      return "upcoming";
-    };
-
     // Determine opponent data
     const opponentTeam = isTexasHome ? awayTeam : homeTeam;
     const opponentId = opponentTeam.id || opponentTeam.team?.id || "";
@@ -173,7 +185,7 @@ const processEvents = (data: any): Game[] => {
       timeValid: competition.timeValid === true,
       broadcast: competition.broadcast || undefined,
       score: calculateScore(homeScore, awayScore),
-      result: determineResult(),
+      result: resultFor(gameStatus, texasTeam.winner, texasScore, oppScore),
       status: gameStatus,
       isTexasHome: isTexasHome,
       opponentId,
@@ -350,11 +362,7 @@ export const fetchLiveGame = async (
       date: new Date(competition.date).toLocaleDateString(),
       timestamp: new Date(competition.date).getTime(),
       score: hasStarted ? `${awayScore} - ${homeScore}` : originalGame.score,
-      result: texasTeam.winner
-        ? "win"
-        : texasTeam.winner === false
-          ? "loss"
-          : "upcoming",
+      result: resultFor(liveStatus, texasTeam.winner, texasScore, oppScore),
       status: liveStatus,
       isTexasHome,
       texasScore: hasStarted ? texasScore : originalGame.texasScore,
