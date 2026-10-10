@@ -29,7 +29,9 @@ export async function GET(
       {
         next: { revalidate: REVALIDATE_SECONDS },
         headers: { Accept: "application/json" },
-        signal: AbortSignal.timeout(5_000),
+        // A live summary is large and ESPN is slow on gamedays. This also bounds
+        // reading the body, so keep it under the client's 10s abort but not tight.
+        signal: AbortSignal.timeout(9_000),
       },
     );
     if (!response.ok) {

@@ -120,6 +120,10 @@ export function useCurrentGameData(initialOverrideMode?: string) {
   const hasLoadedRef = useRef(false);
   const overrideModeRef = useRef(overrideMode);
   overrideModeRef.current = overrideMode;
+  // Last good summary per game. The schedule feed can sit on 0-0 for most of
+  // a quarter, so it must not overwrite a live score on the next poll or when
+  // the summary request fails.
+  const lastLiveRef = useRef<Map<string, Game>>(new Map());
 
   const loadGameData = useCallback(async (modeOverride?: string | null) => {
     const requestId = ++requestIdRef.current;
@@ -143,8 +147,22 @@ export function useCurrentGameData(initialOverrideMode?: string) {
       if (activeMode) {
         setCurrentGameData(data[0] || null);
       } else {
-        const relevantGame = selectRelevantGame(data);
+        const scheduled = selectRelevantGame(data);
+        const cachedLive = scheduled
+          ? lastLiveRef.current.get(scheduled.id)
+          : undefined;
+        const relevantGame =
+          scheduled && cachedLive && scheduled.status !== "STATUS_FINAL"
+            ? cachedLive
+            : scheduled;
         setCurrentGameData(relevantGame);
+        if (relevantGame && relevantGame !== scheduled) {
+          setAllGames((games) =>
+            games.map((game) =>
+              game.id === relevantGame.id ? relevantGame : game,
+            ),
+          );
+        }
         // Paint from the schedule. A live summary is a second round trip
         // and only matters while that feed can still be behind.
         hasLoadedRef.current = true;
@@ -156,10 +174,11 @@ export function useCurrentGameData(initialOverrideMode?: string) {
             hasKickedOff(relevantGame) ||
             (relevantGame.status === "STATUS_FINAL" &&
               Date.now() - getApproxEndTime(relevantGame) <= SUMMARY_LAG_MS));
-        if (scheduleMayLag && relevantGame) {
-          const liveData = await fetchLiveGame(relevantGame.id, relevantGame);
+        if (scheduleMayLag && relevantGame && scheduled) {
+          const liveData = await fetchLiveGame(scheduled.id, scheduled);
           if (requestId !== requestIdRef.current) return;
           if (liveData) {
+            lastLiveRef.current.set(liveData.id, liveData);
             setCurrentGameData(liveData);
             setAllGames((games) =>
               games.map((game) => (game.id === liveData.id ? liveData : game)),
