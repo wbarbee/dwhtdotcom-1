@@ -27,8 +27,15 @@ type Snapshot = {
   scores: Record<string, number>;
 };
 
+/**
+ * ESPN's edge caches can each hold a different, older copy. A unique query
+ * string skips them so every read comes from the origin.
+ */
+export const bustEdgeCache = (url: string) =>
+  `${url}${url.includes("?") ? "&" : "?"}_=${Date.now()}`;
+
 async function fetchFresh(url: string): Promise<any> {
-  const response = await fetch(url, {
+  const response = await fetch(bustEdgeCache(url), {
     cache: "no-store",
     headers: { Accept: "application/json" },
     signal: AbortSignal.timeout(LIVE_TIMEOUT_MS),

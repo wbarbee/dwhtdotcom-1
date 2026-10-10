@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { slimSummary } from "@/utils/espnPayload";
+import { bustEdgeCache } from "@/utils/espnLive";
 
 const ESPN_SUMMARY =
   "https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary";
@@ -8,6 +9,9 @@ const ESPN_SUMMARY =
 const REVALIDATE_SECONDS = 15;
 
 const CACHE_CONTROL = `public, max-age=10, s-maxage=${REVALIDATE_SECONDS}, stale-while-revalidate=60`;
+
+/** The header view is the live-score fallback: no stale copies anywhere. */
+const LIVE_CACHE_CONTROL = "public, max-age=0, s-maxage=5";
 
 export async function GET(
   request: NextRequest,
@@ -24,10 +28,14 @@ export async function GET(
   const view = request.nextUrl.searchParams.get("view");
 
   try {
+    const isLive = view === "header";
+    const url = `${ESPN_SUMMARY}?event=${encodeURIComponent(eventId)}`;
     const response = await fetch(
-      `${ESPN_SUMMARY}?event=${encodeURIComponent(eventId)}`,
+      isLive ? bustEdgeCache(url) : url,
       {
-        next: { revalidate: REVALIDATE_SECONDS },
+        ...(isLive
+          ? { cache: "no-store" as const }
+          : { next: { revalidate: REVALIDATE_SECONDS } }),
         headers: { Accept: "application/json" },
         // A live summary is large and ESPN is slow on gamedays. This also bounds
         // reading the body, so keep it under the client's 10s abort but not tight.
@@ -41,11 +49,12 @@ export async function GET(
       );
     }
     const data = slimSummary(await response.json(), view);
+    const cacheControl = isLive ? LIVE_CACHE_CONTROL : CACHE_CONTROL;
     return NextResponse.json(data, {
       headers: {
-        "Cache-Control": CACHE_CONTROL,
-        "CDN-Cache-Control": CACHE_CONTROL,
-        "Vercel-CDN-Cache-Control": CACHE_CONTROL,
+        "Cache-Control": cacheControl,
+        "CDN-Cache-Control": cacheControl,
+        "Vercel-CDN-Cache-Control": cacheControl,
       },
     });
   } catch {
