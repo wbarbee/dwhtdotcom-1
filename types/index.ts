@@ -14,6 +14,10 @@ export type Game = {
 	neutralSite: boolean;
 	date: string;
 	timestamp: number;
+	/** False when ESPN has not published a kickoff time. */
+	timeValid?: boolean;
+	/** National TV or streaming network, when ESPN has one. */
+	broadcast?: string;
 	score: string;
 	result: 'win' | 'loss' | 'upcoming';
 	status:

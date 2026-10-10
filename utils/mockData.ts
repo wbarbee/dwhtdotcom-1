@@ -18,6 +18,8 @@ const baseMockGame: Game = {
 	awayTeamScore: null,
 	location: 'Cotton Bowl',
 	neutralSite: true,
+	timeValid: true,
+	broadcast: 'ABC',
 	date: '2023-10-07',
 	timestamp: getCurrentTimestamp(),
 	score: '',

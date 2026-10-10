@@ -20,6 +20,8 @@ export const formatCurrentEventData = (event: any): Game => {
 		neutralSite: event.neutralSite,
 		date: event.date,
 		timestamp: event.timestamp,
+		timeValid: event.timeValid,
+		broadcast: event.broadcast,
 		score: event.score,
 		result: event.result,
 		status: event.status,

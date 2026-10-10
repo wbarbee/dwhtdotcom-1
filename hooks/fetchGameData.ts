@@ -109,7 +109,8 @@ const processEvents = (data: any): Game[] => {
       return null;
     };
 
-    const isNeutralSite = event.competitions[0].neutralSite;
+    const competition = event.competitions[0];
+    const isNeutralSite = competition.neutralSite;
     const isTexasHome = texasTeam.homeAway === "home";
     const gameStatus = event.competitions[0].status?.type?.name || "Unknown";
 
@@ -165,10 +166,12 @@ const processEvents = (data: any): Game[] => {
       awayTeamAbbrev: awayTeam.team.abbreviation,
       homeTeamScore: homeScore,
       awayTeamScore: awayScore,
-      location: event.competitions[0].venue.fullName,
+      location: competition.venue.fullName,
       neutralSite: isNeutralSite,
       date: new Date(event.date).toLocaleDateString(),
       timestamp: new Date(event.date).getTime(),
+      timeValid: competition.timeValid === true,
+      broadcast: competition.broadcast || undefined,
       score: calculateScore(homeScore, awayScore),
       result: determineResult(),
       status: gameStatus,

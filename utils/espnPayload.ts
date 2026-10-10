@@ -4,6 +4,22 @@
  * downloading and parsing the rest.
  */
 
+/** National TV, then national streaming, then whatever ESPN listed. */
+function broadcastLabel(broadcasts: any): string {
+  if (!Array.isArray(broadcasts)) return "";
+  const entries = broadcasts
+    .map((b) => ({
+      type: String(b?.type?.shortName ?? ""),
+      market: String(b?.market?.type ?? ""),
+      name: String(b?.media?.shortName ?? "").trim(),
+    }))
+    .filter((b) => b.name);
+  const prefer = (type: string) =>
+    entries.find((b) => b.type === type && b.market === "National") ??
+    entries.find((b) => b.type === type);
+  return (prefer("TV") ?? prefer("Streaming") ?? entries[0])?.name ?? "";
+}
+
 export function slimSchedule(data: any) {
   const events = Array.isArray(data?.events) ? data.events : [];
   return {
@@ -28,6 +44,8 @@ export function slimSchedule(data: any) {
         competitions: [
           {
             neutralSite: Boolean(competition.neutralSite),
+            timeValid: competition.timeValid === true,
+            broadcast: broadcastLabel(competition.broadcasts),
             venue: {
               fullName: competition.venue?.fullName ?? "",
             },

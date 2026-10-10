@@ -283,6 +283,9 @@ export default function ScoreCard({
 		awayTeamScore,
 		location,
 		date,
+		timestamp,
+		timeValid,
+		broadcast,
 	} = currentGameData;
 
 	const showScore =
@@ -296,6 +299,19 @@ export default function ScoreCard({
 		: modeData.backgroundImage;
 
 	const formattedDate = new Date(date).toLocaleDateString();
+	// ESPN publishes Eastern in its own detail string. Format the UTC kickoff
+	// in the viewer's timezone, and only when ESPN says the time is real.
+	const showAirtime = status !== 'STATUS_FINAL';
+	const kickoffLabel =
+		showAirtime && timeValid
+			? new Date(timestamp).toLocaleTimeString(undefined, {
+					hour: 'numeric',
+					minute: '2-digit',
+					timeZoneName: 'short',
+				})
+			: '';
+	const network = showAirtime && broadcast ? broadcast : '';
+	const airLine = [kickoffLabel, network].filter(Boolean).join(' · ');
 
 	const titleColorClass =
 		currentMode === 'win'
@@ -412,19 +428,12 @@ export default function ScoreCard({
 									homeLabel={compactHome}
 								/>
 							</div>
-							{/* Stacked on phones: a long venue name plus the date on one
-							    line wraps mid-name and strands the separator. */}
 							<div
-								className={`${status === 'STATUS_SCHEDULED' ? 'mt-1' : ''} flex flex-col sm:flex-row flex-wrap items-center justify-center gap-x-2 px-2 text-sm text-foreground/50`}
+								className={`${status === 'STATUS_SCHEDULED' ? 'mt-1' : ''} flex flex-col items-center justify-center gap-1 px-2 text-sm text-foreground/50`}
 							>
 								<span className='text-balance'>{location}</span>
-								<span
-									className='hidden sm:inline text-foreground/30'
-									aria-hidden='true'
-								>
-									&middot;
-								</span>
 								<span>{formattedDate}</span>
+								{airLine ? <span>{airLine}</span> : null}
 							</div>
 						</motion.div>
 					</motion.div>
