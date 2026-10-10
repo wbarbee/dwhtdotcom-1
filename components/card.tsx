@@ -356,9 +356,10 @@ export default function ScoreCard({
 						</div>
 					</div>
 					<motion.div
-						className='flex flex-col md:col-span-6 items-center justify-center text-center gap-5 md:gap-6 px-1 pb-10 min-w-0'
+						className='flex flex-col md:col-span-6 h-full min-h-0 min-w-0 pt-5'
 						variants={itemVariants}
 					>
+						<div className='flex flex-1 flex-col items-center justify-center text-center gap-4 px-1 min-h-0'>
 						{(modeData.title || currentMode === 'pregame') && (
 							<motion.p
 								className={`text-xl md:text-2xl font-display italic tracking-wide ${titleColorClass}`}
@@ -436,32 +437,32 @@ export default function ScoreCard({
 								{airLine ? <span>{airLine}</span> : null}
 							</div>
 						</motion.div>
+						</div>
+						<div className={`self-end mt-3 ${scoreboardToolbarClass}`}>
+							{showRefreshButton && (
+								<>
+									<button
+										type='button'
+										className={scoreboardControlClass}
+										aria-label='Refresh data'
+										onClick={handleRefresh}
+										disabled={isRefreshing}
+									>
+										<RefreshCw
+											size={15}
+											strokeWidth={1.75}
+											className={isRefreshing ? 'animate-spin' : undefined}
+										/>
+									</button>
+									<ScoreboardToolbarDivider />
+								</>
+							)}
+							<FullScoreModal result={currentGameData.result} />
+							<ScoreboardToolbarDivider />
+							<ThemeSwitch />
+						</div>
 					</motion.div>
 				</motion.div>
-			</div>
-
-			<div className={`absolute bottom-3 right-3 z-10 ${scoreboardToolbarClass}`}>
-				{showRefreshButton && (
-					<>
-						<button
-							type='button'
-							className={scoreboardControlClass}
-							aria-label='Refresh data'
-							onClick={handleRefresh}
-							disabled={isRefreshing}
-						>
-							<RefreshCw
-								size={15}
-								strokeWidth={1.75}
-								className={isRefreshing ? 'animate-spin' : undefined}
-							/>
-						</button>
-						<ScoreboardToolbarDivider />
-					</>
-				)}
-				<FullScoreModal result={currentGameData.result} />
-				<ScoreboardToolbarDivider />
-				<ThemeSwitch />
 			</div>
 		</div>
 	);
