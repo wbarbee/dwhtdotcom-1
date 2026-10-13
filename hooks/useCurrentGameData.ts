@@ -22,6 +22,60 @@ const LIVE_POLL_MS = 30 * 1000;
 const PREGAME_POLL_MS = 60 * 1000;
 /** Foreground wakes arrive in bursts (visibilitychange + focus + pageshow). */
 const WAKE_THROTTLE_MS = 5 * 1000;
+/** A remembered live score stands in for an unverified one only this long. */
+const LIVE_MEMORY_MS = 90 * 1000;
+/**
+ * How long a remembered score can raise a lower one. Outlasts a reload that
+ * lands on a stale copy, but lets a rare scoring correction through.
+ */
+const HIGH_WATER_MS = 15 * 60 * 1000;
+const LIVE_STORAGE_KEY = "dwht:live-scores";
+
+type Remembered = { game: Game; at: number };
+
+const loadRemembered = (): Map<string, Remembered> => {
+  try {
+    const raw = window.localStorage.getItem(LIVE_STORAGE_KEY);
+    const entries: [string, Remembered][] = raw ? JSON.parse(raw) : [];
+    const now = Date.now();
+    return new Map(entries.filter(([, r]) => now - r.at <= HIGH_WATER_MS));
+  } catch {
+    return new Map();
+  }
+};
+
+const saveRemembered = (map: Map<string, Remembered>) => {
+  try {
+    window.localStorage.setItem(
+      LIVE_STORAGE_KEY,
+      JSON.stringify(Array.from(map.entries())),
+    );
+  } catch {
+    // Private mode or storage blocked: the in-memory copy still works.
+  }
+};
+
+/**
+ * Football scores never go down, so between two reads of the same game the
+ * higher score per team is the fresher one. Status comes from `next`.
+ */
+const withHigherScores = (next: Game, prev: Game | undefined): Game => {
+  if (!prev || prev.id !== next.id) return next;
+  const home = Math.max(next.homeTeamScore ?? 0, prev.homeTeamScore ?? 0);
+  const away = Math.max(next.awayTeamScore ?? 0, prev.awayTeamScore ?? 0);
+  if (home === next.homeTeamScore && away === next.awayTeamScore) return next;
+  const texasScore = next.isTexasHome ? home : away;
+  const opponentScore = next.isTexasHome ? away : home;
+  return {
+    ...next,
+    homeTeamScore: home,
+    awayTeamScore: away,
+    score: `${away} - ${home}`,
+    texasScore,
+    opponentScore,
+    pointDifferential: texasScore - opponentScore,
+  };
+};
 
 const isGameInProgress = (status: string) => {
   return [
@@ -120,6 +174,23 @@ export function useCurrentGameData(initialOverrideMode?: string) {
   const hasLoadedRef = useRef(false);
   const overrideModeRef = useRef(overrideMode);
   overrideModeRef.current = overrideMode;
+  // Last good summary per game. The schedule feed can sit on 0-0 for most of
+  // a quarter, so it must not overwrite a live score on the next poll or when
+  // the summary request fails.
+  // Survives reloads, so a refresh that lands on a stale copy cannot take
+  // the score backwards.
+  const lastLiveRef = useRef<Map<string, Remembered> | null>(null);
+  const remembered = () => (lastLiveRef.current ??= loadRemembered());
+  const rememberLive = (game: Game) => {
+    const map = remembered();
+    map.set(game.id, { game, at: Date.now() });
+    saveRemembered(map);
+  };
+  /** The remembered game, if it is recent enough to raise a lower score. */
+  const highWater = (id: string) => {
+    const entry = remembered().get(id);
+    return entry && Date.now() - entry.at <= HIGH_WATER_MS ? entry : undefined;
+  };
 
   const loadGameData = useCallback(async (modeOverride?: string | null) => {
     const requestId = ++requestIdRef.current;
@@ -143,23 +214,52 @@ export function useCurrentGameData(initialOverrideMode?: string) {
       if (activeMode) {
         setCurrentGameData(data[0] || null);
       } else {
-        const relevantGame = selectRelevantGame(data);
+        const scheduled = selectRelevantGame(data);
+        const prior = scheduled ? highWater(scheduled.id) : undefined;
+        let relevantGame = scheduled;
+        if (scheduled && prior && scheduled.status !== "STATUS_FINAL") {
+          if (scheduled.scoreVerified === true) {
+            relevantGame = withHigherScores(scheduled, prior.game);
+            rememberLive(relevantGame);
+          } else if (Date.now() - prior.at <= LIVE_MEMORY_MS) {
+            // Brief stand-in while the summary fallback runs. Past that, an
+            // old score is no better than the lagging one: show the spinner.
+            relevantGame = prior.game;
+          }
+        } else if (scheduled?.scoreVerified === true) {
+          rememberLive(scheduled);
+        }
         setCurrentGameData(relevantGame);
-        // Paint from the schedule. A live summary is a second round trip
-        // and only matters while that feed can still be behind.
+        if (relevantGame && relevantGame !== scheduled) {
+          setAllGames((games) =>
+            games.map((game) =>
+              game.id === relevantGame.id ? relevantGame : game,
+            ),
+          );
+        }
+        // Paint from the schedule. The schedule route overlays live scores, so
+        // the summary is only a fallback when that overlay could not verify.
         hasLoadedRef.current = true;
         if (requestId === requestIdRef.current) setLoading(false);
 
+        // Judge the schedule's own copy: a remembered stand-in is verified but
+        // old, and must not suppress the fallback.
         const scheduleMayLag =
-          relevantGame &&
-          (isGameInProgress(relevantGame.status) ||
-            hasKickedOff(relevantGame) ||
-            (relevantGame.status === "STATUS_FINAL" &&
-              Date.now() - getApproxEndTime(relevantGame) <= SUMMARY_LAG_MS));
-        if (scheduleMayLag && relevantGame) {
-          const liveData = await fetchLiveGame(relevantGame.id, relevantGame);
+          scheduled &&
+          scheduled.scoreVerified !== true &&
+          (isGameInProgress(scheduled.status) ||
+            hasKickedOff(scheduled) ||
+            (scheduled.status === "STATUS_FINAL" &&
+              Date.now() - getApproxEndTime(scheduled) <= SUMMARY_LAG_MS));
+        if (scheduleMayLag && scheduled) {
+          const summary = await fetchLiveGame(scheduled.id, scheduled);
           if (requestId !== requestIdRef.current) return;
-          if (liveData) {
+          if (summary) {
+            const liveData = withHigherScores(
+              summary,
+              highWater(summary.id)?.game,
+            );
+            rememberLive(liveData);
             setCurrentGameData(liveData);
             setAllGames((games) =>
               games.map((game) => (game.id === liveData.id ? liveData : game)),

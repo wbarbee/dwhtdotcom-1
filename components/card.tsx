@@ -288,9 +288,15 @@ export default function ScoreCard({
 		broadcast,
 	} = currentGameData;
 
+	// A live-window score that only the lagging schedule vouches for is wrong
+	// more often than not. Hold the spinner until a live source confirms it.
+	const awaitingLiveScore = currentGameData.scoreVerified === false;
 	const showScore =
-		(isGameInProgress(status) || status === 'STATUS_FINAL') && !isRefreshing;
-	const showPeriod = isGameInProgress(status) && !isRefreshing;
+		(isGameInProgress(status) || status === 'STATUS_FINAL') &&
+		!isRefreshing &&
+		!awaitingLiveScore;
+	const showPeriod =
+		isGameInProgress(status) && !isRefreshing && !awaitingLiveScore;
 	// Manual refresh is only useful mid-game; hide it for finals / upcoming
 	const showRefreshButton = isGameInProgress(status);
 
@@ -383,7 +389,7 @@ export default function ScoreCard({
 										fallback={score}
 									/>
 								</motion.div>
-							) : isRefreshing ? (
+							) : isRefreshing || awaitingLiveScore ? (
 								<Spinner
 									size='lg'
 									color='default'
