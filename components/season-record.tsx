@@ -6,7 +6,7 @@ import { parseSeasonRecord } from '../utils/seasonUtils';
 
 interface SeasonRecordProps {
 	games: Game[];
-	/** The game the hero card is showing, so both rank badges agree. */
+	/** Hero card game, used when it is not already in `games`. */
 	currentGame?: Game | null;
 }
 

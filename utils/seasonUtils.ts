@@ -18,29 +18,41 @@ const IN_PROGRESS_STATUSES: Game['status'][] = [
 ];
 
 /**
- * Texas' current rank.
+ * Texas' current weekly rank.
  *
- * `currentGame` is the same object the hero score card renders, so when one is
- * supplied both the record bar and the card badge always show the same number.
- * Without it, fall back to the newest game that actually carries a rank —
- * including a game in progress, whose poll position is fresher than the last
- * completed game's.
+ * The poll is released Sunday night. ESPN writes that rank onto games that
+ * have not been played yet, and leaves completed games at the rank from the
+ * week they were played. Reading a final therefore keeps last Sunday's number
+ * until the next kickoff.
+ *
+ * `currentGame` is included when the hero card has a fresher copy than the
+ * schedule list (a game in progress). It does not override the next unplayed
+ * game: that game is the poll.
  */
 export function resolveTexasRank(
 	games: Game[],
 	currentGame?: Game | null
 ): number | null {
-	const fromCurrent = getTexasRank(currentGame);
-	if (fromCurrent !== null) return fromCurrent;
+	const candidates =
+		currentGame && !games.some((g) => g.id === currentGame.id)
+			? [...games, currentGame]
+			: games;
 
-	const ranked = games
+	const pending = candidates
 		.filter(
 			(g) =>
-				g.status === 'STATUS_FINAL' || IN_PROGRESS_STATUSES.includes(g.status)
+				g.status === 'STATUS_SCHEDULED' ||
+				IN_PROGRESS_STATUSES.includes(g.status)
 		)
+		.sort((a, b) => a.timestamp - b.timestamp);
+
+	if (pending.length > 0) return getTexasRank(pending[0]);
+
+	const finals = candidates
+		.filter((g) => g.status === 'STATUS_FINAL')
 		.sort((a, b) => b.timestamp - a.timestamp);
 
-	for (const game of ranked) {
+	for (const game of finals) {
 		const rank = getTexasRank(game);
 		if (rank !== null) return rank;
 	}
@@ -250,8 +262,8 @@ export function calculateHookEmIndex(games: Game[]): HookEmIndex {
 			}),
 	];
 
-	// Factor 5: Ranking bonus (0-15) — same Texas rank as the record bar / card
-	const texasRank = resolveTexasRank(completed);
+	// Factor 5: Ranking bonus (0-15) — this week's poll, not the last kickoff
+	const texasRank = resolveTexasRank(games);
 	const rankingBonus =
 		texasRank === null
 			? 0
