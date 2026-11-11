@@ -90,6 +90,24 @@ export type HookEmIndex = {
 	};
 };
 
+export type HookEmOutcome = {
+	score: number;
+	grade: string;
+	/** Change from the current score. */
+	delta: number;
+	/** Estimated Texas rank after this result; null is unranked. */
+	texasRank: number | null;
+};
+
+/** The index if the next unplayed game is won or lost. */
+export type HookEmProjection = {
+	game: Game;
+	/** Points the simulated final is decided by, either way. */
+	assumedMargin: number;
+	win: HookEmOutcome;
+	loss: HookEmOutcome;
+};
+
 export type GameSummaryTeamStats = {
 	teamId: string;
 	abbreviation: string;

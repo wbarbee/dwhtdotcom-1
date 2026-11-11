@@ -1,5 +1,14 @@
-import { Game, SeasonRecord, HookEmIndex, HookEmFactorBreakdown } from '../types';
+import {
+	Game,
+	SeasonRecord,
+	HookEmIndex,
+	HookEmFactorBreakdown,
+	HookEmOutcome,
+	HookEmProjection,
+} from '../types';
 import { getOpponentRank, getTexasRank } from './rankUtils';
+
+const PROJECTED_MARGIN = 7;
 
 const PROVISIONAL_GAME_THRESHOLD = 4;
 const QUALITY_WIN_CAP = 20;
@@ -126,7 +135,7 @@ export function qualityWinPointsForGame(game: Game): number {
 	return points;
 }
 
-function shortOpponentLabel(game: Game): string {
+export function shortOpponentLabel(game: Game): string {
 	const rank = getOpponentRank(game);
 	const name =
 		game.opponentName.replace(
@@ -138,7 +147,11 @@ function shortOpponentLabel(game: Game): string {
 	return `${rankLabel}${name}${site}`.trim();
 }
 
-export function calculateHookEmIndex(games: Game[]): HookEmIndex {
+export function calculateHookEmIndex(
+	games: Game[],
+	/** Pins Texas' rank instead of reading it from `games`. */
+	texasRankOverride?: number | null
+): HookEmIndex {
 	const completed = games.filter((g) => g.status === 'STATUS_FINAL');
 	const emptyBreakdowns = {
 		winPercentage: [] as HookEmFactorBreakdown[],
@@ -263,7 +276,10 @@ export function calculateHookEmIndex(games: Game[]): HookEmIndex {
 	];
 
 	// Factor 5: Ranking bonus (0-15) — this week's poll, not the last kickoff
-	const texasRank = resolveTexasRank(games);
+	const texasRank =
+		texasRankOverride !== undefined
+			? texasRankOverride
+			: resolveTexasRank(games);
 	const rankingBonus =
 		texasRank === null
 			? 0
@@ -309,6 +325,84 @@ export function calculateHookEmIndex(games: Game[]): HookEmIndex {
 			marginFactor: marginBreakdown,
 			rankingBonus: rankingBreakdown,
 		},
+	};
+}
+
+/**
+ * Rough guess at where the poll puts Texas after a result. Voters move a
+ * winner up a little (more for beating a ranked team) and drop a loser by how
+ * bad the loss looks. Null is unranked.
+ */
+export function estimateRankAfter(
+	texasRank: number | null,
+	opponentRank: number | null,
+	result: 'win' | 'loss'
+): number | null {
+	if (texasRank === null) {
+		if (result === 'loss' || opponentRank === null) return null;
+		return opponentRank <= 10 ? 22 : 25;
+	}
+
+	const opponentRankedHigher =
+		opponentRank !== null && opponentRank < texasRank;
+
+	if (result === 'win') {
+		const climb = opponentRank === null ? 1 : opponentRankedHigher ? 4 : 2;
+		return Math.max(1, texasRank - climb);
+	}
+
+	const drop = opponentRank === null ? 8 : opponentRankedHigher ? 3 : 5;
+	const next = texasRank + drop;
+	return next > 25 ? null : next;
+}
+
+/**
+ * What the index becomes if the next unplayed game is won or lost.
+ *
+ * Two things a result cannot tell us are estimated: the final margin (one
+ * score either way) and the poll move (see `estimateRankAfter`).
+ * Returns null when nothing has been played yet or nothing is left to play.
+ */
+export function projectHookEmIndex(games: Game[]): HookEmProjection | null {
+	const next = games
+		.filter((g) => g.status !== 'STATUS_FINAL')
+		.sort((a, b) => a.timestamp - b.timestamp)[0];
+	if (!next || !games.some((g) => g.status === 'STATUS_FINAL')) return null;
+
+	const current = calculateHookEmIndex(games);
+	const texasRank = resolveTexasRank(games);
+
+	const outcome = (result: 'win' | 'loss'): HookEmOutcome => {
+		const simulated = games.map((g) =>
+			g.id === next.id
+				? {
+						...g,
+						status: 'STATUS_FINAL' as const,
+						result,
+						pointDifferential:
+							result === 'win' ? PROJECTED_MARGIN : -PROJECTED_MARGIN,
+					}
+				: g
+		);
+		const projectedRank = estimateRankAfter(
+			texasRank,
+			getOpponentRank(next),
+			result
+		);
+		const { score, grade } = calculateHookEmIndex(simulated, projectedRank);
+		return {
+			score,
+			grade,
+			delta: score - current.score,
+			texasRank: projectedRank,
+		};
+	};
+
+	return {
+		game: next,
+		assumedMargin: PROJECTED_MARGIN,
+		win: outcome('win'),
+		loss: outcome('loss'),
 	};
 }
 

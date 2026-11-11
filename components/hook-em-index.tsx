@@ -1,8 +1,12 @@
 'use client';
 import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Game } from '../types';
-import { calculateHookEmIndex } from '../utils/seasonUtils';
+import { Game, HookEmOutcome } from '../types';
+import {
+	calculateHookEmIndex,
+	projectHookEmIndex,
+	shortOpponentLabel,
+} from '../utils/seasonUtils';
 import { fetchLastSeasonData } from '../hooks/fetchGameData';
 
 interface HookEmIndexProps {
@@ -153,6 +157,57 @@ function CircularGauge({
 	);
 }
 
+const rankLabel = (rank: number | null) =>
+	rank === null ? 'unranked' : `#${rank}`;
+
+function OutcomeTile({
+	label,
+	outcome,
+	tone,
+}: {
+	label: string;
+	outcome: HookEmOutcome;
+	tone: 'win' | 'loss';
+}) {
+	const { score, grade, delta, texasRank } = outcome;
+	const frame =
+		tone === 'win'
+			? 'border-accent-green/25 bg-accent-green/5'
+			: 'border-accent-red/25 bg-accent-red/5';
+	const deltaStyle =
+		delta > 0
+			? 'bg-accent-green/15 text-accent-green'
+			: delta < 0
+				? 'bg-accent-red/15 text-accent-red'
+				: 'bg-foreground/10 text-foreground/50';
+	const deltaLabel =
+		delta > 0 ? `▲ ${delta}` : delta < 0 ? `▼ ${Math.abs(delta)}` : 'Even';
+
+	return (
+		<div
+			className={`flex flex-col gap-1.5 rounded-xl border px-3 py-2.5 min-w-0 ${frame}`}
+		>
+			<span className='text-[10px] uppercase tracking-wider text-foreground/55 truncate'>
+				{label}
+			</span>
+			<div className='flex items-center justify-between gap-2'>
+				<span className='font-score font-bold text-foreground leading-none'>
+					<span className='text-2xl'>{score}</span>
+					<span className='ml-1.5 text-sm text-foreground/65'>{grade}</span>
+				</span>
+				<span
+					className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-mono leading-none ${deltaStyle}`}
+				>
+					{deltaLabel}
+				</span>
+			</div>
+			<span className='text-[10px] text-foreground/50 truncate'>
+				Poll est. {rankLabel(texasRank)}
+			</span>
+		</div>
+	);
+}
+
 export default function HookEmIndex({
 	games,
 	className,
@@ -209,6 +264,11 @@ export default function HookEmIndex({
 		(g) => g.status === 'STATUS_FINAL',
 	).length;
 	const index = useMemo(() => calculateHookEmIndex(activeGames), [activeGames]);
+	// Only the live season has a next game; the last-season fallback does not.
+	const projection = useMemo(
+		() => (completedCount > 0 ? projectHookEmIndex(games) : null),
+		[completedCount, games],
+	);
 
 	if (fallbackLoading) {
 		return (
@@ -388,6 +448,38 @@ export default function HookEmIndex({
 						</div>
 					</div>
 				</div>
+
+				{projection && (
+					<div className='w-full max-w-sm flex flex-col gap-2.5 border-t border-foreground/10 pt-3'>
+						<div className='flex items-center justify-between gap-2 min-w-0'>
+							<span className='text-[11px] font-medium text-foreground/65 shrink-0'>
+								Next game — what if?
+							</span>
+							<span className='text-[11px] font-medium text-foreground/85 truncate'>
+								{projection.game.isTexasHome || projection.game.neutralSite
+									? 'vs'
+									: 'at'}{' '}
+								{shortOpponentLabel(projection.game).replace(/ \(A\)$/, '')}
+							</span>
+						</div>
+						<div className='grid grid-cols-2 gap-2'>
+							<OutcomeTile
+								label='If we hook them'
+								outcome={projection.win}
+								tone='win'
+							/>
+							<OutcomeTile
+								label='If we don’t'
+								outcome={projection.loss}
+								tone='loss'
+							/>
+						</div>
+						<span className='text-[10px] text-foreground/40 text-center leading-relaxed'>
+							Estimate: {projection.assumedMargin}-point final and a typical
+							poll move
+						</span>
+					</div>
+				)}
 			</motion.div>
 		</div>
 	);
