@@ -450,7 +450,7 @@ export default function HookEmIndex({
 				</div>
 
 				{projection && (
-					<div className='w-full max-w-sm flex flex-col gap-2.5 border-t border-foreground/10 pt-3'>
+					<div className='w-full max-w-sm flex flex-col gap-2.5 border-t border-foreground/10 mt-2 md:mt-3 pt-6'>
 						<div className='flex items-center justify-between gap-2 min-w-0'>
 							<span className='text-[11px] font-medium text-foreground/65 shrink-0'>
 								Next game — what if?
